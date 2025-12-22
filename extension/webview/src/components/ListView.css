@@ -1,105 +1,71 @@
 .list-view {
+    height: 100%;
     display: flex;
     flex-direction: column;
-    height: 100%;
-    font-size: 13px;
+}
+
+.bulk-actions {
+    padding: 8px;
+    background: var(--vscode-editor-selectionBackground);
+    color: var(--vscode-editor-selectionForeground);
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.bulk-actions button {
+    background: var(--vscode-button-background);
+    color: var(--vscode-button-foreground);
+    border: none;
+    padding: 4px 8px;
+    cursor: pointer;
 }
 
 .list-header {
     display: flex;
-    padding: 8px 0;
+    padding: 8px;
+    background: var(--vscode-editor-background);
     border-bottom: 1px solid var(--vscode-panel-border);
-    font-weight: 600;
-    background: var(--vscode-sideBar-background);
-    position: sticky;
-    top: 0;
-}
-
-.list-body {
-    flex: 1;
-    overflow: hidden;
+    font-weight: bold;
+    font-size: 12px;
 }
 
 .list-row {
     display: flex;
     align-items: center;
+    border-bottom: 1px solid var(--vscode-panel-border);
+    font-size: 13px;
     cursor: pointer;
-    border-bottom: 1px solid var(--vscode-list-inactiveSelectionBackground);
 }
 
-.list-row:hover {
+.list-row.selected {
+    background: var(--vscode-list-activeSelectionBackground);
+    color: var(--vscode-list-activeSelectionForeground);
+}
+
+.list-row:hover:not(.selected) {
     background: var(--vscode-list-hoverBackground);
 }
 
-.list-row-even {
-    background: var(--vscode-list-inactiveSelectionBackground);
-}
+.col-check { width: 30px; display: flex; justify-content: center; }
+.col-id { width: 80px; font-family: monospace; color: var(--vscode-textPreformat-foreground); }
+.col-status { width: 100px; }
+.col-priority { width: 40px; text-align: center; }
+.col-title { flex: 1; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; display: flex; align-items: center; gap: 6px; }
+.col-assignee { width: 100px; overflow: hidden; text-overflow: ellipsis; }
 
-.list-row-even:hover {
-    background: var(--vscode-list-hoverBackground);
-}
-
-.cell {
-    padding: 4px 8px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.cell-id {
-    width: 80px;
-    font-family: var(--vscode-editor-font-family);
-    color: var(--vscode-textLink-foreground);
-}
-
-.cell-status {
-    width: 100px;
-}
-
-.cell-priority {
-    width: 110px;
-}
-
-.cell-type {
-    width: 80px;
-    color: var(--vscode-descriptionForeground);
-}
-
-.cell-title {
-    flex: 1;
-    min-width: 200px;
-}
-
-.cell-assignee {
-    width: 100px;
-    color: var(--vscode-descriptionForeground);
-}
-
-/* Status colors */
-.status-open { color: var(--vscode-charts-yellow); }
-.status-in-progress { color: var(--vscode-charts-blue); }
-.status-closed { color: var(--vscode-charts-green); }
-.status-blocked { color: var(--vscode-charts-red); }
-
-/* Priority colors */
-.priority-critical { color: #ff4444; font-weight: 600; }
-.priority-high { color: #ff8844; }
-.priority-medium { color: #ffcc44; }
-.priority-low { color: #88bbff; }
-.priority-trivial { color: var(--vscode-descriptionForeground); }
-
-/* Inline select styling */
-.cell select {
+.col-status select {
+    width: 100%;
     background: transparent;
     border: none;
     color: inherit;
-    font-size: inherit;
     cursor: pointer;
-    padding: 2px 4px;
-    width: 100%;
 }
 
-.cell select:focus {
-    outline: 1px solid var(--vscode-focusBorder);
-    border-radius: 3px;
+.mini-label {
+    font-size: 10px;
+    background: var(--vscode-badge-background);
+    color: var(--vscode-badge-foreground);
+    padding: 1px 4px;
+    border-radius: 2px;
 }

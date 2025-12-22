@@ -1,10 +1,12 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import init, { GritsWasm } from './pkg/grits_core';
+import init, { WasmStore } from './wasm/grits_core';
 import { Issue, ViewType } from './types';
 import { ListView } from './components/ListView';
 import { KanbanView } from './components/KanbanView';
 import { GraphView } from './components/GraphView';
 import { AgendaView } from './components/AgendaView';
+import { DetailPanel } from './components/DetailPanel';
+import { CreateIssueModal } from './components/CreateIssueModal';
 import './App.css';
 
 // VS Code API
@@ -13,10 +15,14 @@ const vscode = window.vscode;
 export function App() {
     const [issues, setIssues] = useState<Issue[]>([]);
     const [view, setView] = useState<ViewType>('list');
-    const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
-    const [jsonlContent, setJsonlContent] = useState<string>('');
-    const [wasmReady, setWasmReady] = useState(false);
+    const [selectedIssueId, setSelectedIssueId] = useState<string | null>(null);
+    const [wasmStore, setWasmStore] = useState<WasmStore | null>(null);
     const isWasmLoading = useRef(false);
+    const [loading, setLoading] = useState(true);
+    const [conflictMode, setConflictMode] = useState(false);
+    const [onboardingNeeded, setOnboardingNeeded] = useState(false);
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [templates, setTemplates] = useState<string[]>(['bug', 'feature']); // Default templates
 
     // Initialize WASM
     useEffect(() => {
@@ -27,9 +33,12 @@ export function App() {
         const wasmUri = (window as any).wasmUri;
         init(wasmUri).then(() => {
             console.log('Grits WASM ready');
-            setWasmReady(true);
+            const store = new WasmStore();
+            setWasmStore(store);
+            setLoading(false);
         }).catch((err: any) => {
             console.error('Failed to initialize Grits WASM:', err);
+            setLoading(false);
         });
     }, []);
 
@@ -38,47 +47,33 @@ export function App() {
         const handleMessage = (event: MessageEvent) => {
             const message = event.data;
             if (message.type === 'update' && message.content) {
-                setJsonlContent(message.content);
-
-                if (wasmReady) {
-                    // Use GritsWasm for parsing
+                if (wasmStore) {
                     try {
-                        const jsonArr = GritsWasm.parse_issues(message.content);
-                        setIssues(JSON.parse(jsonArr));
+                        wasmStore.load_from_jsonl(message.content);
+                        refreshIssues();
                     } catch (err) {
-                        console.error('WASM parse failed, falling back to JS:', err);
-                        // Fallback to JS parsing
-                        const parsed: Issue[] = [];
-                        for (const line of message.content.split('\n')) {
-                            const trimmed = line.trim();
-                            if (trimmed) parsed.push(JSON.parse(trimmed));
-                        }
-                        setIssues(parsed);
+                        console.error('WASM load failed:', err);
                     }
-                } else {
-                    // Fallback to JS parsing if WASM not ready
-                    const parsed: Issue[] = [];
-                    for (const line of message.content.split('\n')) {
-                        const trimmed = line.trim();
-                        if (trimmed) {
-                            try {
-                                const issue = JSON.parse(trimmed);
-                                // Ensure essential arrays exist for component robustness
-                                issue.dependencies = issue.dependencies || [];
-                                issue.labels = issue.labels || [];
-                                issue.comments = issue.comments || [];
-                                parsed.push(issue);
-                            } catch (e: any) {
-                                console.error('Failed to parse JSONL line:', trimmed, e);
-                            }
-                        }
-                    }
-                    setIssues(parsed);
                 }
+            } else if (message.type === 'workspace_load' && message.contents) {
+                if (wasmStore) {
+                    try {
+                        wasmStore.load_workspace(message.contents);
+                        refreshIssues();
+                    } catch (err) {
+                        console.error('WASM workspace load failed:', err);
+                    }
+                }
+            } else if (message.type === 'conflict') {
+                setConflictMode(true);
+            } else if (message.type === 'onboarding_needed') {
+                setOnboardingNeeded(true);
+            } else if (message.type === 'templates') {
+                setTemplates(message.templates || []);
+            } else if (message.type === 'template_content') {
+                window.dispatchEvent(new CustomEvent('template-loaded', { detail: message }));
             }
         };
-
-        console.log('React App message listener attached. WASM ready:', wasmReady);
 
         window.addEventListener('message', handleMessage);
 
@@ -86,68 +81,155 @@ export function App() {
         vscode.postMessage({ type: 'ready' });
 
         return () => window.removeEventListener('message', handleMessage);
-    }, [wasmReady]);
+    }, [wasmStore]);
 
-    // Handle field updates
-    const handleUpdateField = useCallback(
-        (id: string, field: string, value: unknown) => {
-            if (wasmReady) {
-                try {
-                    // Use GritsWasm for robust field updates and validation
-                    const valueJson = JSON.stringify(value);
-                    const newContent = GritsWasm.update_field(jsonlContent, id, field, valueJson);
+    const refreshIssues = useCallback(() => {
+        if (!wasmStore) return;
+        try {
+            const json = wasmStore.list_issues("");
+            setIssues(JSON.parse(json));
+        } catch (e) {
+            console.error("Failed to list issues:", e);
+        }
+    }, [wasmStore]);
 
-                    setJsonlContent(newContent);
+    const handleUpdateField = useCallback((id: string, field: string, value: any) => {
+        if (!wasmStore) return;
 
-                    // Parse updated issues to update local state
-                    const jsonArr = GritsWasm.parse_issues(newContent);
-                    setIssues(JSON.parse(jsonArr));
+        try {
+            const issueJson = wasmStore.get_issue(id);
+            if (issueJson === "null") return;
 
-                    // Send save message to VS Code
-                    vscode.postMessage({ type: 'save', content: newContent });
-                    return;
-                } catch (err: any) {
-                    console.error('WASM update failed:', err);
-                    // Fallback to manual update if WASM fails
+            const issue = JSON.parse(issueJson);
+            issue[field] = value;
+
+            wasmStore.update_issue(JSON.stringify(issue));
+            refreshIssues();
+
+            // Save to disk
+            const content = wasmStore.save_to_jsonl();
+            vscode.postMessage({ type: 'save', content });
+        } catch (e) {
+            console.error("Failed to update field:", e);
+        }
+    }, [wasmStore, refreshIssues]);
+
+    const handleUpdateIssue = useCallback((updatedIssue: Issue) => {
+         if (!wasmStore) return;
+         try {
+             wasmStore.update_issue(JSON.stringify(updatedIssue));
+             refreshIssues();
+             const content = wasmStore.save_to_jsonl();
+             vscode.postMessage({ type: 'save', content });
+         } catch(e) {
+             console.error("Failed to update issue:", e);
+         }
+    }, [wasmStore, refreshIssues]);
+
+    const handleAddComment = useCallback((issueId: string, author: string, text: string) => {
+        if (!wasmStore) return;
+        try {
+            wasmStore.add_comment(issueId, author, text);
+            refreshIssues();
+            const content = wasmStore.save_to_jsonl();
+            vscode.postMessage({ type: 'save', content });
+        } catch (e) {
+            console.error("Failed to add comment:", e);
+        }
+    }, [wasmStore, refreshIssues]);
+
+    const handleAddLabel = useCallback((issueId: string, label: string) => {
+        if (!wasmStore) return;
+        try {
+            wasmStore.add_label(issueId, label);
+            refreshIssues();
+            const content = wasmStore.save_to_jsonl();
+            vscode.postMessage({ type: 'save', content });
+        } catch (e) {
+            console.error("Failed to add label:", e);
+        }
+    }, [wasmStore, refreshIssues]);
+
+    const handleRemoveLabel = useCallback((issueId: string, label: string) => {
+        if (!wasmStore) return;
+        try {
+            wasmStore.remove_label(issueId, label);
+            refreshIssues();
+            const content = wasmStore.save_to_jsonl();
+            vscode.postMessage({ type: 'save', content });
+        } catch (e) {
+            console.error("Failed to remove label:", e);
+        }
+    }, [wasmStore, refreshIssues]);
+
+    const handleCreateIssue = useCallback((title: string, description: string, type: string, priority: number) => {
+        if (!wasmStore) return;
+        try {
+            const issueObj = {
+                title,
+                description,
+                issue_type: type,
+                priority,
+                status: 'open',
+                labels: [],
+                dependencies: [],
+                comments: [],
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+                id: '',
+                content_hash: '',
+                design: '',
+                acceptance_criteria: '',
+                notes: '',
+                assignee: null,
+                estimated_minutes: null,
+                closed_at: null,
+                external_ref: null,
+                sender: '',
+                ephemeral: false,
+                replies_to: '',
+                relates_to: [],
+                duplicate_of: '',
+                superseded_by: '',
+                deleted_at: null,
+                deleted_by: '',
+                delete_reason: '',
+                original_type: ''
+            };
+
+            wasmStore.create_issue(JSON.stringify(issueObj));
+            refreshIssues();
+            const content = wasmStore.save_to_jsonl();
+            vscode.postMessage({ type: 'save', content });
+        } catch (e) {
+            console.error("Failed to create issue:", e);
+        }
+    }, [wasmStore, refreshIssues]);
+
+    const handleLoadTemplate = (templateName: string): Promise<string> => {
+        return new Promise((resolve) => {
+            const handler = (e: Event) => {
+                const detail = (e as CustomEvent).detail;
+                if (detail.name === templateName) {
+                    window.removeEventListener('template-loaded', handler);
+                    resolve(detail.content);
                 }
-            }
+            };
+            window.addEventListener('template-loaded', handler);
+            vscode.postMessage({ type: 'command', command: 'grits.loadTemplate', name: templateName });
 
-            // Fallback: Update local state immediately for responsiveness
-            setIssues((prev) =>
-                prev.map((issue) =>
-                    issue.id === id
-                        ? { ...issue, [field]: value, updated_at: new Date().toISOString() }
-                        : issue
-                )
-            );
+            setTimeout(() => {
+                window.removeEventListener('template-loaded', handler);
+                resolve('');
+            }, 2000);
+        });
+    };
 
-            // Update JSONL and save
-            const lines = jsonlContent.split('\n');
-            const newLines = lines.map((line) => {
-                const trimmed = line.trim();
-                if (!trimmed) return line;
+    const handleSelectIssue = useCallback((issue: Issue | null) => {
+        setSelectedIssueId(issue ? issue.id : null);
+    }, []);
 
-                try {
-                    const issue = JSON.parse(trimmed);
-                    if (issue.id === id) {
-                        issue[field] = value;
-                        issue.updated_at = new Date().toISOString();
-                        return JSON.stringify(issue);
-                    }
-                } catch {
-                    // Keep original line if parse fails
-                }
-                return line;
-            });
-
-            const newContent = newLines.join('\n');
-            setJsonlContent(newContent);
-
-            // Send save message to VS Code
-            vscode.postMessage({ type: 'save', content: newContent });
-        },
-        [jsonlContent, wasmReady]
-    );
+    const selectedIssue = issues.find(i => i.id === selectedIssueId) || null;
 
     // View switcher
     const ViewTab = ({ id, label, icon }: { id: ViewType; label: string; icon: string }) => (
@@ -160,6 +242,37 @@ export function App() {
         </button>
     );
 
+    const handleOnboard = () => {
+         vscode.postMessage({ type: 'command', command: 'grits.onboard' });
+         setOnboardingNeeded(false);
+    };
+
+    if (loading) {
+        return <div className="loading">Loading Grits Engine...</div>;
+    }
+
+    if (conflictMode) {
+        return (
+             <div className="conflict-banner">
+                <h2>⚠️ Git Merge Conflict Detected</h2>
+                <p>The issue file contains conflict markers. Please resolve them using the standard Merge Editor.</p>
+                <button onClick={() => vscode.postMessage({ type: 'command', command: 'git.openMergeEditor' })}>
+                    Open Merge Editor
+                </button>
+             </div>
+        );
+    }
+
+    if (onboardingNeeded) {
+        return (
+            <div className="onboarding-view">
+                <h2>Welcome to Grits</h2>
+                <p>No .grits directory found. Let's get set up.</p>
+                <button onClick={handleOnboard}>Initialize Grits</button>
+            </div>
+        );
+    }
+
     return (
         <div className="app">
             <header className="app-header">
@@ -167,6 +280,7 @@ export function App() {
                     <span className="logo">📋</span>
                     <h1>Grits</h1>
                     <span className="issue-count">{issues.length} issues</span>
+                    <button className="new-issue-btn" onClick={() => setIsCreateModalOpen(true)}>+ New Issue</button>
                 </div>
                 <nav className="view-tabs">
                     <ViewTab id="list" label="List" icon="📄" />
@@ -181,71 +295,47 @@ export function App() {
                     <ListView
                         issues={issues}
                         onUpdateField={handleUpdateField}
-                        onSelectIssue={setSelectedIssue}
+                        onSelectIssue={handleSelectIssue}
                     />
                 )}
                 {view === 'kanban' && (
                     <KanbanView
                         issues={issues}
                         onUpdateField={handleUpdateField}
-                        onSelectIssue={setSelectedIssue}
+                        onSelectIssue={handleSelectIssue}
                     />
                 )}
                 {view === 'graph' && (
-                    <GraphView issues={issues} onSelectIssue={setSelectedIssue} />
+                    <GraphView issues={issues} onSelectIssue={handleSelectIssue} />
                 )}
                 {view === 'agenda' && (
                     <AgendaView
                         issues={issues}
                         onUpdateField={handleUpdateField}
-                        onSelectIssue={setSelectedIssue}
+                        onSelectIssue={handleSelectIssue}
                     />
                 )}
             </main>
 
-            {/* Issue detail panel */}
             {selectedIssue && (
-                <aside className="detail-panel">
-                    <div className="detail-header">
-                        <h2>{selectedIssue.title}</h2>
-                        <button
-                            className="close-btn"
-                            onClick={() => setSelectedIssue(null)}
-                        >
-                            ✕
-                        </button>
-                    </div>
-                    <div className="detail-body">
-                        <div className="detail-field">
-                            <label>ID</label>
-                            <span className="id-value">{selectedIssue.id}</span>
-                        </div>
-                        <div className="detail-field">
-                            <label>Status</label>
-                            <span>{selectedIssue.status}</span>
-                        </div>
-                        <div className="detail-field">
-                            <label>Priority</label>
-                            <span>P{selectedIssue.priority}</span>
-                        </div>
-                        <div className="detail-field">
-                            <label>Type</label>
-                            <span>{selectedIssue.issue_type}</span>
-                        </div>
-                        {selectedIssue.assignee && (
-                            <div className="detail-field">
-                                <label>Assignee</label>
-                                <span>{selectedIssue.assignee}</span>
-                            </div>
-                        )}
-                        <div className="detail-field full-width">
-                            <label>Description</label>
-                            <p className="description">
-                                {selectedIssue.description || 'No description'}
-                            </p>
-                        </div>
-                    </div>
-                </aside>
+                <DetailPanel
+                    issue={selectedIssue}
+                    onClose={() => setSelectedIssueId(null)}
+                    onUpdate={handleUpdateIssue}
+                    onAddComment={handleAddComment}
+                    onAddLabel={handleAddLabel}
+                    onRemoveLabel={handleRemoveLabel}
+                    allIssues={issues}
+                />
+            )}
+
+            {isCreateModalOpen && (
+                <CreateIssueModal
+                    onClose={() => setIsCreateModalOpen(false)}
+                    onCreate={handleCreateIssue}
+                    templates={templates}
+                    onLoadTemplate={handleLoadTemplate}
+                />
             )}
         </div>
     );

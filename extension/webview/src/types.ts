@@ -11,9 +11,23 @@ export interface Issue {
     priority: number;
     issue_type: string;
     assignee: string | null;
+    estimated_minutes: number | null;
     created_at: string;
     updated_at: string;
     closed_at: string | null;
+    external_ref: string | null;
+    sender: string;
+    ephemeral: boolean;
+    replies_to: string;
+    relates_to: string[];
+    duplicate_of: string;
+    superseded_by: string;
+
+    deleted_at: string | null;
+    deleted_by: string;
+    delete_reason: string;
+    original_type: string;
+
     labels: string[];
     dependencies: Dependency[];
     comments: Comment[];
@@ -28,7 +42,7 @@ export interface Dependency {
 }
 
 export interface Comment {
-    id: string;
+    id: number;
     issue_id: string;
     author: string;
     text: string;
