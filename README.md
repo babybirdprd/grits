@@ -23,11 +23,15 @@ cargo install --git https://github.com/babybirdprd/grits.git grits-cli --force
 
 ### Option 2: Download Binary
 
-Download the latest release for your platform from [GitHub Releases](https://github.com/babybirdprd/grits/releases).
+**Windows (PowerShell One-Liner):**
+```powershell
+iwr https://github.com/babybirdprd/grits/releases/latest/download/gr-x86_64-pc-windows-msvc.exe -OutFile gr.exe; mv gr.exe $HOME/.cargo/bin/gr.exe
+```
 
-1. Download the file (e.g., `gr-x86_64-pc-windows-msvc.exe`).
-2. Rename it to `gr` (or `gr.exe`).
-3. Move it to a folder in your PATH (like `/usr/local/bin` on Unix or a dedicated `C:\bin` on Windows).
+**Manual Download:**
+1. Download from [GitHub Releases](https://github.com/babybirdprd/grits/releases).
+2. Rename to `gr` (or `gr.exe`).
+3. Move to a folder in your PATH.
 
 ### Option 3: Build from Source
 

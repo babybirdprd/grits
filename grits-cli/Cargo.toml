@@ -31,6 +31,8 @@ schemars = "1.0"
 walkdir = "2.5"
 regex = "1.11"
 git2 = { version = "0.19", features = ["vendored-libgit2"] }
+# Use vendored openssl for macOS/Linux cross-builds in CI, but skip on Windows to avoid Perl requirement
+[target.'cfg(not(windows))'.dependencies]
 openssl = { version = "0.10", features = ["vendored"] }
 
 [dev-dependencies]
