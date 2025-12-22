@@ -10,7 +10,11 @@ mod mcp;
 
 #[derive(Parser)]
 #[command(name = "gr")]
-#[command(about = "Grits Issue Tracker")]
+#[command(about = "Grits Issue Tracker - Git-native, local-first issue management")]
+#[command(
+    long_about = "A lightweight issue tracker with first-class dependency support.\nDesigned for both humans (VS Code extension) and AI agents (MCP server)."
+)]
+#[command(version)]
 struct Cli {
     #[command(subcommand)]
     command: Commands,
@@ -18,24 +22,35 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
+    /// List issues with optional filters
     List {
+        /// Filter by status (open, in-progress, blocked, closed)
         #[arg(long)]
         status: Option<String>,
+        /// Filter by assignee
         #[arg(long)]
         assignee: Option<String>,
+        /// Filter by priority (1=critical to 5=trivial)
         #[arg(long)]
         priority: Option<i32>,
+        /// Filter by issue type (bug, feature, task, epic)
         #[arg(long = "type")]
         type_: Option<String>,
+        /// Filter by label
         #[arg(long)]
         label: Option<String>,
+        /// Sort by field (priority, created_at, updated_at)
         #[arg(long)]
         sort: Option<String>,
     },
+    /// Show detailed information about an issue
     Show {
+        /// Issue ID or prefix
         id: String,
     },
+    /// Update one or more fields on an issue
     Update {
+        /// Issue ID or prefix
         id: String,
         #[arg(long)]
         title: Option<String>,
@@ -60,29 +75,41 @@ enum Commands {
         #[arg(long, action = clap::ArgAction::Append)]
         remove_dependency: Vec<String>,
     },
+    /// Edit an issue in your $EDITOR
     Edit {
+        /// Issue ID or prefix
         id: String,
     },
+    /// Close an issue
     Close {
+        /// Issue ID or prefix
         id: String,
     },
+    /// Create a new issue
     Create {
+        /// Issue title
         title: String,
+        /// Issue description
         #[arg(short, long, default_value = "")]
         description: String,
+        /// Issue type: bug, feature, task, epic
         #[arg(short = 't', long = "type", default_value = "bug")]
         type_: String,
+        /// Priority: 1 (critical) to 5 (trivial)
         #[arg(short, long, default_value_t = 2)]
         priority: i32,
     },
+    /// Export issues to JSONL format
     Export {
         #[arg(short, long, default_value = ".grits/issues.jsonl")]
         output: String,
     },
+    /// Import issues from JSONL format
     Import {
         #[arg(short, long, default_value = ".grits/issues.jsonl")]
         input: String,
     },
+    /// Git merge driver for grits JSONL files
     Merge {
         output: String,
         base: String,
@@ -91,15 +118,22 @@ enum Commands {
         #[arg(long)]
         debug: bool,
     },
+    /// Initialize grits in the current repository
     Onboard,
+    /// Show issues ready to work on (no blockers)
     Ready,
+    /// Synchronize issues with git remote
     Sync {
+        /// Squash all changes into a single commit
         #[arg(long)]
         squash: bool,
+        /// Show what would happen without making changes
         #[arg(long)]
         dry_run: bool,
     },
+    /// Show issue statistics
     Stats,
+    /// Manage configuration settings
     Config {
         #[command(subcommand)]
         command: ConfigCommands,
@@ -110,8 +144,19 @@ enum Commands {
 
 #[derive(Subcommand)]
 enum ConfigCommands {
-    Set { key: String, value: String },
-    Get { key: String },
+    /// Set a configuration value
+    Set {
+        /// Configuration key (e.g., user.name, issue_id_prefix)
+        key: String,
+        /// Value to set
+        value: String,
+    },
+    /// Get a configuration value
+    Get {
+        /// Configuration key
+        key: String,
+    },
+    /// List all configuration values
     List,
 }
 
@@ -143,18 +188,22 @@ struct IssueFrontmatter {
 }
 
 fn main() -> anyhow::Result<()> {
-    tracing_subscriber::fmt::init();
     let cli = Cli::parse();
 
+    // Only init tracing for non-MCP commands (MCP needs clean stdio for JSON-RPC)
+    if !matches!(cli.command, Commands::ServeMcp) {
+        tracing_subscriber::fmt::init();
+    }
+
     // Find DB
-    let db_path = if matches!(cli.command, Commands::Onboard) {
+    let db_path = if matches!(cli.command, Commands::Onboard | Commands::ServeMcp) {
         PathBuf::from(".grits/grits.db")
     } else {
         find_db_path()
     };
 
-    // Ensure parent dir exists if we are creating
-    if let Commands::Create { .. } = cli.command {
+    // Ensure parent dir exists if we are creating/serving
+    if matches!(cli.command, Commands::Create { .. } | Commands::ServeMcp) {
         if let Some(parent) = db_path.parent() {
             std::fs::create_dir_all(parent)?;
         }
