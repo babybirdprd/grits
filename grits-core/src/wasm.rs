@@ -26,6 +26,7 @@ extern "C" {
     fn git_show(revision: &str) -> String;
     fn git_rebase_continue() -> String;
     fn git_has_remote() -> bool;
+    fn git_config(key: &str, value: &str) -> String;
 }
 
 /// FileSystem implementation that delegates to JavaScript.
@@ -201,6 +202,14 @@ impl GitOps for WasmGit {
 
     fn has_remote(&self) -> Result<bool> {
         Ok(git_has_remote())
+    }
+
+    fn config(&self, key: &str, value: &str) -> Result<()> {
+        let res = git_config(key, value);
+        if res.starts_with("error:") {
+            bail!("{}", res);
+        }
+        Ok(())
     }
 }
 

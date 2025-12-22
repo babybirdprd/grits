@@ -34,3 +34,8 @@ export function git_has_remote() {
     console.log(`[JS] git_has_remote`);
     return false;
 }
+
+export function git_config(key, value) {
+    console.log(`[JS] git_config: ${key}=${value}`);
+    return "";
+}
