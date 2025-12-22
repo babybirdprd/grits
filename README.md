@@ -13,12 +13,28 @@ A Git-native, local-first issue tracker with a **Twin Engine** architecture:
 - Git
 - Node.js 18+ (for VS Code extension)
 
-### Build & Install
+### Option 1: Download Binary (Recommended)
+
+Download the latest release from [GitHub Releases](https://github.com/your-org/grits/releases):
+- **Windows**: `gr-x86_64-pc-windows-msvc.exe`
+- **macOS (Intel)**: `gr-x86_64-apple-darwin`
+- **macOS (Apple Silicon)**: `gr-aarch64-apple-darwin`
+- **Linux**: `gr-x86_64-unknown-linux-gnu`
+
+Rename to `gr` (or `gr.exe`) and add to your PATH.
+
+### Option 2: Build from Source
+
 ```bash
-cargo build --release
-# Add to PATH or use alias
-alias gr="./target/release/gr"
+# Clone and enter directory
+git clone https://github.com/your-org/grits.git
+cd grits
+
+# Install globally (adds `gr` to your PATH)
+cargo install --path grits-cli
 ```
+
+> **Updating**: `cargo install --path grits-cli --force`
 
 ### Initialize a Project
 ```bash
@@ -75,11 +91,21 @@ The extension provides a rich UI for `.jsonl` issue files:
 - **Agenda View**: Focus mode for high-priority items
 
 **Install Extension:**
+
+Download `grits-kanban-*.vsix` from [Releases](https://github.com/your-org/grits/releases) and:
 ```bash
+code --install-extension grits-kanban-0.1.0.vsix
+```
+
+Or build from source:
+```bash
+# Uses pnpm workspace - one install for everything
+pnpm install
+
+# Build and run in dev mode
 cd extension
-npm install
-npm run compile
-# Then F5 to launch Extension Development Host
+pnpm run compile
+# Press F5 in VS Code
 ```
 
 ## Project Structure
