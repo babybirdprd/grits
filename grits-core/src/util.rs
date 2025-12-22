@@ -125,18 +125,18 @@ mod tests {
     fn test_generate_hash_id_stability() {
         // Ensure deterministic output for same input
         let date = Utc.timestamp_opt(1600000000, 0).unwrap();
-        let id1 = generate_hash_id("bd", "Title", "Desc", "User", date, 6, 0);
-        let id2 = generate_hash_id("bd", "Title", "Desc", "User", date, 6, 0);
+        let id1 = generate_hash_id("gr", "Title", "Desc", "User", date, 6, 0);
+        let id2 = generate_hash_id("gr", "Title", "Desc", "User", date, 6, 0);
         assert_eq!(id1, id2);
-        assert!(id1.starts_with("bd-"));
+        assert!(id1.starts_with("gr-"));
         assert_eq!(id1.len(), 3 + 6); // prefix(2) + dash(1) + hash(6)
 
         // Ensure different output for different input
-        let id3 = generate_hash_id("bd", "Title2", "Desc", "User", date, 6, 0);
+        let id3 = generate_hash_id("gr", "Title2", "Desc", "User", date, 6, 0);
         assert_ne!(id1, id3);
 
         // Ensure different output for different nonce
-        let id4 = generate_hash_id("bd", "Title", "Desc", "User", date, 6, 1);
+        let id4 = generate_hash_id("gr", "Title", "Desc", "User", date, 6, 1);
         assert_ne!(id1, id4);
     }
 }

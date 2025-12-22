@@ -14,7 +14,7 @@ cd rust
 cargo build
 ```
 
-This will build both `beads-core` and `beads-cli`.
+This will build both `grits-core` and `grits-cli`.
 
 ## Running
 
@@ -22,12 +22,12 @@ Run the CLI directly via `cargo`:
 
 ```bash
 cd rust
-cargo run -p beads-cli -- <args>
+cargo run -p grits-cli -- <args>
 ```
 
 Example:
 ```bash
-cargo run -p beads-cli -- list
+cargo run -p grits-cli -- list
 ```
 
 ## Testing

@@ -1,4 +1,4 @@
-import init, { WasmFileSystem, WasmGit } from './pkg/beads_core.js';
+import init, { WasmFileSystem, WasmGit } from './pkg/grits_core.js';
 
 async function run() {
     await init();

@@ -1,6 +1,6 @@
 # CLI Usage
 
-The `bd` CLI is the primary interface for interacting with Beads issues.
+The `gr` CLI is the primary interface for interacting with Grits issues.
 
 ## Common Commands
 
@@ -9,10 +9,10 @@ Create a new issue.
 
 ```bash
 # Create a bug with default priority
-bd create "Fix login crash"
+gr create "Fix login crash"
 
 # Create a feature request with specific priority and description
-bd create "Dark Mode" --type feature --priority 1 --description "Add dark mode support"
+gr create "Dark Mode" --type feature --priority 1 --description "Add dark mode support"
 ```
 
 ### `list`
@@ -20,33 +20,33 @@ List issues. Supports filtering and sorting.
 
 ```bash
 # List all open issues
-bd list
+gr list
 
 # Filter by status
-bd list --status in-progress
+gr list --status in-progress
 
 # Filter by assignee
-bd list --assignee "jane.doe"
+gr list --assignee "jane.doe"
 
 # Filter by label
-bd list --label "frontend"
+gr list --label "frontend"
 
 # Sort by priority
-bd list --sort priority
+gr list --sort priority
 ```
 
 ### `show`
 Show details of a specific issue.
 
 ```bash
-bd show <issue-id>
+gr show <issue-id>
 ```
 
 ### `edit`
 Edit an issue's description and metadata in your `$EDITOR`.
 
 ```bash
-bd edit <issue-id>
+gr edit <issue-id>
 ```
 
 ### `update`
@@ -54,20 +54,20 @@ Update specific fields of an issue directly.
 
 ```bash
 # Change status
-bd update <issue-id> --status done
+gr update <issue-id> --status done
 
 # Add a label
-bd update <issue-id> --add-label "urgent"
+gr update <issue-id> --add-label "urgent"
 
 # Add a blocking dependency
-bd update <issue-id> --add-dependency <blocking-issue-id>
+gr update <issue-id> --add-dependency <blocking-issue-id>
 ```
 
 ### `sync`
 Synchronize local changes with the git backend. This exports DB changes to JSONL, commits, pulls, merges, and pushes.
 
 ```bash
-bd sync
+gr sync
 ```
 
 ### `config`
@@ -75,24 +75,24 @@ Manage configuration values.
 
 ```bash
 # Set user name
-bd config set user.name "Alice"
+gr config set user.name "Alice"
 
 # List all config
-bd config list
+gr config list
 ```
 
 ### `stats`
 Show issue statistics.
 
 ```bash
-bd stats
+gr stats
 ```
 
 ### `onboard`
-Initialize a new Beads repository in the current directory.
+Initialize a new Grits repository in the current directory.
 
 ```bash
-bd onboard
+gr onboard
 ```
 
 ## Global Options

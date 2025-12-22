@@ -2,7 +2,7 @@
 
 ## Executive Summary
 
-The Rust port of `beads` is **usable for basic issue tracking workflows**, including initialization, creation, updating, and git synchronization. The core architecture (SQLite storage, JSONL sync, Git operations) is fully functional and compatible with the existing Go implementation.
+The Rust port of `grits` is **usable for basic issue tracking workflows**, including initialization, creation, updating, and git synchronization. The core architecture (SQLite storage, JSONL sync, Git operations) is fully functional and compatible with the existing Go implementation.
 
 However, it is **incomplete for advanced users** who rely on labeling or dependency management (DAG), as the CLI currently lacks commands to expose these features.
 

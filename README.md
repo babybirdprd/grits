@@ -1,4 +1,4 @@
-# Beads (Rust Port)
+# Grits
 
 This is the Rust implementation of [Beads](https://github.com/steveyegge/beads), a distributed, git-backed issue tracker.
 
@@ -24,25 +24,25 @@ cargo build --release
 ### Run
 ```bash
 # Run via cargo
-cargo run -p beads-cli -- list
+cargo run -p grits-cli -- list
 
 # Or run the binary directly after build
-./target/release/bd list
+./target/release/gr list
 ```
 
 ## Documentation
 
 *   [Architecture](docs/architecture.md): Overview of the workspace, library design, and WASM strategy.
-*   [CLI Usage](docs/cli_usage.md): Guide to the `bd` commands (`create`, `list`, `sync`, etc.).
+*   [CLI Usage](docs/cli_usage.md): Guide to the `gr` commands (`create`, `list`, `sync`, etc.).
 *   [Development](docs/development.md): How to build, test, and verify compatibility.
 *   [Compatibility](docs/compatibility.md): Details on interoperability with the Go implementation.
 *   [WASM Status](docs/wasm_compatibility.md): Current status and roadmap for WebAssembly support.
 
 ## Project Structure
 
-*   `beads-core/`: The core library containing models, storage, and sync logic.
-*   `beads-cli/`: The command-line interface application.
+*   `grits-core/`: The core library containing models, storage, and sync logic.
+*   `grits-cli/`: The command-line interface application.
 *   `docs/`: Detailed documentation.
 
 ## License
-Same as the main Beads repository.
+MIT

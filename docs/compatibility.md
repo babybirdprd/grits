@@ -6,9 +6,9 @@ The Rust port maintains strict compatibility with the existing Go implementation
 
 Both implementations share the following state:
 
-1.  **SQLite Database**: The local database at `.beads/beads.db` uses the same schema.
-2.  **JSONL Files**: Issues are exported to and imported from JSONL files in the `.beads/` directory. This is the source of truth for synchronization.
-3.  **Git Branch**: The `beads` branch (or configured branch) is used for syncing.
+1.  **SQLite Database**: The local database at `.grits/grits.db` uses the same schema.
+2.  **JSONL Files**: Issues are exported to and imported from JSONL files in the `.grits/` directory. This is the source of truth for synchronization.
+3.  **Git Branch**: The `grits` branch (or configured branch) is used for syncing.
 
 ## Key Compatibility Features
 

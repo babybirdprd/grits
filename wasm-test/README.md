@@ -1,6 +1,6 @@
 # WASM Test Harness
 
-This directory contains a simple test harness for the WASM build of `beads-core`.
+This directory contains a simple test harness for the WASM build of `grits-core`.
 
 ## Prerequisites
 
@@ -11,7 +11,7 @@ This directory contains a simple test harness for the WASM build of `beads-core`
 
 1. Build the WASM package:
    ```bash
-   cd ../beads-core
+   cd ../grits-core
    wasm-pack build --target web --out-dir ../wasm-test/pkg
    ```
 
@@ -26,7 +26,7 @@ This directory contains a simple test harness for the WASM build of `beads-core`
 ## Mock Implementation
 
 The JS bindings are currently mock implementations defined in:
-- `rust/beads-core/js/beads_fs.js`
-- `rust/beads-core/js/beads_git.js`
+- `rust/grits-core/js/grits_fs.js`
+- `rust/grits-core/js/grits_git.js`
 
 These satisfy the linker requirements but do not persist data or run real git commands.
