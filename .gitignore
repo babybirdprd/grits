@@ -1,4 +1,13 @@
 target/
-target/
 
 .grits/grits.db
+
+# Node.js
+node_modules/
+extension/out/
+extension/webview/dist/
+extension/*.vsix
+
+# Editor
+.DS_Store
+*.swp

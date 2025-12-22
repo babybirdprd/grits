@@ -1,0 +1,139 @@
+.kanban-view {
+    display: flex;
+    gap: 16px;
+    height: 100%;
+    padding: 16px;
+    overflow-x: auto;
+}
+
+.kanban-column {
+    flex: 0 0 280px;
+    display: flex;
+    flex-direction: column;
+    background: var(--vscode-sideBar-background);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.kanban-column-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    border-top: 3px solid;
+    background: var(--vscode-sideBarSectionHeader-background);
+    font-weight: 600;
+}
+
+.column-count {
+    background: var(--vscode-badge-background);
+    color: var(--vscode-badge-foreground);
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 12px;
+}
+
+.kanban-column-body {
+    flex: 1;
+    padding: 8px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.kanban-card {
+    background: var(--vscode-editor-background);
+    border: 1px solid var(--vscode-panel-border);
+    border-radius: 6px;
+    padding: 12px;
+    cursor: grab;
+    transition: box-shadow 0.15s, transform 0.15s;
+}
+
+.kanban-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
+}
+
+.kanban-card:active {
+    cursor: grabbing;
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    font-size: 12px;
+}
+
+.card-id {
+    font-family: var(--vscode-editor-font-family);
+    color: var(--vscode-textLink-foreground);
+}
+
+.card-priority {
+    font-weight: 600;
+}
+
+.priority-1 .card-priority {
+    color: #ff4444;
+}
+
+.priority-2 .card-priority {
+    color: #ff8844;
+}
+
+.priority-3 .card-priority {
+    color: #ffcc44;
+}
+
+.priority-4 .card-priority {
+    color: #88bbff;
+}
+
+.priority-5 .card-priority {
+    color: var(--vscode-descriptionForeground);
+}
+
+.priority-1 {
+    border-left: 3px solid #ff4444;
+}
+
+.priority-2 {
+    border-left: 3px solid #ff8844;
+}
+
+.priority-3 {
+    border-left: 3px solid #ffcc44;
+}
+
+.priority-4 {
+    border-left: 3px solid #88bbff;
+}
+
+.card-title {
+    font-size: 14px;
+    line-height: 1.4;
+    margin-bottom: 8px;
+    word-wrap: break-word;
+}
+
+.card-footer {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--vscode-descriptionForeground);
+}
+
+.card-type {
+    background: var(--vscode-badge-background);
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.card-assignee {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}

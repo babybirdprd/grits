@@ -9,7 +9,7 @@ fn test_onboard() -> Result<(), Box<dyn std::error::Error>> {
     let path = temp.path();
 
     // Run gr onboard in temp dir
-    let mut cmd = Command::cargo_bin("gr")?;
+    let mut cmd = Command::new(env!("CARGO_BIN_EXE_gr"));
     cmd.current_dir(path)
         .arg("onboard")
         .write_stdin("\n") // Accept default username
@@ -31,7 +31,7 @@ fn test_create_list_show_close() -> Result<(), Box<dyn std::error::Error>> {
     let path = temp.path();
 
     // Onboard first
-    Command::cargo_bin("gr")?
+    Command::new(env!("CARGO_BIN_EXE_gr"))
         .current_dir(path)
         .arg("onboard")
         .write_stdin("\n")
@@ -39,7 +39,7 @@ fn test_create_list_show_close() -> Result<(), Box<dyn std::error::Error>> {
         .success();
 
     // Create issue
-    let assert = Command::cargo_bin("gr")?
+    let assert = Command::new(env!("CARGO_BIN_EXE_gr"))
         .current_dir(path)
         .arg("create")
         .arg("Test Issue")
@@ -55,7 +55,7 @@ fn test_create_list_show_close() -> Result<(), Box<dyn std::error::Error>> {
     assert!(id.starts_with("gr-"));
 
     // List
-    Command::cargo_bin("gr")?
+    Command::new(env!("CARGO_BIN_EXE_gr"))
         .current_dir(path)
         .arg("list")
         .assert()
@@ -64,7 +64,7 @@ fn test_create_list_show_close() -> Result<(), Box<dyn std::error::Error>> {
         .stdout(predicate::str::contains("Test Issue"));
 
     // Show
-    Command::cargo_bin("gr")?
+    Command::new(env!("CARGO_BIN_EXE_gr"))
         .current_dir(path)
         .arg("show")
         .arg(id)
@@ -74,7 +74,7 @@ fn test_create_list_show_close() -> Result<(), Box<dyn std::error::Error>> {
         .stdout(predicate::str::contains("This is a test"));
 
     // Close
-    Command::cargo_bin("gr")?
+    Command::new(env!("CARGO_BIN_EXE_gr"))
         .current_dir(path)
         .arg("close")
         .arg(id)
@@ -83,7 +83,7 @@ fn test_create_list_show_close() -> Result<(), Box<dyn std::error::Error>> {
         .stdout(predicate::str::contains(format!("Closed issue {}", id)));
 
     // Verify status is closed
-    Command::cargo_bin("gr")?
+    Command::new(env!("CARGO_BIN_EXE_gr"))
         .current_dir(path)
         .arg("show")
         .arg(id)
@@ -100,7 +100,7 @@ fn test_path_handling() -> Result<(), Box<dyn std::error::Error>> {
     let root = temp.path();
 
     // Onboard at root
-    Command::cargo_bin("gr")?
+    Command::new(env!("CARGO_BIN_EXE_gr"))
         .current_dir(root)
         .arg("onboard")
         .write_stdin("\n")
@@ -108,7 +108,7 @@ fn test_path_handling() -> Result<(), Box<dyn std::error::Error>> {
         .success();
 
     // Create issue at root
-    Command::cargo_bin("gr")?
+    Command::new(env!("CARGO_BIN_EXE_gr"))
         .current_dir(root)
         .arg("create")
         .arg("Root Issue")
@@ -122,7 +122,7 @@ fn test_path_handling() -> Result<(), Box<dyn std::error::Error>> {
     fs::create_dir_all(&subdir)?;
 
     // Run list from subdir
-    Command::cargo_bin("gr")?
+    Command::new(env!("CARGO_BIN_EXE_gr"))
         .current_dir(&subdir)
         .arg("list")
         .assert()

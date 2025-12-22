@@ -6,6 +6,8 @@ use serde::{Deserialize, Serialize};
 use std::io::Write;
 use std::path::PathBuf;
 
+mod mcp;
+
 #[derive(Parser)]
 #[command(name = "gr")]
 #[command(about = "Grits Issue Tracker")]
@@ -102,6 +104,8 @@ enum Commands {
         #[command(subcommand)]
         command: ConfigCommands,
     },
+    /// Start the MCP server for AI agent integration
+    ServeMcp,
 }
 
 #[derive(Subcommand)]
@@ -902,6 +906,11 @@ fn main() -> anyhow::Result<()> {
                 .create_issue(&issue)
                 .context("Failed to create issue")?;
             println!("Created issue {}", short_id);
+        }
+        Commands::ServeMcp => {
+            // Run async MCP server using tokio runtime
+            let rt = tokio::runtime::Runtime::new()?;
+            rt.block_on(async { mcp::run_server(db_path).await })?;
         }
     }
 

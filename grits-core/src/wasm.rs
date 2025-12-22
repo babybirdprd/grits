@@ -203,3 +203,175 @@ impl GitOps for WasmGit {
         Ok(git_has_remote())
     }
 }
+
+// =============================================================================
+// GritsWasm - WASM Bridge for VS Code Extension UI
+// =============================================================================
+
+use crate::models::Issue;
+use serde_json::Value;
+
+/// WASM bridge for the VS Code extension UI.
+/// Provides pure functions for parsing and updating issue data.
+#[wasm_bindgen]
+pub struct GritsWasm;
+
+#[wasm_bindgen]
+impl GritsWasm {
+    /// Parse JSONL content into a JSON array of issues.
+    /// Input: Raw JSONL string from VS Code (one issue per line)
+    /// Output: JSON array string for React UI
+    #[wasm_bindgen]
+    pub fn parse_issues(content: &str) -> Result<String, JsValue> {
+        let mut issues: Vec<Issue> = Vec::new();
+
+        for line in content.lines() {
+            let trimmed = line.trim();
+            if trimmed.is_empty() {
+                continue;
+            }
+
+            let issue: Issue = serde_json::from_str(trimmed)
+                .map_err(|e| JsValue::from_str(&format!("Parse error: {}", e)))?;
+            issues.push(issue);
+        }
+
+        serde_json::to_string(&issues)
+            .map_err(|e| JsValue::from_str(&format!("Serialize error: {}", e)))
+    }
+
+    /// Generic field updater with type validation.
+    ///
+    /// Arguments:
+    /// * `content`: The full JSONL file content
+    /// * `id`: The issue ID to find
+    /// * `field`: The name of the field to update (e.g., "status", "priority", "title")
+    /// * `value_json`: The new value as a JSON string (e.g., "1", "\"done\"", "\"New Title\"")
+    ///
+    /// Returns: New JSONL string to save to disk
+    #[wasm_bindgen]
+    pub fn update_field(
+        content: &str,
+        id: &str,
+        field: &str,
+        value_json: &str,
+    ) -> Result<String, JsValue> {
+        // Parse the new value from JSON string (preserves types)
+        let new_value: Value = serde_json::from_str(value_json)
+            .map_err(|e| JsValue::from_str(&format!("Invalid JSON value: {}", e)))?;
+
+        let mut output = String::new();
+        let mut found = false;
+
+        for line in content.lines() {
+            let trimmed = line.trim();
+            if trimmed.is_empty() {
+                continue;
+            }
+
+            // Parse line as dynamic JSON
+            let mut doc: Value = serde_json::from_str(trimmed)
+                .map_err(|e| JsValue::from_str(&format!("Corrupt DB line: {}", e)))?;
+
+            // Check if this is our target
+            if let Some(doc_id) = doc.get("id").and_then(|v| v.as_str()) {
+                if doc_id == id {
+                    // Apply the update dynamically
+                    if let Some(obj) = doc.as_object_mut() {
+                        obj.insert(field.to_string(), new_value.clone());
+
+                        // Update the updated_at timestamp
+                        obj.insert(
+                            "updated_at".to_string(),
+                            Value::String(chrono::Utc::now().to_rfc3339()),
+                        );
+                    }
+
+                    // Validation: Try to convert back to strict Issue struct
+                    let _valid_issue: Issue = serde_json::from_value(doc.clone()).map_err(|e| {
+                        JsValue::from_str(&format!("Type Error: Field '{}' invalid - {}", field, e))
+                    })?;
+
+                    found = true;
+                }
+            }
+
+            // Write back to string
+            let line_str = serde_json::to_string(&doc)
+                .map_err(|e| JsValue::from_str(&format!("Serialize error: {}", e)))?;
+            output.push_str(&line_str);
+            output.push('\n');
+        }
+
+        if !found {
+            return Err(JsValue::from_str(&format!("Issue ID not found: {}", id)));
+        }
+
+        Ok(output)
+    }
+
+    /// Serialize issues array back to JSONL format.
+    /// Input: JSON array string of issues
+    /// Output: JSONL string (one issue per line)
+    #[wasm_bindgen]
+    pub fn serialize_issues(issues_json: &str) -> Result<String, JsValue> {
+        let issues: Vec<Issue> = serde_json::from_str(issues_json)
+            .map_err(|e| JsValue::from_str(&format!("Parse error: {}", e)))?;
+
+        let mut output = String::new();
+        for issue in issues {
+            let line = serde_json::to_string(&issue)
+                .map_err(|e| JsValue::from_str(&format!("Serialize error: {}", e)))?;
+            output.push_str(&line);
+            output.push('\n');
+        }
+
+        Ok(output)
+    }
+
+    /// Create a new issue and return the updated JSONL content.
+    /// This is a convenience method for the UI.
+    #[wasm_bindgen]
+    pub fn create_issue(
+        content: &str,
+        title: &str,
+        description: &str,
+        issue_type: &str,
+        priority: i32,
+    ) -> Result<String, JsValue> {
+        use chrono::Utc;
+        use sha2::{Digest, Sha256};
+
+        // Generate a simple ID
+        let now = Utc::now();
+        let hash_input = format!("{}{}{}", title, description, now.timestamp_millis());
+        let mut hasher = Sha256::new();
+        hasher.update(hash_input.as_bytes());
+        let hash = hasher.finalize();
+        let id = format!("gr-{}", hex::encode(&hash[..4]));
+
+        let issue = Issue {
+            id,
+            title: title.to_string(),
+            description: description.to_string(),
+            status: "open".to_string(),
+            priority,
+            issue_type: issue_type.to_string(),
+            created_at: now,
+            updated_at: now,
+            ..Default::default()
+        };
+
+        let new_line = serde_json::to_string(&issue)
+            .map_err(|e| JsValue::from_str(&format!("Serialize error: {}", e)))?;
+
+        let mut output = content.to_string();
+        if !output.ends_with('\n') && !output.is_empty() {
+            output.push('\n');
+        }
+        output.push_str(&new_line);
+        output.push('\n');
+
+        Ok(output)
+    }
+}

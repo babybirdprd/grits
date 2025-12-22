@@ -21,6 +21,12 @@ edit = "0.1.5"
 comfy-table = "7.2.1"
 colored = "3.0.0"
 
+# MCP Server (Agent Engine)
+rmcp = { version = "0.12", features = ["server", "transport-io", "macros"] }
+tokio = { version = "1.0", features = ["full"] }
+serde_json = "1.0"
+schemars = "1.0"
+
 [dev-dependencies]
 assert_cmd = "2.1.1"
 predicates = "3.1.3"

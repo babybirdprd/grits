@@ -1,20 +1,19 @@
 # WASM Compatibility
 
-The Rust port is designed with future WebAssembly (WASM) support in mind. This will allow Grits to run in browser-based environments (like VS Code extensions or web UIs) without requiring a native binary.
+> **Status: ✅ Verified Working** — `grits-core` compiles successfully to `wasm32-unknown-unknown`.
+
+The `grits-core` library is designed for WebAssembly (WASM) compatibility, enabling it to run in browser-based environments (VS Code extensions, web UIs) without a native binary.
 
 ## Current Status
 
-*   **FileSystem Abstraction**: The `FileSystem` trait in `grits-core` abstracts all file I/O operations.
-    *   **Native**: `StdFileSystem` uses `std::fs`.
-    *   **WASM**: `WasmFileSystem` delegates to JavaScript functions via `wasm-bindgen`.
-*   **GitOps Abstraction**: The `GitOps` trait abstracts git commands.
-    *   **Native**: `StdGit` uses `std::process::Command` to call the `git` binary.
-    *   **WASM**: `WasmGit` delegates to JavaScript functions via `wasm-bindgen`.
-*   **Store Abstraction**: The `Store` trait in `grits-core` abstracts the persistence layer.
-    *   **Native**: `SqliteStore` uses `rusqlite` (SQLite).
-    *   **WASM/All**: `MemoryStore` provides an in-memory implementation suitable for ephemeral sessions or testing.
-*   **Core Logic**: The core logic is pure Rust and does not depend on OS-specific features.
-*   **Compilation**: `grits-core` compiles for `wasm32-unknown-unknown`. Dependencies like `rusqlite` are gated behind `#[cfg(not(target_arch = "wasm32"))]`.
+| Abstraction | Native | WASM |
+|-------------|--------|------|
+| **FileSystem** | `StdFileSystem` (std::fs) | `WasmFileSystem` (wasm-bindgen → JS) |
+| **GitOps** | `StdGit` (std::process::Command) | `WasmGit` (wasm-bindgen → JS) |
+| **Store** | `SqliteStore` (rusqlite) | `MemoryStore` (in-memory) |
+
+*   **Core Logic**: Pure Rust, no OS-specific dependencies.
+*   **Compilation**: Platform-specific deps are gated with `#[cfg(not(target_arch = "wasm32"))]`.
 
 ## JavaScript Bindings
 
@@ -36,9 +35,17 @@ To use Grits in a WASM environment:
 
 ## Testing
 
-A basic browser-based test harness is available in `rust/wasm-test/`.
-To run it:
-1.  Install `wasm-pack` (`cargo install wasm-pack`).
-2.  Build the WASM package: `cd rust/grits-core && wasm-pack build --target web --out-dir ../wasm-test/pkg`.
-3.  Serve `rust/wasm-test/` (e.g., `python3 -m http.server`).
-4.  Open browser to verify console output.
+A basic browser-based test harness is available in `wasm-test/`.
+
+```bash
+# Install wasm-pack
+cargo install wasm-pack
+
+# Build WASM package
+cd grits-core && wasm-pack build --target web --out-dir ../wasm-test/pkg
+
+# Serve and test
+cd ../wasm-test && python -m http.server
+# Open http://localhost:8000 in browser
+```
+

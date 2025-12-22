@@ -1,27 +1,124 @@
 # Architecture
 
-The Rust port of Beads follows a library-first architecture designed for portability (including WASM) and simplicity.
+Grits implements a **Twin Engine** architecture: a headless core that powers both AI agents and human developers through specialized interfaces.
+
+## Twin Engine Overview
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                        grits-core                            │
+│              (Rust library, WASM-compatible)                 │
+│    ┌─────────┐  ┌─────────┐  ┌──────────┐  ┌──────────┐    │
+│    │ Models  │  │  Store  │  │   Sync   │  │  WASM    │    │
+│    │         │  │ (SQLite)│  │ (Git)    │  │  Bridge  │    │
+│    └─────────┘  └─────────┘  └──────────┘  └──────────┘    │
+└────────────────────────┬────────────────────────────────────┘
+                         │
+          ┌──────────────┴──────────────┐
+          │                             │
+          ▼                             ▼
+┌─────────────────────┐      ┌─────────────────────┐
+│   Engine A (Native) │      │   Engine B (WASM)   │
+│   ┌───────────────┐ │      │   ┌───────────────┐ │
+│   │  MCP Server   │ │      │   │ VS Code Ext   │ │
+│   │  (gr serve)   │ │      │   │  (React UI)   │ │
+│   └───────────────┘ │      │   └───────────────┘ │
+│         ↓           │      │         ↓           │
+│   AI Agents         │      │   Human Developers  │
+│   (Antigravity)     │      │   (Visual UI)       │
+└─────────────────────┘      └─────────────────────┘
+```
+
+## Engine A: MCP Server (Agent Interface)
+
+The native CLI includes an MCP (Model Context Protocol) server that exposes issue management as structured tools.
+
+**Location:** `grits-cli/src/mcp.rs`
+
+**Tools:**
+- `list_issues` - Query with filters
+- `create_issue` - Create new issues
+- `update_issue` - Modify existing issues
+- `close_issue` - Mark issues closed
+- `get_issue` - Get full details
+
+**Protocol:** JSON-RPC 2.0 over stdio (MCP 2024-11-05 spec)
+
+## Engine B: WASM + VS Code Extension (Human Interface)
+
+The core library compiles to WebAssembly, enabling zero-latency UI in VS Code.
+
+**WASM Bridge:** `grits-core/src/wasm.rs`
+- `GritsWasm.parse_issues()` - Parse JSONL → JSON array
+- `GritsWasm.update_field()` - Generic field updates with validation
+- `GritsWasm.serialize_issues()` - JSON → JSONL
+- `GritsWasm.create_issue()` - Create new issue
+
+**VS Code Extension:** `extension/`
+- Custom editor for `.jsonl` files
+- File ↔ Webview synchronization
+- Four specialized views (List, Kanban, Graph, Agenda)
 
 ## Workspace Structure
 
-The `rust/` directory is a Cargo workspace containing:
+```
+grits/
+├── grits-core/           # Library crate (WASM-compatible)
+│   ├── src/
+│   │   ├── models.rs     # Issue, Comment, Dependency types
+│   │   ├── store.rs      # SQLite storage (native only)
+│   │   ├── sync.rs       # Git synchronization
+│   │   ├── wasm.rs       # WASM bridge (GritsWasm)
+│   │   └── fs.rs         # FileSystem abstraction
+│   └── Cargo.toml
+├── grits-cli/            # Binary crate
+│   ├── src/
+│   │   ├── main.rs       # CLI commands
+│   │   └── mcp.rs        # MCP server implementation
+│   └── Cargo.toml
+└── extension/            # VS Code extension
+    ├── src/
+    │   └── extension.ts  # Custom editor provider
+    └── webview/          # React frontend
+        └── src/
+            ├── App.tsx
+            └── components/
+```
 
-*   **`grits-core`**: The library crate. It contains the domain models, storage logic, sync algorithms, and abstractions for file system and git operations.
-*   **`grits-cli`**: The binary crate. It handles command-line argument parsing (via `clap`), output formatting, and invokes `grits-core` logic.
+## Key Design Decisions
 
-## Key Decisions
+### 1. Headless Core
+All business logic lives in `grits-core`, with no I/O assumptions. This enables:
+- Native CLI with SQLite + Git
+- WASM builds for browser/editor environments
+- Testability without mocking
 
-### No Daemon
-Unlike the original Go implementation, the Rust port does not use a background daemon or RPC. It accesses the SQLite database directly. Concurrency safety is managed via SQLite's file locking mechanism. This reduces complexity and system resource usage.
+### 2. Single Source of Truth
+Both engines read/write the same `.grits/issues.jsonl` file:
+- Changes sync automatically via file system watching
+- No race conditions (file-level locking)
+- Git-native versioning and conflict resolution
 
-### WASM Compatibility
-A major goal of the Rust port is to support compilation to WebAssembly (WASM). To achieve this:
+### 3. Type-Safe Tool Interface
+MCP tools use strongly-typed parameters (`schemars` JSON Schema):
+- AI agents get accurate parameter descriptions
+- Validation happens at the boundary
+- Rust's type system enforced throughout
 
-*   **FileSystem Abstraction**: All file I/O in `grits-core` is performed through the `FileSystem` trait. This allows injecting a virtual file system in WASM environments where direct disk access is not available.
-*   **GitOps Abstraction**: Git operations are abstracted behind the `GitOps` trait. The CLI uses `StdGit` (wrapping `std::process::Command`), but a WASM target can implement this trait using a pure-Rust git library or JS interop.
+### 4. Graceful Degradation
+- No WASM? CLI works standalone
+- No extension? Files are plain JSONL (editable in any editor)
+- No MCP client? Use CLI commands directly
 
 ## Database & Sync
 
-*   **Schema**: The Rust port shares the same SQLite schema as the Go version. It uses `rusqlite` for interaction.
-*   **Data Compatibility**: It reads and writes to `.grits/grits.db`.
-*   **Sync**: Synchronization logic (exporting to JSONL, git commit, pull, push, importing from JSONL) is implemented in `grits-core`. The `dirty_issues` table is used to track changes that need to be exported.
+- **Schema**: SQLite database at `.grits/grits.db`
+- **Export**: JSONL at `.grits/issues.jsonl` (synced to Git)
+- **Sync**: `gr sync` exports → commits → pushes → imports changes
+
+## Compatibility
+
+The Rust implementation maintains compatibility with the original Go Beads implementation:
+- Same SQLite schema
+- Same JSONL export format
+- Same Git conventions

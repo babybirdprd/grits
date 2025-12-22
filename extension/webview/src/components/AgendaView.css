@@ -1,0 +1,143 @@
+.agenda-view {
+    padding: 24px;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.agenda-title {
+    font-size: 24px;
+    margin-bottom: 24px;
+    color: var(--vscode-foreground);
+}
+
+.agenda-section {
+    margin-bottom: 32px;
+}
+
+.agenda-section h3 {
+    font-size: 16px;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--vscode-panel-border);
+}
+
+.blocked-section h3 {
+    color: #dc3545;
+}
+
+.in-progress-section h3 {
+    color: #0d6efd;
+}
+
+.priority-section h3 {
+    color: #ff8844;
+}
+
+.agenda-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.agenda-card {
+    background: var(--vscode-editor-background);
+    border: 1px solid var(--vscode-panel-border);
+    border-radius: 8px;
+    padding: 16px;
+    cursor: pointer;
+    transition: box-shadow 0.15s;
+}
+
+.agenda-card:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.agenda-card.priority-1 {
+    border-left: 4px solid #ff4444;
+}
+
+.agenda-card.priority-2 {
+    border-left: 4px solid #ff8844;
+}
+
+.agenda-card.priority-3 {
+    border-left: 4px solid #ffcc44;
+}
+
+.agenda-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    font-size: 12px;
+}
+
+.card-id {
+    font-family: var(--vscode-editor-font-family);
+    color: var(--vscode-textLink-foreground);
+}
+
+.status-badge {
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    text-transform: uppercase;
+}
+
+.status-open {
+    background: rgba(240, 173, 78, 0.2);
+    color: #f0ad4e;
+}
+
+.status-in-progress {
+    background: rgba(13, 110, 253, 0.2);
+    color: #0d6efd;
+}
+
+.status-blocked {
+    background: rgba(220, 53, 69, 0.2);
+    color: #dc3545;
+}
+
+.status-closed {
+    background: rgba(25, 135, 84, 0.2);
+    color: #198754;
+}
+
+.agenda-card-title {
+    font-size: 15px;
+    font-weight: 500;
+    margin-bottom: 8px;
+}
+
+.agenda-card-meta {
+    font-size: 12px;
+    color: var(--vscode-descriptionForeground);
+    margin-bottom: 12px;
+}
+
+.agenda-card-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.agenda-card-actions button {
+    padding: 6px 12px;
+    border: none;
+    border-radius: 4px;
+    background: var(--vscode-button-background);
+    color: var(--vscode-button-foreground);
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.agenda-card-actions button:hover {
+    background: var(--vscode-button-hoverBackground);
+}
+
+.agenda-empty {
+    text-align: center;
+    padding: 48px;
+    color: var(--vscode-descriptionForeground);
+    font-size: 18px;
+}

@@ -1,0 +1,10 @@
+{
+    "servers": {
+        "grits": {
+            "command": "gr",
+            "args": [
+                "serve-mcp"
+            ]
+        }
+    }
+}

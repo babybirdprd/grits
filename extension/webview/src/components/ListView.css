@@ -1,0 +1,105 @@
+.list-view {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    font-size: 13px;
+}
+
+.list-header {
+    display: flex;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--vscode-panel-border);
+    font-weight: 600;
+    background: var(--vscode-sideBar-background);
+    position: sticky;
+    top: 0;
+}
+
+.list-body {
+    flex: 1;
+    overflow: hidden;
+}
+
+.list-row {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    border-bottom: 1px solid var(--vscode-list-inactiveSelectionBackground);
+}
+
+.list-row:hover {
+    background: var(--vscode-list-hoverBackground);
+}
+
+.list-row-even {
+    background: var(--vscode-list-inactiveSelectionBackground);
+}
+
+.list-row-even:hover {
+    background: var(--vscode-list-hoverBackground);
+}
+
+.cell {
+    padding: 4px 8px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.cell-id {
+    width: 80px;
+    font-family: var(--vscode-editor-font-family);
+    color: var(--vscode-textLink-foreground);
+}
+
+.cell-status {
+    width: 100px;
+}
+
+.cell-priority {
+    width: 110px;
+}
+
+.cell-type {
+    width: 80px;
+    color: var(--vscode-descriptionForeground);
+}
+
+.cell-title {
+    flex: 1;
+    min-width: 200px;
+}
+
+.cell-assignee {
+    width: 100px;
+    color: var(--vscode-descriptionForeground);
+}
+
+/* Status colors */
+.status-open { color: var(--vscode-charts-yellow); }
+.status-in-progress { color: var(--vscode-charts-blue); }
+.status-closed { color: var(--vscode-charts-green); }
+.status-blocked { color: var(--vscode-charts-red); }
+
+/* Priority colors */
+.priority-critical { color: #ff4444; font-weight: 600; }
+.priority-high { color: #ff8844; }
+.priority-medium { color: #ffcc44; }
+.priority-low { color: #88bbff; }
+.priority-trivial { color: var(--vscode-descriptionForeground); }
+
+/* Inline select styling */
+.cell select {
+    background: transparent;
+    border: none;
+    color: inherit;
+    font-size: inherit;
+    cursor: pointer;
+    padding: 2px 4px;
+    width: 100%;
+}
+
+.cell select:focus {
+    outline: 1px solid var(--vscode-focusBorder);
+    border-radius: 3px;
+}
