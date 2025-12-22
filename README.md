@@ -4,7 +4,7 @@ A Git-native, local-first issue tracker with a **Twin Engine** architecture:
 - 🤖 **Agent Engine**: MCP server for AI integration (Antigravity, Claude, etc.)
 - 👀 **Visual Engine**: VS Code extension with WASM-powered UI
 
-**Status**: Production Ready (v0.1.0)
+**Status**: Production Ready (v0.1.2)
 
 ## Quick Start
 
@@ -15,7 +15,7 @@ A Git-native, local-first issue tracker with a **Twin Engine** architecture:
 
 ### Option 1: Download Binary (Recommended)
 
-Download the latest release from [GitHub Releases](https://github.com/your-org/grits/releases):
+Download the latest release from [GitHub Releases](https://github.com/babybirdprd/grits/releases):
 - **Windows**: `gr-x86_64-pc-windows-msvc.exe`
 - **macOS (Intel)**: `gr-x86_64-apple-darwin`
 - **macOS (Apple Silicon)**: `gr-aarch64-apple-darwin`
@@ -27,7 +27,7 @@ Rename to `gr` (or `gr.exe`) and add to your PATH.
 
 ```bash
 # Clone and enter directory
-git clone https://github.com/your-org/grits.git
+git clone https://github.com/babybirdprd/grits.git
 cd grits
 
 # Install all dependencies (Rust + Node)
@@ -58,6 +58,14 @@ gr sync                                        # Sync with Git
 ```
 
 ## Twin Engine Architecture
+
+Grits uses a "Unified State" approach where the Human UI and the AI Agent always stay in sync.
+
+### 🔗 Tethered Sync
+Whenever the AI Agent (via MCP) or the Human (via UI) modifies an issue, Grits automatically:
+1. **Auto-Imports** changes from the `.grits/issues.jsonl` file into the database.
+2. **Auto-Exports** database updates back to the file.
+This means you can move a card in the Kanban board and the Agent sees it immediately, and vice-versa.
 
 ### 🤖 Agent Engine (MCP Server)
 
@@ -98,7 +106,7 @@ The extension provides a rich UI for `.jsonl` issue files:
 
 **Install Extension:**
 
-Download `grits-kanban-*.vsix` from [Releases](https://github.com/your-org/grits/releases) and:
+Download `grits-kanban-*.vsix` from [Releases](https://github.com/babybirdprd/grits/releases) and:
 ```bash
 code --install-extension grits-kanban-0.1.0.vsix
 ```
