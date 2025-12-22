@@ -217,132 +217,190 @@ impl GitOps for WasmGit {
 // GritsWasm - WASM Bridge for VS Code Extension UI
 // =============================================================================
 
-use crate::models::Issue;
+use crate::memory_store::MemoryStore;
+use crate::models::{Issue, Comment, Dependency};
+use crate::search::SearchIndex;
+use crate::store::Store;
 use serde_json::Value;
 
-/// WASM bridge for the VS Code extension UI.
-/// Provides pure functions for parsing and updating issue data.
+/// Stateful WASM store wrapping MemoryStore.
 #[wasm_bindgen]
-pub struct GritsWasm;
+pub struct WasmStore {
+    inner: MemoryStore,
+}
 
 #[wasm_bindgen]
-impl GritsWasm {
-    /// Parse JSONL content into a JSON array of issues.
-    /// Input: Raw JSONL string from VS Code (one issue per line)
-    /// Output: JSON array string for React UI
-    #[wasm_bindgen]
-    pub fn parse_issues(content: &str) -> Result<String, JsValue> {
-        let mut issues: Vec<Issue> = Vec::new();
-
-        for line in content.lines() {
-            let trimmed = line.trim();
-            if trimmed.is_empty() {
-                continue;
-            }
-
-            let issue: Issue = serde_json::from_str(trimmed)
-                .map_err(|e| JsValue::from_str(&format!("Parse error: {}", e)))?;
-            issues.push(issue);
+impl WasmStore {
+    #[wasm_bindgen(constructor)]
+    pub fn new() -> Self {
+        WasmStore {
+            inner: MemoryStore::new(),
         }
+    }
+
+    #[wasm_bindgen]
+    pub fn search(&self, query: &str) -> Result<String, JsValue> {
+        let issues = self.inner.list_issues(None, None, None, None, None, None)
+            .map_err(|e| JsValue::from_str(&format!("List failed: {}", e)))?;
+
+        let index = SearchIndex::new(&issues);
+        let results = index.search(query, &issues);
+
+        let found_issues: Vec<Issue> = results.into_iter().map(|(i, _)| i).collect();
+
+        serde_json::to_string(&found_issues)
+            .map_err(|e| JsValue::from_str(&format!("Serialize error: {}", e)))
+    }
+
+    /// Load issues from JSONL content string
+    #[wasm_bindgen]
+    pub fn load(&mut self, content: &str) -> Result<(), JsValue> {
+        self.inner.import_from_string(content)
+            .map_err(|e| JsValue::from_str(&format!("Failed to load content: {}", e)))
+    }
+
+    /// Export issues to JSONL content string
+    #[wasm_bindgen]
+    pub fn export(&self) -> Result<String, JsValue> {
+        self.inner.export_to_string()
+            .map_err(|e| JsValue::from_str(&format!("Failed to export content: {}", e)))
+    }
+
+    /// List issues with optional filters (passed as JSON object)
+    /// { "status": "open", "sort_by": "updated" }
+    #[wasm_bindgen]
+    pub fn list_issues(&self, filter_json: Option<String>) -> Result<String, JsValue> {
+        let (status, assignee, priority, issue_type, label, sort_by) = if let Some(json) = filter_json {
+            let v: Value = serde_json::from_str(&json)
+                .map_err(|e| JsValue::from_str(&format!("Invalid filter JSON: {}", e)))?;
+            (
+                v.get("status").and_then(|v| v.as_str()).map(|s| s.to_string()),
+                v.get("assignee").and_then(|v| v.as_str()).map(|s| s.to_string()),
+                v.get("priority").and_then(|v| v.as_i64()).map(|i| i as i32),
+                v.get("type").and_then(|v| v.as_str()).map(|s| s.to_string()),
+                v.get("label").and_then(|v| v.as_str()).map(|s| s.to_string()),
+                v.get("sort_by").and_then(|v| v.as_str()).map(|s| s.to_string()),
+            )
+        } else {
+            (None, None, None, None, None, None)
+        };
+
+        let issues = self.inner.list_issues(
+            status.as_deref(),
+            assignee.as_deref(),
+            priority,
+            issue_type.as_deref(),
+            label.as_deref(),
+            sort_by.as_deref(),
+        ).map_err(|e| JsValue::from_str(&format!("List issues failed: {}", e)))?;
 
         serde_json::to_string(&issues)
             .map_err(|e| JsValue::from_str(&format!("Serialize error: {}", e)))
     }
 
-    /// Generic field updater with type validation.
-    ///
-    /// Arguments:
-    /// * `content`: The full JSONL file content
-    /// * `id`: The issue ID to find
-    /// * `field`: The name of the field to update (e.g., "status", "priority", "title")
-    /// * `value_json`: The new value as a JSON string (e.g., "1", "\"done\"", "\"New Title\"")
-    ///
-    /// Returns: New JSONL string to save to disk
     #[wasm_bindgen]
-    pub fn update_field(
-        content: &str,
-        id: &str,
-        field: &str,
-        value_json: &str,
-    ) -> Result<String, JsValue> {
-        // Parse the new value from JSON string (preserves types)
-        let new_value: Value = serde_json::from_str(value_json)
-            .map_err(|e| JsValue::from_str(&format!("Invalid JSON value: {}", e)))?;
+    pub fn update_issue(&self, id: &str, field: &str, value_json: &str) -> Result<(), JsValue> {
+        let mut issue = self.inner.get_issue(id)
+            .map_err(|e| JsValue::from_str(&format!("DB error: {}", e)))?
+            .ok_or_else(|| JsValue::from_str(&format!("Issue not found: {}", id)))?;
 
-        let mut output = String::new();
-        let mut found = false;
+        let value: Value = serde_json::from_str(value_json)
+            .map_err(|e| JsValue::from_str(&format!("Invalid value JSON: {}", e)))?;
 
-        for line in content.lines() {
-            let trimmed = line.trim();
-            if trimmed.is_empty() {
-                continue;
-            }
+        match field {
+            "title" => issue.title = value.as_str().unwrap_or(&issue.title).to_string(),
+            "description" => issue.description = value.as_str().unwrap_or(&issue.description).to_string(),
+            "status" => issue.status = value.as_str().unwrap_or(&issue.status).to_string(),
+            "priority" => issue.priority = value.as_i64().unwrap_or(issue.priority as i64) as i32,
+            "issue_type" => issue.issue_type = value.as_str().unwrap_or(&issue.issue_type).to_string(),
+            "assignee" => issue.assignee = value.as_str().map(|s| s.to_string()), // Null clears it
+            _ => return Err(JsValue::from_str(&format!("Unknown field: {}", field))),
+        }
 
-            // Parse line as dynamic JSON
-            let mut doc: Value = serde_json::from_str(trimmed)
-                .map_err(|e| JsValue::from_str(&format!("Corrupt DB line: {}", e)))?;
+        issue.updated_at = chrono::Utc::now();
 
-            // Check if this is our target
-            if let Some(doc_id) = doc.get("id").and_then(|v| v.as_str()) {
-                if doc_id == id {
-                    // Apply the update dynamically
-                    if let Some(obj) = doc.as_object_mut() {
-                        obj.insert(field.to_string(), new_value.clone());
+        self.inner.update_issue(&issue)
+            .map_err(|e| JsValue::from_str(&format!("Update failed: {}", e)))?;
 
-                        // Update the updated_at timestamp
-                        obj.insert(
-                            "updated_at".to_string(),
-                            Value::String(chrono::Utc::now().to_rfc3339()),
-                        );
-                    }
+        Ok(())
+    }
 
-                    // Validation: Try to convert back to strict Issue struct
-                    let _valid_issue: Issue = serde_json::from_value(doc.clone()).map_err(|e| {
-                        JsValue::from_str(&format!("Type Error: Field '{}' invalid - {}", field, e))
-                    })?;
+    #[wasm_bindgen]
+    pub fn bulk_update(&self, ids_json: &str, field: &str, value_json: &str) -> Result<(), JsValue> {
+        let ids: Vec<String> = serde_json::from_str(ids_json)
+            .map_err(|e| JsValue::from_str(&format!("Invalid IDs JSON: {}", e)))?;
+        let value: Value = serde_json::from_str(value_json)
+            .map_err(|e| JsValue::from_str(&format!("Invalid value JSON: {}", e)))?;
 
-                    found = true;
+        for id in ids {
+            if let Ok(Some(mut issue)) = self.inner.get_issue(&id) {
+                match field {
+                    "status" => issue.status = value.as_str().unwrap_or(&issue.status).to_string(),
+                    "priority" => issue.priority = value.as_i64().unwrap_or(issue.priority as i64) as i32,
+                    "issue_type" => issue.issue_type = value.as_str().unwrap_or(&issue.issue_type).to_string(),
+                    "assignee" => issue.assignee = value.as_str().map(|s| s.to_string()),
+                    _ => continue, // Skip unknown fields
                 }
+                issue.updated_at = chrono::Utc::now();
+                let _ = self.inner.update_issue(&issue);
             }
-
-            // Write back to string
-            let line_str = serde_json::to_string(&doc)
-                .map_err(|e| JsValue::from_str(&format!("Serialize error: {}", e)))?;
-            output.push_str(&line_str);
-            output.push('\n');
         }
-
-        if !found {
-            return Err(JsValue::from_str(&format!("Issue ID not found: {}", id)));
-        }
-
-        Ok(output)
+        Ok(())
     }
 
-    /// Serialize issues array back to JSONL format.
-    /// Input: JSON array string of issues
-    /// Output: JSONL string (one issue per line)
     #[wasm_bindgen]
-    pub fn serialize_issues(issues_json: &str) -> Result<String, JsValue> {
-        let issues: Vec<Issue> = serde_json::from_str(issues_json)
-            .map_err(|e| JsValue::from_str(&format!("Parse error: {}", e)))?;
+    pub fn add_label(&self, id: &str, label: &str) -> Result<(), JsValue> {
+        let mut issue = self.inner.get_issue(id)
+            .map_err(|e| JsValue::from_str(&format!("DB error: {}", e)))?
+            .ok_or_else(|| JsValue::from_str(&format!("Issue not found: {}", id)))?;
 
-        let mut output = String::new();
-        for issue in issues {
-            let line = serde_json::to_string(&issue)
-                .map_err(|e| JsValue::from_str(&format!("Serialize error: {}", e)))?;
-            output.push_str(&line);
-            output.push('\n');
+        if !issue.labels.contains(&label.to_string()) {
+            issue.labels.push(label.to_string());
+            issue.updated_at = chrono::Utc::now();
+            self.inner.update_issue(&issue)
+                .map_err(|e| JsValue::from_str(&format!("Update failed: {}", e)))?;
         }
-
-        Ok(output)
+        Ok(())
     }
 
-    /// Create a new issue and return the updated JSONL content.
-    /// This is a convenience method for the UI.
+    #[wasm_bindgen]
+    pub fn remove_label(&self, id: &str, label: &str) -> Result<(), JsValue> {
+        let mut issue = self.inner.get_issue(id)
+            .map_err(|e| JsValue::from_str(&format!("DB error: {}", e)))?
+            .ok_or_else(|| JsValue::from_str(&format!("Issue not found: {}", id)))?;
+
+        if let Some(pos) = issue.labels.iter().position(|l| l == label) {
+            issue.labels.remove(pos);
+            issue.updated_at = chrono::Utc::now();
+            self.inner.update_issue(&issue)
+                .map_err(|e| JsValue::from_str(&format!("Update failed: {}", e)))?;
+        }
+        Ok(())
+    }
+
+    #[wasm_bindgen]
+    pub fn add_comment(&self, id: &str, text: &str, author: &str) -> Result<(), JsValue> {
+        let mut issue = self.inner.get_issue(id)
+            .map_err(|e| JsValue::from_str(&format!("DB error: {}", e)))?
+            .ok_or_else(|| JsValue::from_str(&format!("Issue not found: {}", id)))?;
+
+        let comment = Comment {
+            id: uuid::Uuid::new_v4().to_string(),
+            text: text.to_string(),
+            author: author.to_string(),
+            created_at: chrono::Utc::now(),
+        };
+
+        issue.comments.push(comment);
+        issue.updated_at = chrono::Utc::now();
+        self.inner.update_issue(&issue)
+            .map_err(|e| JsValue::from_str(&format!("Update failed: {}", e)))?;
+        Ok(())
+    }
+
     #[wasm_bindgen]
     pub fn create_issue(
-        content: &str,
+        &self,
         title: &str,
         description: &str,
         issue_type: &str,
@@ -351,16 +409,22 @@ impl GritsWasm {
         use chrono::Utc;
         use sha2::{Digest, Sha256};
 
-        // Generate a simple ID
-        let now = Utc::now();
-        let hash_input = format!("{}{}{}", title, description, now.timestamp_millis());
-        let mut hasher = Sha256::new();
-        hasher.update(hash_input.as_bytes());
-        let hash = hasher.finalize();
-        let id = format!("gr-{}", hex::encode(&hash[..4]));
+        // Generate ID (simplified version of Store logic or reuse Store::generate_unique_id if exposed)
+        // Store::generate_unique_id requires prefix and creator, which we might not have perfectly here.
+        // We'll mimic the logic for now or update MemoryStore to expose it better.
+        // Actually MemoryStore implements Store which has generate_unique_id.
+        // We need a config for prefix/user though.
+        let prefix = self.inner.get_config("issue_id_prefix")
+            .unwrap_or(Ok(None)).unwrap_or(None).unwrap_or("gr".to_string());
+        let user = self.inner.get_config("user.name")
+            .unwrap_or(Ok(None)).unwrap_or(None).unwrap_or("unknown".to_string());
 
+        let id = self.inner.generate_unique_id(&prefix, title, description, &user)
+             .map_err(|e| JsValue::from_str(&format!("ID generation failed: {}", e)))?;
+
+        let now = Utc::now();
         let issue = Issue {
-            id,
+            id: id.clone(),
             title: title.to_string(),
             description: description.to_string(),
             status: "open".to_string(),
@@ -368,19 +432,34 @@ impl GritsWasm {
             issue_type: issue_type.to_string(),
             created_at: now,
             updated_at: now,
+            assignee: None,
+            comments: Vec::new(),
+            labels: Vec::new(),
+            dependencies: Vec::new(),
             ..Default::default()
         };
 
-        let new_line = serde_json::to_string(&issue)
-            .map_err(|e| JsValue::from_str(&format!("Serialize error: {}", e)))?;
+        self.inner.create_issue(&issue)
+             .map_err(|e| JsValue::from_str(&format!("Create failed: {}", e)))?;
 
-        let mut output = content.to_string();
-        if !output.ends_with('\n') && !output.is_empty() {
-            output.push('\n');
+        Ok(id)
+    }
+
+    #[wasm_bindgen]
+    pub fn get_all_labels(&self) -> Result<String, JsValue> {
+        // Collect all unique labels
+        let issues = self.inner.list_issues(None, None, None, None, None, None)
+             .map_err(|e| JsValue::from_str(&format!("List failed: {}", e)))?;
+
+        let mut labels = std::collections::HashSet::new();
+        for issue in issues {
+            for label in issue.labels {
+                labels.insert(label);
+            }
         }
-        output.push_str(&new_line);
-        output.push('\n');
-
-        Ok(output)
+        let mut list: Vec<_> = labels.into_iter().collect();
+        list.sort();
+        serde_json::to_string(&list)
+            .map_err(|e| JsValue::from_str(&format!("Serialize error: {}", e)))
     }
 }

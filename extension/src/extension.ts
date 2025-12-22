@@ -50,6 +50,9 @@ export class GritsEditorProvider implements vscode.CustomTextEditorProvider {
             content: document.getText(),
         });
 
+        // WORKSPACE MODE: Scan for other .grits/issues.jsonl files
+        this.scanWorkspaceAndAppend(document, webviewPanel.webview);
+
         // Handle messages from webview
         webviewPanel.webview.onDidReceiveMessage(
             async (message) => {
@@ -144,6 +147,35 @@ export class GritsEditorProvider implements vscode.CustomTextEditorProvider {
             text += possible.charAt(Math.floor(Math.random() * possible.length));
         }
         return text;
+    }
+
+    private async scanWorkspaceAndAppend(currentDoc: vscode.TextDocument, webview: vscode.Webview) {
+        const workspaceFolders = vscode.workspace.workspaceFolders;
+        if (!workspaceFolders) return;
+
+        // Find all issues.jsonl files
+        const files = await vscode.workspace.findFiles('**/.grits/issues.jsonl');
+
+        for (const file of files) {
+            // Skip the current document to avoid duplication
+            if (file.toString() === currentDoc.uri.toString()) continue;
+
+            try {
+                const doc = await vscode.workspace.openTextDocument(file);
+                const content = doc.getText();
+                if (content.trim()) {
+                    this.postMessage(webview, 'update', { content });
+                    console.log('Appended content from:', file.toString());
+                }
+            } catch (e) {
+                console.error('Failed to load workspace file:', file, e);
+            }
+        }
+
+        if (files.length > 1) {
+            // Notify UI that we are in workspace mode (optional, for read-only hint)
+            // this.postMessage(webview, 'workspace-mode', { count: files.length });
+        }
     }
 }
 

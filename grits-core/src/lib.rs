@@ -2,6 +2,7 @@ pub mod fs;
 pub mod git;
 pub mod merge;
 pub mod models;
+pub mod search;
 pub mod store;
 pub mod sync;
 pub mod util;
