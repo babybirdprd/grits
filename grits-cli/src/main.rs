@@ -224,8 +224,18 @@ fn main() -> anyhow::Result<()> {
         }
     }
 
+    let is_onboard = matches!(cli.command, Commands::Onboard);
+    let is_mcp = matches!(cli.command, Commands::ServeMcp);
+    let jsonl_path = db_path.parent().unwrap().join("issues.jsonl");
+
     let mut store = SqliteStore::open(&db_path)
         .map_err(|e| anyhow::anyhow!("Failed to open DB at {:?}: {}", db_path, e))?;
+
+    // AUTO-IMPORT: Before any command runs, look for changes in the Human Engine (.jsonl)
+    // This maintains the "Twin Engine" tether - what happens in the UI is seen by the CLI immediately.
+    if jsonl_path.exists() && !is_onboard {
+        let _ = store.import_from_jsonl(&jsonl_path, &StdFileSystem);
+    }
 
     match cli.command {
         Commands::List {
@@ -959,8 +969,15 @@ fn main() -> anyhow::Result<()> {
         Commands::ServeMcp => {
             // Run async MCP server using tokio runtime
             let rt = tokio::runtime::Runtime::new()?;
-            rt.block_on(async { mcp::run_server(db_path).await })?;
+            rt.block_on(async { mcp::run_server(db_path.clone()).await })?;
         }
+    }
+
+    // AUTO-EXPORT: Push any DB changes back to the Visual Engine (.jsonl)
+    // This completes the "Twin Engine" tether - mutations from the CLI appear in the UI immediately.
+    // Sync already handles its own export/import loop, so this is a safety measure for other commands.
+    if !is_onboard && !is_mcp {
+        let _ = store.export_to_jsonl(&jsonl_path, &StdFileSystem);
     }
 
     Ok(())
