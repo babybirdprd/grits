@@ -62,14 +62,23 @@ export function App() {
                         const trimmed = line.trim();
                         if (trimmed) {
                             try {
-                                parsed.push(JSON.parse(trimmed));
-                            } catch (e) { /* ignore */ }
+                                const issue = JSON.parse(trimmed);
+                                // Ensure essential arrays exist for component robustness
+                                issue.dependencies = issue.dependencies || [];
+                                issue.labels = issue.labels || [];
+                                issue.comments = issue.comments || [];
+                                parsed.push(issue);
+                            } catch (e) {
+                                console.error('Failed to parse JSONL line:', trimmed, e);
+                            }
                         }
                     }
                     setIssues(parsed);
                 }
             }
         };
+
+        console.log('React App message listener attached. WASM ready:', wasmReady);
 
         window.addEventListener('message', handleMessage);
 

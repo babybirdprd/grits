@@ -16,11 +16,11 @@ export function GraphView({ issues, onSelectIssue }: GraphViewProps) {
     const issueMap = new Map(issues.map((i) => [i.id, i]));
 
     // Find issues with dependencies
-    const withDeps = issues.filter((i) => i.dependencies.length > 0);
+    const withDeps = issues.filter((i) => (i.dependencies?.length || 0) > 0);
 
     // Find root issues (no one depends on them) for a tree view
     const dependedOn = new Set(
-        issues.flatMap((i) => i.dependencies.map((d) => d.depends_on_id))
+        issues.flatMap((i) => (i.dependencies || []).map((d) => d.depends_on_id))
     );
     const roots = issues.filter((i) => !dependedOn.has(i.id) && i.status !== 'closed');
 
@@ -66,7 +66,7 @@ export function GraphView({ issues, onSelectIssue }: GraphViewProps) {
                                 </div>
                                 <span className="dep-arrow">→</span>
                                 <div className="dep-targets">
-                                    {issue.dependencies.map((dep) => {
+                                    {(issue.dependencies || []).map((dep) => {
                                         const target = issueMap.get(dep.depends_on_id);
                                         return (
                                             <div

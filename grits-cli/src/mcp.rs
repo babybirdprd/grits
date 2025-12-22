@@ -4,7 +4,7 @@
 
 use chrono::Utc;
 use git2::Repository;
-use grits_core::{Issue, SqliteStore, Store};
+use grits_core::{Issue, SqliteStore, StdFileSystem, Store};
 use regex::Regex;
 use rmcp::{
     handler::server::tool::ToolRouter,
@@ -344,7 +344,25 @@ impl GritsServer {
                 })?;
             }
         }
-        SqliteStore::open(&*self.db_path).map_err(|e| McpError::internal_error(e.to_string(), None))
+        let mut store = SqliteStore::open(&*self.db_path)
+            .map_err(|e| McpError::internal_error(e.to_string(), None))?;
+
+        // AUTO-IMPORT: Bring in any changes from the Human Engine (UI)
+        let jsonl_path = self.db_path.parent().unwrap().join("issues.jsonl");
+        if jsonl_path.exists() {
+            let fs = StdFileSystem;
+            let _ = store.import_from_jsonl(&jsonl_path, &fs);
+        }
+
+        Ok(store)
+    }
+
+    fn auto_export(&self, store: &SqliteStore) -> Result<(), McpError> {
+        let jsonl_path = self.db_path.parent().unwrap().join("issues.jsonl");
+        let fs = StdFileSystem;
+        store
+            .export_to_jsonl(&jsonl_path, &fs)
+            .map_err(|e| McpError::internal_error(e.to_string(), None))
     }
 
     #[tool(description = "List issues with optional filters. Returns issue summaries as JSON.")]
@@ -412,6 +430,9 @@ impl GritsServer {
             .create_issue(&issue)
             .map_err(|e| McpError::internal_error(e.to_string(), None))?;
 
+        // AUTO-EXPORT: Push changes to Human Engine (UI)
+        self.auto_export(&store)?;
+
         Ok(CallToolResult::success(vec![Content::text(format!(
             "Created issue: {}",
             id
@@ -455,6 +476,9 @@ impl GritsServer {
             .update_issue(&updated)
             .map_err(|e| McpError::internal_error(e.to_string(), None))?;
 
+        // AUTO-EXPORT: Push changes to Human Engine (UI)
+        self.auto_export(&store)?;
+
         Ok(CallToolResult::success(vec![Content::text(format!(
             "Updated issue: {}",
             updated.id
@@ -483,6 +507,9 @@ impl GritsServer {
         store
             .update_issue(&closed)
             .map_err(|e| McpError::internal_error(e.to_string(), None))?;
+
+        // AUTO-EXPORT: Push changes to Human Engine (UI)
+        self.auto_export(&store)?;
 
         Ok(CallToolResult::success(vec![Content::text(format!(
             "Closed issue: {} ({})",
@@ -1087,6 +1114,9 @@ impl GritsServer {
             updated_ids,
             failed_ids,
         };
+
+        // AUTO-EXPORT: Push changes to Human Engine (UI)
+        self.auto_export(&store)?;
 
         let json = serde_json::to_string_pretty(&result)
             .map_err(|e| McpError::internal_error(e.to_string(), None))?;
