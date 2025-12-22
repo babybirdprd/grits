@@ -18,7 +18,7 @@ A Git-native, local-first issue tracker with a **Twin Engine** architecture:
 If you have Rust installed, this is the easiest way. It automatically adds `gr` to your PATH:
 
 ```bash
-cargo install --git https://github.com/babybirdprd/grits.git grits-cli --force
+cargo install grits-cli
 ```
 
 ### Option 2: Download Binary
