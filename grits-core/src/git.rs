@@ -12,6 +12,7 @@ pub trait GitOps {
     fn show(&self, revision: &str) -> Result<String>;
     fn rebase_continue(&self) -> Result<()>;
     fn has_remote(&self) -> Result<bool>;
+    fn config(&self, key: &str, value: &str) -> Result<()>;
 }
 
 pub struct StdGit {
@@ -175,5 +176,20 @@ impl GitOps for StdGit {
         }
         let stdout = String::from_utf8_lossy(&output.stdout);
         Ok(!stdout.trim().is_empty())
+    }
+
+    fn config(&self, key: &str, value: &str) -> Result<()> {
+        let output = self
+            .command(&["config", "--local", key, value])
+            .output()
+            .context("Failed to run git config")?;
+
+        if !output.status.success() {
+            bail!(
+                "git config failed: {}",
+                String::from_utf8_lossy(&output.stderr)
+            );
+        }
+        Ok(())
     }
 }

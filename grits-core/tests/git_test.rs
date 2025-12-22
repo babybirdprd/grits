@@ -10,6 +10,9 @@ fn test_git_operations() {
 
     // Init
     git.init().expect("git init failed");
+    git.config("user.email", "test@example.com")
+        .expect("config failed");
+    git.config("user.name", "Test User").expect("config failed");
 
     // Create file
     let file_path = root.join("test.txt");
