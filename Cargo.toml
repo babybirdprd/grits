@@ -1,0 +1,6 @@
+[workspace]
+members = [
+    "grits-core",
+    "grits-cli",
+]
+resolver = "2"
