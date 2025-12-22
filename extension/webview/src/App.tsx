@@ -28,7 +28,7 @@ export function App() {
         init(wasmUri).then(() => {
             console.log('Grits WASM ready');
             setWasmReady(true);
-        }).catch(err => {
+        }).catch((err: any) => {
             console.error('Failed to initialize Grits WASM:', err);
         });
     }, []);
@@ -68,7 +68,7 @@ export function App() {
                                 issue.labels = issue.labels || [];
                                 issue.comments = issue.comments || [];
                                 parsed.push(issue);
-                            } catch (e) {
+                            } catch (e: any) {
                                 console.error('Failed to parse JSONL line:', trimmed, e);
                             }
                         }
@@ -106,7 +106,7 @@ export function App() {
                     // Send save message to VS Code
                     vscode.postMessage({ type: 'save', content: newContent });
                     return;
-                } catch (err) {
+                } catch (err: any) {
                     console.error('WASM update failed:', err);
                     // Fallback to manual update if WASM fails
                 }

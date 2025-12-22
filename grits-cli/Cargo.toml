@@ -30,7 +30,7 @@ schemars = "1.0"
 # Strategic MCP Tools (file/git operations)
 walkdir = "2.5"
 regex = "1.11"
-git2 = "0.19"
+git2 = { version = "0.19", features = ["vendored-libgit2"] }
 
 [dev-dependencies]
 assert_cmd = "2.1.1"

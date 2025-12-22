@@ -71,6 +71,9 @@ jobs:
         with:
           targets: wasm32-unknown-unknown
       
+      - name: Install wasm-pack
+        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+      
       - name: Install dependencies
         run: pnpm install
       
