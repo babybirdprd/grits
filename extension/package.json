@@ -15,14 +15,20 @@
   "contributes": {
     "customEditors": [
       {
-        "viewType": "grits.kanban",
+        "viewType": "grits.issueTracker",
         "displayName": "Grits Kanban",
         "selector": [
           {
             "filenamePattern": "*.jsonl"
+          },
+          {
+            "filenamePattern": "**/*.jsonl"
+          },
+          {
+            "filenamePattern": "**/.grits/*.jsonl"
           }
         ],
-        "priority": "option"
+        "priority": "default"
       }
     ],
     "commands": [

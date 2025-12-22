@@ -15,7 +15,6 @@ use rmcp::{
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use std::sync::Arc;
-use walkdir::WalkDir;
 
 // Tool parameter types
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]

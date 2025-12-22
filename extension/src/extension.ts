@@ -7,11 +7,12 @@ import * as vscode from 'vscode';
  * with React-based UI for List, Kanban, Graph, and Agenda views.
  */
 export class GritsEditorProvider implements vscode.CustomTextEditorProvider {
-    public static readonly viewType = 'grits.kanban';
+    public static readonly viewType = 'grits.issueTracker';
 
     constructor(private readonly context: vscode.ExtensionContext) { }
 
     public static register(context: vscode.ExtensionContext): vscode.Disposable {
+        console.log('Registering GritsEditorProvider with viewType:', GritsEditorProvider.viewType);
         const provider = new GritsEditorProvider(context);
         return vscode.window.registerCustomEditorProvider(
             GritsEditorProvider.viewType,
@@ -30,12 +31,14 @@ export class GritsEditorProvider implements vscode.CustomTextEditorProvider {
         webviewPanel: vscode.WebviewPanel,
         _token: vscode.CancellationToken
     ): Promise<void> {
+        console.log('Resolving Grits Kanban editor for:', document.uri.toString());
         // Set up webview
         webviewPanel.webview.options = {
             enableScripts: true,
             localResourceRoots: [
                 vscode.Uri.joinPath(this.context.extensionUri, 'media'),
                 vscode.Uri.joinPath(this.context.extensionUri, 'dist'),
+                vscode.Uri.joinPath(this.context.extensionUri, 'webview', 'dist'),
             ],
         };
 
@@ -95,8 +98,16 @@ export class GritsEditorProvider implements vscode.CustomTextEditorProvider {
     }
 
     private getHtmlForWebview(webview: vscode.Webview): string {
-        // TODO: Replace with actual React build output
         const nonce = this.getNonce();
+
+        // Get the local path to main script run in the webview, then convert it to a uri we can use in the webview.
+        const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, 'webview', 'dist', 'assets', 'index.js'));
+
+        // Do the same for the stylesheet.
+        const styleMainUri = webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, 'webview', 'dist', 'assets', 'index.css'));
+
+        // Get the local path to wasm file
+        const wasmUri = webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, 'webview', 'dist', 'assets', 'grits_core_bg.wasm'));
 
         return `
             <!DOCTYPE html>
@@ -108,47 +119,19 @@ export class GritsEditorProvider implements vscode.CustomTextEditorProvider {
                     content="default-src 'none';
                              style-src ${webview.cspSource} 'unsafe-inline';
                              script-src 'nonce-${nonce}';
-                             img-src ${webview.cspSource} data:;">
+                             img-src ${webview.cspSource} data:;
+                             connect-src ${webview.cspSource};">
                 <title>Grits Kanban</title>
-                <style>
-                    body {
-                        padding: 20px;
-                        font-family: var(--vscode-font-family);
-                        color: var(--vscode-foreground);
-                        background: var(--vscode-editor-background);
-                    }
-                    .loading {
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                        height: 100vh;
-                        font-size: 1.2em;
-                        color: var(--vscode-descriptionForeground);
-                    }
-                    #root {
-                        height: 100%;
-                    }
-                </style>
+                <link href="${styleMainUri}" rel="stylesheet">
             </head>
             <body>
-                <div id="root">
-                    <div class="loading">Loading Grits UI...</div>
-                </div>
+                <div id="root"></div>
                 <script nonce="${nonce}">
-                    const vscode = acquireVsCodeApi();
-                    
-                    // Handle messages from extension
-                    window.addEventListener('message', event => {
-                        const message = event.data;
-                        if (message.type === 'update') {
-                            // TODO: Pass to React app when loaded
-                            console.log('Received issues:', message.content);
-                        }
-                    });
-
-                    // Signal that webview is ready
-                    vscode.postMessage({ type: 'ready' });
+                    // Inject VS Code API and WASM URI
+                    window.vscode = acquireVsCodeApi();
+                    window.wasmUri = "${wasmUri.toString()}";
                 </script>
+                <script nonce="${nonce}" type="module" src="${scriptUri}"></script>
             </body>
             </html>
         `;

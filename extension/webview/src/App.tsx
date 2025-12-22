@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import init, { GritsWasm } from './pkg/grits_core';
 import { Issue, ViewType } from './types';
 import { ListView } from './components/ListView';
 import { KanbanView } from './components/KanbanView';
@@ -14,6 +15,23 @@ export function App() {
     const [view, setView] = useState<ViewType>('list');
     const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
     const [jsonlContent, setJsonlContent] = useState<string>('');
+    const [wasmReady, setWasmReady] = useState(false);
+    const isWasmLoading = useRef(false);
+
+    // Initialize WASM
+    useEffect(() => {
+        if (isWasmLoading.current) return;
+        isWasmLoading.current = true;
+
+        console.log('Initializing Grits WASM...');
+        const wasmUri = (window as any).wasmUri;
+        init(wasmUri).then(() => {
+            console.log('Grits WASM ready');
+            setWasmReady(true);
+        }).catch(err => {
+            console.error('Failed to initialize Grits WASM:', err);
+        });
+    }, []);
 
     // Handle messages from VS Code extension
     useEffect(() => {
@@ -22,18 +40,33 @@ export function App() {
             if (message.type === 'update' && message.content) {
                 setJsonlContent(message.content);
 
-                // Parse JSONL to issues
-                try {
+                if (wasmReady) {
+                    // Use GritsWasm for parsing
+                    try {
+                        const jsonArr = GritsWasm.parse_issues(message.content);
+                        setIssues(JSON.parse(jsonArr));
+                    } catch (err) {
+                        console.error('WASM parse failed, falling back to JS:', err);
+                        // Fallback to JS parsing
+                        const parsed: Issue[] = [];
+                        for (const line of message.content.split('\n')) {
+                            const trimmed = line.trim();
+                            if (trimmed) parsed.push(JSON.parse(trimmed));
+                        }
+                        setIssues(parsed);
+                    }
+                } else {
+                    // Fallback to JS parsing if WASM not ready
                     const parsed: Issue[] = [];
                     for (const line of message.content.split('\n')) {
                         const trimmed = line.trim();
                         if (trimmed) {
-                            parsed.push(JSON.parse(trimmed));
+                            try {
+                                parsed.push(JSON.parse(trimmed));
+                            } catch (e) { /* ignore */ }
                         }
                     }
                     setIssues(parsed);
-                } catch (err) {
-                    console.error('Failed to parse issues:', err);
                 }
             }
         };
@@ -44,12 +77,33 @@ export function App() {
         vscode.postMessage({ type: 'ready' });
 
         return () => window.removeEventListener('message', handleMessage);
-    }, []);
+    }, [wasmReady]);
 
     // Handle field updates
     const handleUpdateField = useCallback(
         (id: string, field: string, value: unknown) => {
-            // Update local state immediately for responsiveness
+            if (wasmReady) {
+                try {
+                    // Use GritsWasm for robust field updates and validation
+                    const valueJson = JSON.stringify(value);
+                    const newContent = GritsWasm.update_field(jsonlContent, id, field, valueJson);
+
+                    setJsonlContent(newContent);
+
+                    // Parse updated issues to update local state
+                    const jsonArr = GritsWasm.parse_issues(newContent);
+                    setIssues(JSON.parse(jsonArr));
+
+                    // Send save message to VS Code
+                    vscode.postMessage({ type: 'save', content: newContent });
+                    return;
+                } catch (err) {
+                    console.error('WASM update failed:', err);
+                    // Fallback to manual update if WASM fails
+                }
+            }
+
+            // Fallback: Update local state immediately for responsiveness
             setIssues((prev) =>
                 prev.map((issue) =>
                     issue.id === id
@@ -83,7 +137,7 @@ export function App() {
             // Send save message to VS Code
             vscode.postMessage({ type: 'save', content: newContent });
         },
-        [jsonlContent]
+        [jsonlContent, wasmReady]
     );
 
     // View switcher

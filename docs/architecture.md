@@ -36,11 +36,11 @@ The native CLI includes an MCP (Model Context Protocol) server that exposes issu
 **Location:** `grits-cli/src/mcp.rs`
 
 **Tools:**
-- `list_issues` - Query with filters
-- `create_issue` - Create new issues
-- `update_issue` - Modify existing issues
-- `close_issue` - Mark issues closed
-- `get_issue` - Get full details
+- **CRUD Operations:** `list_issues`, `create_issue`, `update_issue`, `close_issue`, `get_issue`
+- **Contextual Operations:** `find_related_issues`, `suggest_issue_for_error`, `infer_issue_from_diff`
+- **Bulk Operations:** `bulk_triage`, `detect_duplicates`, `cleanup_stale`
+- **Workflow Assistance:** `get_next_task`, `link_commit_to_issues`, `generate_issue_from_todo`
+- **Smart Queries:** `search_issues`, `get_issue_graph`, `summarize_sprint`
 
 **Protocol:** JSON-RPC 2.0 over stdio (MCP 2024-11-05 spec)
 

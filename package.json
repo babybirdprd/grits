@@ -1,0 +1,18 @@
+{
+    "name": "grits-workspace",
+    "private": true,
+    "version": "0.1.0",
+    "description": "Root workspace for Grits Twin Engine",
+    "scripts": {
+        "build:core": "cargo build -p grits-core",
+        "build:cli": "cargo build -p grits-cli",
+        "build:wasm": "npx wasm-pack build grits-core --target web --out-dir extension/webview/src/pkg",
+        "build:webview": "pnpm --filter grits-webview build",
+        "build:extension": "pnpm --filter grits-kanban run compile",
+        "build": "pnpm run build:core && pnpm run build:wasm && pnpm run build:cli && pnpm run build:webview && pnpm run build:extension",
+        "install:all": "pnpm install && cargo fetch"
+    },
+    "devDependencies": {
+        "wasm-pack": "^0.13.1"
+    }
+}

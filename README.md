@@ -30,7 +30,13 @@ Rename to `gr` (or `gr.exe`) and add to your PATH.
 git clone https://github.com/your-org/grits.git
 cd grits
 
-# Install globally (adds `gr` to your PATH)
+# Install all dependencies (Rust + Node)
+pnpm run install:all
+
+# Build entire ecosystem (CLI, WASM, Extension)
+pnpm run build
+
+# Install CLI globally
 cargo install --path grits-cli
 ```
 
@@ -61,13 +67,13 @@ gr serve-mcp
 ```
 
 **Available Tools:**
-| Tool | Description |
-|------|-------------|
-| `list_issues` | List issues with filters (status, priority, assignee) |
-| `create_issue` | Create new issue |
-| `update_issue` | Update issue fields |
-| `close_issue` | Close issue by ID |
-| `get_issue` | Get full issue details |
+| Category | Tools |
+|----------|-------|
+| **CRUD** | `list_issues`, `create_issue`, `update_issue`, `close_issue`, `get_issue` |
+| **Contextual** | `find_related_issues`, `suggest_issue_for_error`, `infer_issue_from_diff` |
+| **Bulk** | `bulk_triage`, `detect_duplicates`, `cleanup_stale` |
+| **Workflow** | `get_next_task`, `link_commit_to_issues`, `generate_issue_from_todo` |
+| **Smart Queries** | `search_issues`, `get_issue_graph`, `summarize_sprint` |
 
 **Antigravity Configuration** (`.vscode/mcp.json`):
 ```json
@@ -99,13 +105,10 @@ code --install-extension grits-kanban-0.1.0.vsix
 
 Or build from source:
 ```bash
-# Uses pnpm workspace - one install for everything
-pnpm install
+# From the root directory
+pnpm run build
 
-# Build and run in dev mode
-cd extension
-pnpm run compile
-# Press F5 in VS Code
+# Then press F5 in VS Code in this workspace
 ```
 
 ## Project Structure
