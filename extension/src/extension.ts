@@ -71,6 +71,24 @@ export class GritsEditorProvider implements vscode.CustomTextEditorProvider {
                             content: document.getText(),
                         });
                         break;
+
+                    case 'command':
+                        if (message.command === 'grits.onboard') {
+                            const workspaceFolders = vscode.workspace.workspaceFolders;
+                            if (workspaceFolders) {
+                                const root = workspaceFolders[0].uri;
+                                const gritsPath = vscode.Uri.joinPath(root, '.grits');
+                                try {
+                                    await vscode.workspace.fs.createDirectory(gritsPath);
+                                    vscode.window.showInformationMessage('Initialized .grits directory.');
+                                } catch (e) {
+                                    vscode.window.showErrorMessage('Failed to create .grits directory: ' + e);
+                                }
+                            }
+                        } else if (message.command === 'git.openMergeEditor') {
+                            vscode.commands.executeCommand('git.openMergeEditor', document.uri);
+                        }
+                        break;
                 }
             },
             undefined,
@@ -101,13 +119,13 @@ export class GritsEditorProvider implements vscode.CustomTextEditorProvider {
         const nonce = this.getNonce();
 
         // Get the local path to main script run in the webview, then convert it to a uri we can use in the webview.
-        const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, 'webview', 'dist', 'assets', 'index.js'));
+        const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, 'out', 'index.js'));
 
         // Do the same for the stylesheet.
-        const styleMainUri = webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, 'webview', 'dist', 'assets', 'index.css'));
+        const styleMainUri = webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, 'out', 'index.css'));
 
         // Get the local path to wasm file
-        const wasmUri = webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, 'webview', 'dist', 'assets', 'grits_core_bg.wasm'));
+        const wasmUri = webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, 'out', 'grits_core.wasm'));
 
         return `
             <!DOCTYPE html>
@@ -147,6 +165,49 @@ export class GritsEditorProvider implements vscode.CustomTextEditorProvider {
     }
 }
 
+function getDashboardHtml(webview: vscode.Webview, context: vscode.ExtensionContext): string {
+    const nonce = getNonce();
+    const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(context.extensionUri, 'out', 'index.js'));
+    const styleMainUri = webview.asWebviewUri(vscode.Uri.joinPath(context.extensionUri, 'out', 'index.css'));
+    const wasmUri = webview.asWebviewUri(vscode.Uri.joinPath(context.extensionUri, 'out', 'grits_core.wasm'));
+
+    return `
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <meta http-equiv="Content-Security-Policy"
+                content="default-src 'none';
+                         style-src ${webview.cspSource} 'unsafe-inline';
+                         script-src 'nonce-${nonce}';
+                         img-src ${webview.cspSource} data:;
+                         connect-src ${webview.cspSource};">
+            <title>Grits Dashboard</title>
+            <link href="${styleMainUri}" rel="stylesheet">
+        </head>
+        <body>
+            <div id="root"></div>
+            <script nonce="${nonce}">
+                window.vscode = acquireVsCodeApi();
+                window.wasmUri = "${wasmUri.toString()}";
+                window.isDashboard = true;
+            </script>
+            <script nonce="${nonce}" type="module" src="${scriptUri}"></script>
+        </body>
+        </html>
+    `;
+}
+
+function getNonce(): string {
+    let text = '';
+    const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    for (let i = 0; i < 32; i++) {
+        text += possible.charAt(Math.floor(Math.random() * possible.length));
+    }
+    return text;
+}
+
 /**
  * Extension activation
  */
@@ -169,6 +230,48 @@ export function activate(context: vscode.ExtensionContext) {
                     'Open a .jsonl file first to use the Grits Kanban view.'
                 );
             }
+        })
+    );
+
+    // Register command to open workspace dashboard
+    context.subscriptions.push(
+        vscode.commands.registerCommand('grits.openWorkspaceDashboard', async () => {
+            // Scan for all .grits/issues.jsonl files
+            const files = await vscode.workspace.findFiles('**/.grits/issues.jsonl', '**/node_modules/**');
+
+            if (files.length === 0) {
+                vscode.window.showInformationMessage('No Grits issue files found in workspace.');
+                return;
+            }
+
+            // Read content of all files
+            const contents = [];
+            for (const file of files) {
+                const doc = await vscode.workspace.openTextDocument(file);
+                contents.push(doc.getText());
+            }
+
+            // Create panel
+            const panel = vscode.window.createWebviewPanel(
+                'grits.dashboard',
+                'Grits Dashboard',
+                vscode.ViewColumn.One,
+                {
+                    enableScripts: true,
+                    localResourceRoots: [
+                        vscode.Uri.joinPath(context.extensionUri, 'out')
+                    ]
+                }
+            );
+
+            // Set HTML
+            panel.webview.html = getDashboardHtml(panel.webview, context);
+
+            // Send data
+            panel.webview.postMessage({
+                type: 'workspace_load',
+                contents: contents
+            });
         })
     );
 

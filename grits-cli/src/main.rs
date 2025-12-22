@@ -98,6 +98,9 @@ enum Commands {
         /// Priority: 1 (critical) to 5 (trivial)
         #[arg(short, long, default_value_t = 2)]
         priority: i32,
+        /// Template name (looks for .grits/templates/<name>.md)
+        #[arg(long)]
+        template: Option<String>,
     },
     /// Export issues to JSONL format
     Export {
@@ -797,9 +800,22 @@ fn main() -> anyhow::Result<()> {
             mut description,
             type_,
             priority,
+            template,
         } => {
-            // Interactive editing if description is empty
-            if description.is_empty() {
+            // Load template if specified and description is empty
+            if let Some(ref tmpl_name) = template {
+                 let grits_dir = db_path.parent().unwrap();
+                 let tmpl_path = grits_dir.join("templates").join(format!("{}.md", tmpl_name));
+                 if tmpl_path.exists() {
+                     description = std::fs::read_to_string(tmpl_path).unwrap_or_default();
+                 } else {
+                     eprintln!("Template not found: {}", tmpl_name);
+                 }
+            }
+
+            // Interactive editing if description is empty (or pre-filled by template but user might want to edit)
+            // If template is used, we definitely want to open editor so user can fill it.
+            if description.is_empty() || template.is_some() {
                 let frontmatter = IssueFrontmatter {
                     title: title.clone(),
                     status: "open".to_string(),
@@ -811,7 +827,7 @@ fn main() -> anyhow::Result<()> {
                 };
 
                 let yaml = serde_yaml::to_string(&frontmatter)?;
-                let content = format!("---\n{}---\n\n{}", yaml, "");
+                let content = format!("---\n{}---\n\n{}", yaml, description);
 
                 let mut file = tempfile::Builder::new().suffix(".md").tempfile()?;
                 write!(file, "{}", content)?;
