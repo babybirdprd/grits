@@ -13,34 +13,33 @@ A Git-native, local-first issue tracker with a **Twin Engine** architecture:
 - Git
 - Node.js 18+ (for VS Code extension)
 
-### Option 1: Download Binary (Recommended)
+### Option 1: Cargo (Recommended for Rust users)
 
-Download the latest release from [GitHub Releases](https://github.com/babybirdprd/grits/releases):
-- **Windows**: `gr-x86_64-pc-windows-msvc.exe`
-- **macOS (Intel)**: `gr-x86_64-apple-darwin`
-- **macOS (Apple Silicon)**: `gr-aarch64-apple-darwin`
-- **Linux**: `gr-x86_64-unknown-linux-gnu`
-
-Rename to `gr` (or `gr.exe`) and add to your PATH.
-
-### Option 2: Build from Source
+If you have Rust installed, this is the easiest way. It automatically adds `gr` to your PATH:
 
 ```bash
-# Clone and enter directory
-git clone https://github.com/babybirdprd/grits.git
-cd grits
-
-# Install all dependencies (Rust + Node)
-pnpm run install:all
-
-# Build entire ecosystem (CLI, WASM, Extension)
-pnpm run build
-
-# Install CLI globally
-cargo install --path grits-cli
+cargo install --git https://github.com/babybirdprd/grits.git grits-cli --force
 ```
 
-> **Updating**: `cargo install --path grits-cli --force`
+### Option 2: Download Binary
+
+Download the latest release for your platform from [GitHub Releases](https://github.com/babybirdprd/grits/releases).
+
+1. Download the file (e.g., `gr-x86_64-pc-windows-msvc.exe`).
+2. Rename it to `gr` (or `gr.exe`).
+3. Move it to a folder in your PATH (like `/usr/local/bin` on Unix or a dedicated `C:\bin` on Windows).
+
+### Option 3: Build from Source
+
+If you want to contribute or use the latest main branch:
+
+```bash
+git clone https://github.com/babybirdprd/grits.git
+cd grits
+pnpm install
+pnpm run build
+cargo install --path grits-cli
+```
 
 ### Initialize a Project
 ```bash
