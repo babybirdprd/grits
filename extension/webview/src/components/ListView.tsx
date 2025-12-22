@@ -2,11 +2,13 @@ import { FixedSizeList as List } from 'react-window';
 import AutoSizer from 'react-virtualized-auto-sizer';
 import { Issue } from '../types';
 import clsx from 'clsx';
+import { useState } from 'react';
 import './ListView.css';
 
 interface ListViewProps {
     issues: Issue[];
     onUpdateField: (id: string, field: string, value: unknown) => void;
+    onBulkUpdate: (ids: string[], field: string, value: unknown) => void;
     onSelectIssue: (issue: Issue) => void;
 }
 
@@ -27,16 +29,48 @@ const statusColors: Record<string, string> = {
     blocked: 'status-blocked',
 };
 
-export function ListView({ issues, onUpdateField, onSelectIssue }: ListViewProps) {
+export function ListView({ issues, onUpdateField, onBulkUpdate, onSelectIssue }: ListViewProps) {
+    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+    const toggleSelection = (id: string) => {
+        const newSet = new Set(selectedIds);
+        if (newSet.has(id)) {
+            newSet.delete(id);
+        } else {
+            newSet.add(id);
+        }
+        setSelectedIds(newSet);
+    };
+
+    const toggleAll = () => {
+        if (selectedIds.size === issues.length) {
+            setSelectedIds(new Set());
+        } else {
+            setSelectedIds(new Set(issues.map(i => i.id)));
+        }
+    };
+
+    const handleBulkAction = (field: string, value: unknown) => {
+        onBulkUpdate(Array.from(selectedIds), field, value);
+        setSelectedIds(new Set());
+    };
+
     const Row = ({ index, style }: { index: number; style: React.CSSProperties }) => {
         const issue = issues[index];
 
         return (
             <div
-                className={clsx('list-row', index % 2 === 0 && 'list-row-even')}
+                className={clsx('list-row', index % 2 === 0 && 'list-row-even', selectedIds.has(issue.id) && 'selected')}
                 style={style}
                 onClick={() => onSelectIssue(issue)}
             >
+                <div className="cell cell-select" onClick={(e) => e.stopPropagation()}>
+                    <input
+                        type="checkbox"
+                        checked={selectedIds.has(issue.id)}
+                        onChange={() => toggleSelection(issue.id)}
+                    />
+                </div>
                 <div className="cell cell-id" title={issue.id}>
                     {issue.id.slice(0, 8)}
                 </div>
@@ -78,7 +112,24 @@ export function ListView({ issues, onUpdateField, onSelectIssue }: ListViewProps
 
     return (
         <div className="list-view">
+             {selectedIds.size > 0 && (
+                <div className="bulk-actions-bar">
+                    <span>{selectedIds.size} selected</span>
+                    <button onClick={() => handleBulkAction('status', 'open')}>Set Open</button>
+                    <button onClick={() => handleBulkAction('status', 'in-progress')}>Set In Progress</button>
+                    <button onClick={() => handleBulkAction('status', 'closed')}>Set Closed</button>
+                    <button onClick={() => handleBulkAction('priority', 1)}>Set P1</button>
+                    <button onClick={() => setSelectedIds(new Set())}>Clear Selection</button>
+                </div>
+            )}
             <div className="list-header">
+                <div className="cell cell-select">
+                    <input
+                        type="checkbox"
+                        checked={selectedIds.size === issues.length && issues.length > 0}
+                        onChange={toggleAll}
+                    />
+                </div>
                 <div className="cell cell-id">ID</div>
                 <div className="cell cell-status">Status</div>
                 <div className="cell cell-priority">Priority</div>

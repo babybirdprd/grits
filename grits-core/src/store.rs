@@ -101,7 +101,7 @@ pub mod sqlite_impl {
                 );
 
                 CREATE TABLE IF NOT EXISTS comments (
-                    id INTEGER PRIMARY KEY,
+                    id TEXT PRIMARY KEY,
                     issue_id TEXT,
                     author TEXT,
                     text TEXT,
@@ -700,8 +700,8 @@ pub mod sqlite_impl {
                     if !existing_comments.contains(&(comment.author.clone(), comment.text.clone()))
                     {
                         tx.execute(
-                            "INSERT INTO comments (issue_id, author, text, created_at) VALUES (?1, ?2, ?3, ?4)",
-                            params![&issue.id, &comment.author, &comment.text, comment.created_at.to_rfc3339()],
+                            "INSERT INTO comments (id, issue_id, author, text, created_at) VALUES (?1, ?2, ?3, ?4, ?5)",
+                            params![&comment.id, &issue.id, &comment.author, &comment.text, comment.created_at.to_rfc3339()],
                         )?;
                     }
                 }
@@ -805,8 +805,8 @@ pub mod sqlite_impl {
 
             for comment in &issue.comments {
                 self.conn.execute(
-                    "INSERT INTO comments (issue_id, author, text, created_at) VALUES (?1, ?2, ?3, ?4)",
-                    params![&comment.issue_id, &comment.author, &comment.text, comment.created_at.to_rfc3339()],
+                    "INSERT INTO comments (id, issue_id, author, text, created_at) VALUES (?1, ?2, ?3, ?4, ?5)",
+                    params![&comment.id, &comment.issue_id, &comment.author, &comment.text, comment.created_at.to_rfc3339()],
                 )?;
             }
 

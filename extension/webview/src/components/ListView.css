@@ -1,105 +1,144 @@
 .list-view {
+    height: 100%;
     display: flex;
     flex-direction: column;
-    height: 100%;
-    font-size: 13px;
+    background-color: var(--vscode-editor-background);
+}
+
+.bulk-actions-bar {
+    padding: 8px 16px;
+    background-color: var(--vscode-editor-selectionBackground);
+    color: var(--vscode-editor-selectionForeground);
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    border-bottom: 1px solid var(--vscode-panel-border);
+}
+
+.bulk-actions-bar button {
+    background: var(--vscode-button-background);
+    color: var(--vscode-button-foreground);
+    border: none;
+    padding: 4px 12px;
+    border-radius: 2px;
+    cursor: pointer;
+}
+
+.bulk-actions-bar button:hover {
+    background: var(--vscode-button-hoverBackground);
 }
 
 .list-header {
     display: flex;
-    padding: 8px 0;
+    height: 32px;
+    align-items: center;
     border-bottom: 1px solid var(--vscode-panel-border);
-    font-weight: 600;
-    background: var(--vscode-sideBar-background);
-    position: sticky;
-    top: 0;
+    background-color: var(--vscode-editor-lineHighlightBackground);
+    font-weight: bold;
+    font-size: 13px;
+    color: var(--vscode-foreground);
 }
 
 .list-body {
     flex: 1;
-    overflow: hidden;
 }
 
 .list-row {
     display: flex;
     align-items: center;
+    border-bottom: 1px solid var(--vscode-panel-border);
     cursor: pointer;
-    border-bottom: 1px solid var(--vscode-list-inactiveSelectionBackground);
+    font-size: 13px;
+    color: var(--vscode-foreground);
+    transition: background-color 0.1s;
 }
 
 .list-row:hover {
-    background: var(--vscode-list-hoverBackground);
+    background-color: var(--vscode-list-hoverBackground);
 }
 
 .list-row-even {
-    background: var(--vscode-list-inactiveSelectionBackground);
+    background-color: rgba(128, 128, 128, 0.04);
 }
 
-.list-row-even:hover {
-    background: var(--vscode-list-hoverBackground);
+.list-row.selected {
+    background-color: var(--vscode-list-activeSelectionBackground);
+    color: var(--vscode-list-activeSelectionForeground);
 }
 
 .cell {
-    padding: 4px 8px;
+    padding: 0 8px;
+    display: flex;
+    align-items: center;
     overflow: hidden;
-    text-overflow: ellipsis;
     white-space: nowrap;
+    text-overflow: ellipsis;
+    height: 100%;
+}
+
+.cell-select {
+    width: 32px;
+    justify-content: center;
+    flex-shrink: 0;
 }
 
 .cell-id {
     width: 80px;
-    font-family: var(--vscode-editor-font-family);
-    color: var(--vscode-textLink-foreground);
+    font-family: monospace;
+    opacity: 0.8;
+    flex-shrink: 0;
 }
 
 .cell-status {
-    width: 100px;
+    width: 120px;
+    flex-shrink: 0;
 }
 
 .cell-priority {
-    width: 110px;
+    width: 120px;
+    flex-shrink: 0;
 }
 
 .cell-type {
     width: 80px;
-    color: var(--vscode-descriptionForeground);
+    flex-shrink: 0;
+    text-transform: capitalize;
 }
 
 .cell-title {
     flex: 1;
-    min-width: 200px;
+    font-weight: 500;
 }
 
 .cell-assignee {
-    width: 100px;
-    color: var(--vscode-descriptionForeground);
+    width: 120px;
+    flex-shrink: 0;
+    opacity: 0.9;
 }
 
 /* Status colors */
-.status-open { color: var(--vscode-charts-yellow); }
-.status-in-progress { color: var(--vscode-charts-blue); }
-.status-closed { color: var(--vscode-charts-green); }
-.status-blocked { color: var(--vscode-charts-red); }
+.status-open { border-left: 3px solid #eab308; }
+.status-in-progress { border-left: 3px solid #3b82f6; }
+.status-blocked { border-left: 3px solid #ef4444; }
+.status-closed { border-left: 3px solid #22c55e; }
 
-/* Priority colors */
-.priority-critical { color: #ff4444; font-weight: 600; }
-.priority-high { color: #ff8844; }
-.priority-medium { color: #ffcc44; }
-.priority-low { color: #88bbff; }
-.priority-trivial { color: var(--vscode-descriptionForeground); }
+/* Priority colors (text) */
+.priority-critical { color: #ef4444; font-weight: bold; }
+.priority-high { color: #f97316; }
+.priority-medium { color: #eab308; }
+.priority-low { color: #3b82f6; }
+.priority-trivial { color: #6b7280; }
 
-/* Inline select styling */
-.cell select {
+select {
     background: transparent;
     border: none;
     color: inherit;
-    font-size: inherit;
-    cursor: pointer;
-    padding: 2px 4px;
     width: 100%;
+    cursor: pointer;
+    font-size: inherit;
 }
 
-.cell select:focus {
-    outline: 1px solid var(--vscode-focusBorder);
-    border-radius: 3px;
+select:focus {
+    outline: none;
+    background-color: var(--vscode-input-background);
 }

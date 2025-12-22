@@ -28,6 +28,33 @@ impl MemoryStore {
     pub fn new() -> Self {
         Self::default()
     }
+
+    pub fn import_from_string(&mut self, content: &str) -> Result<()> {
+        let mut inner = self.inner.write().unwrap();
+        inner.issues.clear();
+        for line in content.lines() {
+            let trimmed = line.trim();
+            if trimmed.is_empty() {
+                continue;
+            }
+            let issue: Issue = serde_json::from_str(trimmed)?;
+            inner.issues.insert(issue.id.clone(), issue);
+        }
+        Ok(())
+    }
+
+    pub fn export_to_string(&self) -> Result<String> {
+        let inner = self.inner.read().unwrap();
+        let mut issues: Vec<_> = inner.issues.values().cloned().collect();
+        issues.sort_by(|a, b| a.id.cmp(&b.id));
+        let mut output = String::new();
+        for issue in issues {
+            let json = serde_json::to_string(&issue)?;
+            output.push_str(&json);
+            output.push('\n');
+        }
+        Ok(output)
+    }
 }
 
 impl Store for MemoryStore {

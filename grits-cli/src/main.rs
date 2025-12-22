@@ -800,6 +800,42 @@ fn main() -> anyhow::Result<()> {
         } => {
             // Interactive editing if description is empty
             if description.is_empty() {
+                let mut content_init = String::new();
+
+                // Check for templates
+                let templates_dir = db_path.parent().unwrap().join("templates");
+                if templates_dir.exists() {
+                    let mut templates = Vec::new();
+                    if let Ok(entries) = std::fs::read_dir(&templates_dir) {
+                        for entry in entries.flatten() {
+                            let path = entry.path();
+                            if path.extension().map_or(false, |e| e == "md") {
+                                templates.push(path);
+                            }
+                        }
+                    }
+
+                    if !templates.is_empty() {
+                        println!("Available templates:");
+                        for (i, t) in templates.iter().enumerate() {
+                            println!("{}. {}", i + 1, t.file_name().unwrap().to_string_lossy());
+                        }
+                        println!("0. None (Default)");
+
+                        print!("Select a template [0]: ");
+                        std::io::stdout().flush()?;
+                        let mut input = String::new();
+                        std::io::stdin().read_line(&mut input)?;
+                        let choice = input.trim().parse::<usize>().unwrap_or(0);
+
+                        if choice > 0 && choice <= templates.len() {
+                             if let Ok(t_content) = std::fs::read_to_string(&templates[choice - 1]) {
+                                 content_init = t_content;
+                             }
+                        }
+                    }
+                }
+
                 let frontmatter = IssueFrontmatter {
                     title: title.clone(),
                     status: "open".to_string(),
@@ -810,8 +846,23 @@ fn main() -> anyhow::Result<()> {
                     dependencies: Vec::new(),
                 };
 
-                let yaml = serde_yaml::to_string(&frontmatter)?;
-                let content = format!("---\n{}---\n\n{}", yaml, "");
+                let content = if content_init.is_empty() {
+                    let yaml = serde_yaml::to_string(&frontmatter)?;
+                    format!("---\n{}---\n\n{}", yaml, "")
+                } else {
+                    // Prepend frontmatter if template doesn't have it, or merge?
+                    // Simple approach: If template has frontmatter, use it but override title/type/priority if passed?
+                    // Or just use template as body.
+                    // Let's assume template is body for now to be safe, but we wrap with our frontmatter.
+                    // If template has frontmatter, we might double wrap, which is bad.
+                    // Let's check for ---
+                    if content_init.starts_with("---") {
+                         content_init
+                    } else {
+                        let yaml = serde_yaml::to_string(&frontmatter)?;
+                        format!("---\n{}---\n\n{}", yaml, content_init)
+                    }
+                };
 
                 let mut file = tempfile::Builder::new().suffix(".md").tempfile()?;
                 write!(file, "{}", content)?;

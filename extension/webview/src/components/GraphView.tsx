@@ -1,3 +1,18 @@
+import React, { useCallback, useEffect } from 'react';
+import ReactFlow, {
+    Node,
+    Edge,
+    useNodesState,
+    useEdgesState,
+    Connection,
+    addEdge,
+    Controls,
+    Background,
+    MiniMap,
+    Position,
+} from 'reactflow';
+import 'reactflow/dist/style.css';
+import dagre from 'dagre';
 import { Issue } from '../types';
 import './GraphView.css';
 
@@ -6,100 +21,126 @@ interface GraphViewProps {
     onSelectIssue: (issue: Issue) => void;
 }
 
-/**
- * Simple dependency graph visualization.
- * For a full implementation, use reactflow library.
- * This is a placeholder that shows dependencies as a simple list.
- */
-export function GraphView({ issues, onSelectIssue }: GraphViewProps) {
-    // Build dependency map
-    const issueMap = new Map(issues.map((i) => [i.id, i]));
+const nodeWidth = 180;
+const nodeHeight = 80;
 
-    // Find issues with dependencies
-    const withDeps = issues.filter((i) => (i.dependencies?.length || 0) > 0);
+const getLayoutedElements = (nodes: Node[], edges: Edge[], direction = 'TB') => {
+    const dagreGraph = new dagre.graphlib.Graph();
+    dagreGraph.setDefaultEdgeLabel(() => ({}));
 
-    // Find root issues (no one depends on them) for a tree view
-    const dependedOn = new Set(
-        issues.flatMap((i) => (i.dependencies || []).map((d) => d.depends_on_id))
+    const isHorizontal = direction === 'LR';
+    dagreGraph.setGraph({ rankdir: direction });
+
+    nodes.forEach((node) => {
+        dagreGraph.setNode(node.id, { width: nodeWidth, height: nodeHeight });
+    });
+
+    edges.forEach((edge) => {
+        dagreGraph.setEdge(edge.source, edge.target);
+    });
+
+    dagre.layout(dagreGraph);
+
+    nodes.forEach((node) => {
+        const nodeWithPosition = dagreGraph.node(node.id);
+        node.targetPosition = isHorizontal ? Position.Left : Position.Top;
+        node.sourcePosition = isHorizontal ? Position.Right : Position.Bottom;
+
+        // We are shifting the dagre node position (anchor=center center) to the top left
+        // so it matches the React Flow node anchor point (top left).
+        node.position = {
+            x: nodeWithPosition.x - nodeWidth / 2,
+            y: nodeWithPosition.y - nodeHeight / 2,
+        };
+
+        return node;
+    });
+
+    return { nodes, edges };
+};
+
+export const GraphView: React.FC<GraphViewProps> = ({ issues, onSelectIssue }) => {
+    const [nodes, setNodes, onNodesChange] = useNodesState([]);
+    const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+
+    useEffect(() => {
+        // Convert issues to Nodes and Edges
+        const initialNodes: Node[] = issues.map(issue => ({
+            id: issue.id,
+            data: { label: issue.title, status: issue.status },
+            position: { x: 0, y: 0 },
+            className: `node-${issue.status}`,
+            style: {
+                background: getStatusColor(issue.status),
+                color: '#fff',
+                padding: '10px',
+                borderRadius: '5px',
+                width: nodeWidth,
+                fontSize: '12px'
+            }
+        }));
+
+        const initialEdges: Edge[] = [];
+        issues.forEach(issue => {
+            if (issue.dependencies) {
+                issue.dependencies.forEach(dep => {
+                    initialEdges.push({
+                        id: `${issue.id}-${dep.depends_on_id}`,
+                        source: dep.depends_on_id,
+                        target: issue.id,
+                        type: 'smoothstep',
+                        animated: true,
+                    });
+                });
+            }
+        });
+
+        const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(
+            initialNodes,
+            initialEdges
+        );
+
+        setNodes(layoutedNodes);
+        setEdges(layoutedEdges);
+    }, [issues, setNodes, setEdges]);
+
+    const onConnect = useCallback(
+        (params: Connection) => setEdges((eds) => addEdge(params, eds)),
+        [setEdges]
     );
-    const roots = issues.filter((i) => !dependedOn.has(i.id) && i.status !== 'closed');
+
+    const onNodeClick = (_event: React.MouseEvent, node: Node) => {
+        const issue = issues.find(i => i.id === node.id);
+        if (issue) {
+            onSelectIssue(issue);
+        }
+    };
 
     return (
-        <div className="graph-view">
-            <div className="graph-header">
-                <h2>📊 Dependency Graph</h2>
-                <p className="graph-subtitle">
-                    {issues.length} issues, {withDeps.length} with dependencies
-                </p>
-            </div>
-
-            <div className="graph-content">
-                <section className="graph-section">
-                    <h3>🌳 Root Issues (no blockers)</h3>
-                    <div className="graph-nodes">
-                        {roots.slice(0, 20).map((issue) => (
-                            <div
-                                key={issue.id}
-                                className={`graph-node status-${issue.status}`}
-                                onClick={() => onSelectIssue(issue)}
-                            >
-                                <span className="node-id">{issue.id.slice(0, 8)}</span>
-                                <span className="node-title">{issue.title}</span>
-                            </div>
-                        ))}
-                        {roots.length === 0 && (
-                            <p className="empty-message">No root issues found</p>
-                        )}
-                    </div>
-                </section>
-
-                <section className="graph-section">
-                    <h3>🔗 Dependencies</h3>
-                    <div className="dependency-list">
-                        {withDeps.map((issue) => (
-                            <div key={issue.id} className="dependency-row">
-                                <div
-                                    className="dep-node source"
-                                    onClick={() => onSelectIssue(issue)}
-                                >
-                                    {issue.id.slice(0, 8)}: {issue.title.slice(0, 40)}
-                                </div>
-                                <span className="dep-arrow">→</span>
-                                <div className="dep-targets">
-                                    {(issue.dependencies || []).map((dep) => {
-                                        const target = issueMap.get(dep.depends_on_id);
-                                        return (
-                                            <div
-                                                key={dep.depends_on_id}
-                                                className={`dep-node target ${dep.type_}`}
-                                                onClick={() => target && onSelectIssue(target)}
-                                            >
-                                                <span className="dep-type">{dep.type_}</span>
-                                                <span>{dep.depends_on_id.slice(0, 8)}</span>
-                                                {target && (
-                                                    <span className="dep-title">
-                                                        : {target.title.slice(0, 30)}
-                                                    </span>
-                                                )}
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-                        ))}
-                        {withDeps.length === 0 && (
-                            <p className="empty-message">No dependencies defined</p>
-                        )}
-                    </div>
-                </section>
-            </div>
-
-            <div className="graph-footer">
-                <p>
-                    💡 For interactive graph visualization, install{' '}
-                    <code>reactflow</code> and upgrade this component.
-                </p>
-            </div>
+        <div className="graph-view" style={{ width: '100%', height: '100%' }}>
+            <ReactFlow
+                nodes={nodes}
+                edges={edges}
+                onNodesChange={onNodesChange}
+                onEdgesChange={onEdgesChange}
+                onConnect={onConnect}
+                onNodeClick={onNodeClick}
+                fitView
+            >
+                <Controls />
+                <MiniMap />
+                <Background gap={12} size={1} />
+            </ReactFlow>
         </div>
     );
+};
+
+function getStatusColor(status: string) {
+    switch (status) {
+        case 'open': return '#eab308'; // Yellow
+        case 'in_progress': return '#3b82f6'; // Blue
+        case 'blocked': return '#ef4444'; // Red
+        case 'closed': return '#22c55e'; // Green
+        default: return '#6b7280'; // Gray
+    }
 }
