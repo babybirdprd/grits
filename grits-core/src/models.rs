@@ -17,7 +17,7 @@ pub struct Dependency {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Comment {
-    pub id: i64,
+    pub id: String,
     pub issue_id: String,
     pub author: String,
     pub text: String,

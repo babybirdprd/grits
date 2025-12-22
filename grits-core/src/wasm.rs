@@ -218,7 +218,7 @@ impl GitOps for WasmGit {
 // =============================================================================
 
 use crate::memory_store::MemoryStore;
-use crate::models::{Issue, Comment, Dependency};
+use crate::models::{Issue, Comment};
 use crate::search::SearchIndex;
 use crate::store::Store;
 use serde_json::Value;
@@ -386,6 +386,7 @@ impl WasmStore {
 
         let comment = Comment {
             id: uuid::Uuid::new_v4().to_string(),
+            issue_id: issue.id.clone(),
             text: text.to_string(),
             author: author.to_string(),
             created_at: chrono::Utc::now(),
@@ -407,17 +408,20 @@ impl WasmStore {
         priority: i32,
     ) -> Result<String, JsValue> {
         use chrono::Utc;
-        use sha2::{Digest, Sha256};
 
         // Generate ID (simplified version of Store logic or reuse Store::generate_unique_id if exposed)
         // Store::generate_unique_id requires prefix and creator, which we might not have perfectly here.
         // We'll mimic the logic for now or update MemoryStore to expose it better.
         // Actually MemoryStore implements Store which has generate_unique_id.
         // We need a config for prefix/user though.
-        let prefix = self.inner.get_config("issue_id_prefix")
-            .unwrap_or(Ok(None)).unwrap_or(None).unwrap_or("gr".to_string());
-        let user = self.inner.get_config("user.name")
-            .unwrap_or(Ok(None)).unwrap_or(None).unwrap_or("unknown".to_string());
+        let prefix = match self.inner.get_config("issue_id_prefix") {
+            Ok(Some(p)) => p,
+            _ => "gr".to_string(),
+        };
+        let user = match self.inner.get_config("user.name") {
+            Ok(Some(u)) => u,
+            _ => "unknown".to_string(),
+        };
 
         let id = self.inner.generate_unique_id(&prefix, title, description, &user)
              .map_err(|e| JsValue::from_str(&format!("ID generation failed: {}", e)))?;

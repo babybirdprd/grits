@@ -54,7 +54,7 @@ fn test_export_to_jsonl() -> anyhow::Result<()> {
             created_by: "bob".to_string(),
         }],
         comments: vec![Comment {
-            id: 0, // Ignored by create_issue
+            id: "0".to_string(), // Ignored by create_issue
             issue_id: "gr-123456".to_string(),
             author: "charlie".to_string(),
             text: "Fix this!".to_string(),
