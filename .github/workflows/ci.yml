@@ -50,13 +50,18 @@ jobs:
             extension/pnpm-lock.yaml
             extension/webview/pnpm-lock.yaml
       
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
       - name: Install dependencies
         run: pnpm install
       
-      - name: Build extension
-        working-directory: extension
-        run: pnpm run compile
+      - name: Build WASM
+        run: pnpm run build:wasm
       
-      - name: Build webview
-        working-directory: extension/webview
-        run: pnpm run build
+      - name: Build
+        run: |
+          pnpm run build:webview
+          pnpm run build:extension

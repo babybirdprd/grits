@@ -66,14 +66,21 @@ jobs:
         with:
           node-version: '20'
       
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      
       - name: Install dependencies
         run: pnpm install
       
+      - name: Build WASM
+        run: pnpm run build:wasm
+
       - name: Build
-        working-directory: extension
         run: |
-          pnpm run compile
-          cd webview && pnpm run build
+          pnpm run build:webview
+          pnpm run build:extension
       
       - name: Package VSIX
         working-directory: extension
