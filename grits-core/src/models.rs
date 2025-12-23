@@ -52,10 +52,10 @@ pub struct Issue {
     #[serde(default)]
     pub issue_type: IssueType,
 
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub assignee: Option<String>,
 
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub estimated_minutes: Option<i32>,
 
     #[serde(default = "Utc::now")]
@@ -63,10 +63,10 @@ pub struct Issue {
     #[serde(default = "Utc::now")]
     pub updated_at: DateTime<Utc>,
 
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub closed_at: Option<DateTime<Utc>>,
 
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub external_ref: Option<String>,
 
     // Messaging fields
@@ -86,7 +86,7 @@ pub struct Issue {
     pub superseded_by: String,
 
     // Tombstone fields
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub deleted_at: Option<DateTime<Utc>>,
     #[serde(default)]
     pub deleted_by: String,

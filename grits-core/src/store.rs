@@ -583,7 +583,7 @@ pub mod sqlite_impl {
                     status: row.get(3)?,
                     priority: row.get(4)?,
                     issue_type: row.get(5)?,
-                    assignee: None,
+                    assignee: row.get(8)?,
                     estimated_minutes: None,
                     created_at,
                     updated_at,

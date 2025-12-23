@@ -4,7 +4,7 @@ A Git-native, local-first issue tracker with a **Twin Engine** architecture:
 - 🤖 **Agent Engine**: MCP server for AI integration (Antigravity, Claude, etc.)
 - 👀 **Visual Engine**: VS Code extension with WASM-powered UI
 
-**Status**: Production Ready (v1.0.3)
+**Status**: Production Ready (v1.0.4)
 
 ## Quick Start
 
