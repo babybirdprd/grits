@@ -4,7 +4,10 @@
             "command": "gr",
             "args": [
                 "serve-mcp"
-            ]
+            ],
+            "env": {
+                "GRITS_PROJECT_ROOT": "${workspaceFolder}"
+            }
         }
     }
 }
