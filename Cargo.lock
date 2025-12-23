@@ -637,6 +637,7 @@ dependencies = [
  "chrono",
  "hex",
  "js-sys",
+ "regex",
  "rusqlite",
  "serde",
  "serde_json",

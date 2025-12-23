@@ -18,6 +18,10 @@ mod mcp;
 struct Cli {
     #[command(subcommand)]
     command: Commands,
+
+    /// Explicit project root directory
+    #[arg(long, global = true)]
+    root: Option<PathBuf>,
 }
 
 #[derive(Subcommand)]
@@ -140,6 +144,103 @@ enum Commands {
     },
     /// Start the MCP server for AI agent integration
     ServeMcp,
+
+    /// Strategic planning and advisor tools (AI focused)
+    Advisory {
+        #[command(subcommand)]
+        command: AdvisoryCommands,
+    },
+    /// Deep issue and dependency analysis
+    Analysis {
+        #[command(subcommand)]
+        command: AnalysisCommands,
+    },
+    /// Automated workflow and cleanup tools
+    Workflow {
+        #[command(subcommand)]
+        command: WorkflowCommands,
+    },
+    /// Context-aware tools (errors, diffs, TODOs)
+    Context {
+        #[command(subcommand)]
+        command: ContextCommands,
+    },
+}
+
+#[derive(Subcommand)]
+enum AdvisoryCommands {
+    /// Suggest the next task to work on
+    Next {
+        /// Optional current file path to boost context
+        #[arg(long)]
+        file: Option<String>,
+        /// Filter by assignee
+        #[arg(long)]
+        assignee: Option<String>,
+    },
+    /// Summarize recent sprint activity
+    Sprint {
+        /// Number of days to summarize
+        #[arg(long, default_value_t = 7)]
+        days: i32,
+    },
+}
+
+#[derive(Subcommand)]
+enum AnalysisCommands {
+    /// Show dependency graph (JSON output)
+    Graph,
+    /// Find potential duplicate issues
+    Duplicates,
+    /// Find issues related to a specific file
+    Related { file: String },
+    /// Search issues using natural language
+    Search {
+        query: String,
+        #[arg(long, default_value_t = 10)]
+        limit: i32,
+    },
+}
+
+#[derive(Subcommand)]
+enum WorkflowCommands {
+    /// Triage multiple issues at once
+    Triage {
+        /// Issue IDs to triage
+        ids: Vec<String>,
+        #[arg(long)]
+        status: Option<String>,
+        #[arg(long)]
+        priority: Option<i32>,
+        #[arg(long)]
+        assignee: Option<String>,
+    },
+    /// Find stale issues for cleanup
+    Stale {
+        #[arg(long, default_value_t = 30)]
+        days: i32,
+    },
+}
+
+#[derive(Subcommand)]
+enum ContextCommands {
+    /// Suggest issues matching an error message
+    Error {
+        message: String,
+        #[arg(long, default_value_t = 5)]
+        limit: i32,
+    },
+    /// Infer issue details from a git diff
+    Diff {
+        #[arg(long)]
+        path: Option<String>,
+    },
+    /// Scan file for TODO comments
+    Todo {
+        file: String,
+        #[arg(long)]
+        line: Option<i32>,
+    },
 }
 
 #[derive(Subcommand)]
@@ -201,7 +302,7 @@ fn main() -> anyhow::Result<()> {
     let db_path = if matches!(cli.command, Commands::Onboard) {
         PathBuf::from(".grits/grits.db")
     } else {
-        find_db_path()
+        find_db_path(cli.root.clone())
     };
 
     // Ensure parent dir exists if we are creating/serving
@@ -1024,6 +1125,157 @@ fn main() -> anyhow::Result<()> {
             let rt = tokio::runtime::Runtime::new()?;
             rt.block_on(async { mcp::run_server(db_path.clone()).await })?;
         }
+        Commands::Advisory { command } => match command {
+            AdvisoryCommands::Next { file, assignee } => {
+                let suggestions = grits_core::strategic::advisor::get_next_task(
+                    &store,
+                    file.as_deref(),
+                    assignee.as_deref(),
+                )?;
+                println!("Next suggested tasks:");
+                for s in suggestions {
+                    println!("{}. {} ({}) - {}", s.rank, s.title, s.id, s.reason);
+                }
+            }
+            AdvisoryCommands::Sprint { days } => {
+                let summary = grits_core::strategic::advisor::summarize_sprint(&store, days)?;
+                println!("Sprint Summary (Last {} days):", days);
+                println!("  Issues Created:     {}", summary.issues_created);
+                println!("  Issues Closed:      {}", summary.issues_closed);
+                println!("  Issues In-Progress: {}", summary.issues_in_progress);
+                if !summary.closed_titles.is_empty() {
+                    println!("\n  Closed:");
+                    for t in summary.closed_titles {
+                        println!("    - {}", t);
+                    }
+                }
+            }
+        },
+        Commands::Analysis { command } => match command {
+            AnalysisCommands::Graph => {
+                let graph = grits_core::strategic::analysis::get_issue_graph(&store)?;
+                println!("{}", serde_json::to_string_pretty(&graph)?);
+            }
+            AnalysisCommands::Duplicates => {
+                let dups = grits_core::strategic::analysis::detect_duplicates(&store)?;
+                if dups.is_empty() {
+                    println!("No duplicates detected.");
+                } else {
+                    for d in dups {
+                        println!(
+                            "{}% match: {} and {}",
+                            d.similarity_percent, d.issue_a, d.issue_b
+                        );
+                    }
+                }
+            }
+            AnalysisCommands::Related { file } => {
+                let related = grits_core::strategic::analysis::find_related_issues(&store, &file)?;
+                if related.is_empty() {
+                    println!("No related issues found for {}", file);
+                } else {
+                    for r in related {
+                        println!("{} ({}) - {}", r.title, r.id, r.relevance);
+                    }
+                }
+            }
+            AnalysisCommands::Search { query, limit } => {
+                let results =
+                    grits_core::strategic::analysis::search_issues(&store, &query, limit)?;
+                if results.is_empty() {
+                    println!("No issues found matching '{}'", query);
+                } else {
+                    for r in results {
+                        println!(
+                            "{} ({}) [Score: {}] - {}",
+                            r.title, r.id, r.relevance_score, r.snippet
+                        );
+                    }
+                }
+            }
+        },
+        Commands::Workflow { command } => match command {
+            WorkflowCommands::Triage {
+                ids,
+                status,
+                priority,
+                assignee,
+            } => {
+                let result = grits_core::strategic::workflow::bulk_triage(
+                    &mut store, ids, status, priority, assignee,
+                )?;
+                println!(
+                    "Updated: {}, Failed: {}",
+                    result.updated_count,
+                    result.failed_ids.len()
+                );
+                if !result.failed_ids.is_empty() {
+                    println!("Failed IDs: {:?}", result.failed_ids);
+                }
+            }
+            WorkflowCommands::Stale { days } => {
+                let stale = grits_core::strategic::workflow::cleanup_stale(&store, days)?;
+                if stale.is_empty() {
+                    println!("No stale issues found.");
+                } else {
+                    for s in stale {
+                        println!(
+                            "{} ({}) - Last updated {} days ago",
+                            s.title, s.id, s.days_inactive
+                        );
+                    }
+                }
+            }
+        },
+        Commands::Context { command } => match command {
+            ContextCommands::Error { message, limit } => {
+                let matches = grits_core::strategic::context::suggest_issue_for_error(
+                    &store, &message, limit,
+                )?;
+                if matches.is_empty() {
+                    println!("No matching issues found for error.");
+                } else {
+                    for m in matches {
+                        println!("Match Score {}: {} ({})", m.match_score, m.title, m.id);
+                    }
+                }
+            }
+            ContextCommands::Diff { path } => {
+                let diff = if let Some(p) = path {
+                    std::fs::read_to_string(p)?
+                } else {
+                    // Try to get diff via git
+                    let grits_dir = db_path.parent().unwrap();
+                    let git_root = grits_dir.parent().unwrap_or(std::path::Path::new("."));
+                    let output = std::process::Command::new("git")
+                        .args(["diff", "HEAD~1", "HEAD"])
+                        .current_dir(git_root)
+                        .output()?;
+                    String::from_utf8_lossy(&output.stdout).to_string()
+                };
+                let inferred = grits_core::strategic::context::infer_issue_from_diff(&diff)?;
+                println!("Inferred Issue:");
+                println!("  Title:       {}", inferred.suggested_title);
+                println!("  Type:        {}", inferred.suggested_type);
+                println!("  Description: {}", inferred.suggested_description);
+            }
+            ContextCommands::Todo { file, line } => {
+                let content = std::fs::read_to_string(&file)?;
+                let todos = grits_core::strategic::context::generate_issue_from_todo(
+                    &file, &content, line,
+                )?;
+                if todos.is_empty() {
+                    println!("No TODOs found in {}", file);
+                } else {
+                    for t in todos {
+                        println!(
+                            "Line {}: {} (Suggested: {})",
+                            t.line, t.text, t.suggested_title
+                        );
+                    }
+                }
+            }
+        },
     }
 
     // AUTO-EXPORT: Push any DB changes back to the Visual Engine (.jsonl)
@@ -1036,10 +1288,13 @@ fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
-fn find_db_path() -> PathBuf {
-    // First priority: GRITS_PROJECT_ROOT environment variable
-    // This is set by MCP clients like VS Code using ${workspaceFolder}
-    // (Similar to BEADS_WS in the Beads project)
+fn find_db_path(explicit_root: Option<PathBuf>) -> PathBuf {
+    // First priority: Explicit root flag from CLI
+    if let Some(root) = explicit_root {
+        return root.join(".grits/grits.db");
+    }
+
+    // Second priority: GRITS_PROJECT_ROOT environment variable
     if let Ok(project_root) = std::env::var("GRITS_PROJECT_ROOT") {
         let project_path = PathBuf::from(&project_root);
         let db_path = project_path.join(".grits/grits.db");
