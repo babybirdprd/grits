@@ -196,7 +196,9 @@ fn main() -> anyhow::Result<()> {
     }
 
     // Find DB
-    let db_path = if matches!(cli.command, Commands::Onboard | Commands::ServeMcp) {
+    // Note: ServeMcp uses find_db_path() to ensure it finds the project's database
+    // even when launched from a different working directory by the IDE
+    let db_path = if matches!(cli.command, Commands::Onboard) {
         PathBuf::from(".grits/grits.db")
     } else {
         find_db_path()
@@ -829,9 +831,9 @@ fn main() -> anyhow::Result<()> {
                         let choice = input.trim().parse::<usize>().unwrap_or(0);
 
                         if choice > 0 && choice <= templates.len() {
-                             if let Ok(t_content) = std::fs::read_to_string(&templates[choice - 1]) {
-                                 content_init = t_content;
-                             }
+                            if let Ok(t_content) = std::fs::read_to_string(&templates[choice - 1]) {
+                                content_init = t_content;
+                            }
                         }
                     }
                 }
@@ -857,7 +859,7 @@ fn main() -> anyhow::Result<()> {
                     // If template has frontmatter, we might double wrap, which is bad.
                     // Let's check for ---
                     if content_init.starts_with("---") {
-                         content_init
+                        content_init
                     } else {
                         let yaml = serde_yaml::to_string(&frontmatter)?;
                         format!("---\n{}---\n\n{}", yaml, content_init)

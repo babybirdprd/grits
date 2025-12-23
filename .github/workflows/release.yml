@@ -97,9 +97,31 @@ jobs:
           name: grits-extension
           path: extension/*.vsix
 
+  publish-crates:
+    name: Publish to crates.io
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+      
+      - name: Publish grits-core
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        run: cargo publish -p grits-core --no-verify
+      
+      - name: Wait for crates.io index update
+        run: sleep 60
+      
+      - name: Publish grits-cli
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        run: cargo publish -p grits-cli --no-verify
+
   release:
     name: Create Release
-    needs: [build-cli, build-extension]
+    needs: [build-cli, build-extension, publish-crates]
     runs-on: ubuntu-latest
     steps:
       - name: Download all artifacts
