@@ -121,7 +121,7 @@ export class GritsEditorProvider implements vscode.CustomTextEditorProvider {
                 <meta http-equiv="Content-Security-Policy"
                     content="default-src 'none';
                              style-src ${webview.cspSource} 'unsafe-inline';
-                             script-src 'nonce-${nonce}';
+                             script-src 'nonce-${nonce}' 'wasm-unsafe-eval';
                              img-src ${webview.cspSource} data:;
                              connect-src ${webview.cspSource};">
                 <title>Grits Kanban</title>

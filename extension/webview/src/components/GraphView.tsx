@@ -105,7 +105,7 @@ export const GraphView: React.FC<GraphViewProps> = ({ issues, onSelectIssue }) =
     }, [issues, setNodes, setEdges]);
 
     const onConnect = useCallback(
-        (params: Connection) => setEdges((eds) => addEdge(params, eds)),
+        (params: Connection) => setEdges((eds: Edge[]) => addEdge(params, eds)),
         [setEdges]
     );
 
