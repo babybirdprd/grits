@@ -13,6 +13,25 @@
   "activationEvents": [],
   "main": "./out/extension.js",
   "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "grits",
+          "title": "Grits",
+          "icon": "media/grits-icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "grits": [
+        {
+          "id": "grits.issuesView",
+          "name": "Issues",
+          "contextualTitle": "Grits Issues",
+          "icon": "media/grits-icon.svg"
+        }
+      ]
+    },
     "customEditors": [
       {
         "viewType": "grits.issueTracker",
@@ -35,6 +54,11 @@
       {
         "command": "grits.openKanban",
         "title": "Grits: Open Kanban View"
+      },
+      {
+        "command": "grits.openIssues",
+        "title": "Grits: Open Issues",
+        "icon": "$(list-flat)"
       }
     ]
   },

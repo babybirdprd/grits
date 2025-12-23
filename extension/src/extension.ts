@@ -180,11 +180,46 @@ export class GritsEditorProvider implements vscode.CustomTextEditorProvider {
 }
 
 /**
+ * Tree Data Provider for Grits sidebar view
+ */
+class GritsTreeDataProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
+    getTreeItem(element: vscode.TreeItem): vscode.TreeItem {
+        return element;
+    }
+
+    async getChildren(): Promise<vscode.TreeItem[]> {
+        // Find .grits/issues.jsonl in workspace
+        const files = await vscode.workspace.findFiles('**/.grits/issues.jsonl', null, 1);
+
+        if (files.length === 0) {
+            const noIssues = new vscode.TreeItem('No .grits folder found');
+            noIssues.description = 'Run "gr onboard" to initialize';
+            return [noIssues];
+        }
+
+        const openItem = new vscode.TreeItem('📋 Open Issues Board');
+        openItem.command = {
+            command: 'grits.openIssues',
+            title: 'Open Issues'
+        };
+        openItem.description = 'Click to open Kanban view';
+
+        return [openItem];
+    }
+}
+
+/**
  * Extension activation
  */
 export function activate(context: vscode.ExtensionContext) {
     // Register custom editor provider
     context.subscriptions.push(GritsEditorProvider.register(context));
+
+    // Register tree view for sidebar
+    const treeDataProvider = new GritsTreeDataProvider();
+    context.subscriptions.push(
+        vscode.window.registerTreeDataProvider('grits.issuesView', treeDataProvider)
+    );
 
     // Register command to open kanban view
     context.subscriptions.push(
@@ -204,7 +239,26 @@ export function activate(context: vscode.ExtensionContext) {
         })
     );
 
+    // Register command to open issues from sidebar
+    context.subscriptions.push(
+        vscode.commands.registerCommand('grits.openIssues', async () => {
+            const files = await vscode.workspace.findFiles('**/.grits/issues.jsonl', null, 1);
+            if (files.length > 0) {
+                vscode.commands.executeCommand(
+                    'vscode.openWith',
+                    files[0],
+                    GritsEditorProvider.viewType
+                );
+            } else {
+                vscode.window.showInformationMessage(
+                    'No .grits folder found. Run "gr onboard" in your terminal to initialize.'
+                );
+            }
+        })
+    );
+
     console.log('Grits Kanban extension activated');
 }
 
 export function deactivate() { }
+

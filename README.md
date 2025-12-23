@@ -77,6 +77,8 @@ Run the MCP server for AI agent integration:
 gr serve-mcp
 ```
 
+> ⚠️ **Note**: The MCP server is currently untested. Full verification coming in a future release.
+
 **Available Tools:**
 | Category | Tools |
 |----------|-------|
@@ -110,7 +112,15 @@ The extension provides a rich UI for `.jsonl` issue files:
 - **List View**: Virtualized spreadsheet with inline editing
 - **Kanban View**: Drag-and-drop board by status
 - **Graph View**: Dependency visualization
-- **Agenda View**: Focus mode for high-priority items
+- **Focus View**: High-priority items only
+
+| List View | Kanban View |
+|-----------|-------------|
+| ![List](assets/screenshot-list.png) | ![Kanban](assets/screenshot-kanban.png) |
+
+| Graph View | Focus View |
+|------------|------------|
+| ![Graph](assets/screenshot-graph.png) | ![Focus](assets/screenshot-focus.png) |
 
 **Install Extension:**
 
