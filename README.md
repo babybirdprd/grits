@@ -92,11 +92,16 @@ gr serve-mcp
     "servers": {
         "grits": {
             "command": "gr",
-            "args": ["serve-mcp"]
+            "args": ["serve-mcp"],
+            "env": {
+                "GRITS_PROJECT_ROOT": "${workspaceFolder}"
+            }
         }
     }
 }
 ```
+
+> **Note**: The `GRITS_PROJECT_ROOT` environment variable tells the MCP server which project to use, ensuring issues are stored in the correct location.
 
 ### 👀 Visual Engine (VS Code Extension)
 
@@ -144,5 +149,12 @@ grits/
 - [WASM Status](docs/wasm_compatibility.md): WebAssembly support
 - [Development](docs/development.md): Build & test guide
 
+## Credits
+
+Grits is inspired by [Beads](https://github.com/steveyegge/beads) by Steve Yegge — 
+"A memory upgrade for your coding agent." Thank you for pioneering the Git-native 
+issue tracking concept for AI agents!
+
 ## License
+
 MIT

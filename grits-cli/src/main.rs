@@ -1037,6 +1037,24 @@ fn main() -> anyhow::Result<()> {
 }
 
 fn find_db_path() -> PathBuf {
+    // First priority: GRITS_PROJECT_ROOT environment variable
+    // This is set by MCP clients like VS Code using ${workspaceFolder}
+    // (Similar to BEADS_WS in the Beads project)
+    if let Ok(project_root) = std::env::var("GRITS_PROJECT_ROOT") {
+        let project_path = PathBuf::from(&project_root);
+        let db_path = project_path.join(".grits/grits.db");
+        if db_path.exists() {
+            return db_path;
+        }
+        // If the .grits directory or .git exists, use this path
+        // (DB will be created on first use)
+        let grits_dir = project_path.join(".grits");
+        if grits_dir.exists() || project_path.join(".git").exists() {
+            return db_path;
+        }
+    }
+
+    // Fallback: walk up from current directory (original behavior)
     let mut current = match std::env::current_dir() {
         Ok(c) => c,
         Err(_) => return PathBuf::from(".grits/grits.db"),
