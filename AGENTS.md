@@ -1,5 +1,13 @@
 # Grits CLI for AI Agents
 
+> [!IMPORTANT]
+> **This project uses Grits for issue tracking.** At the start of every session:
+> 1. Run `gr list` to see all open issues
+> 2. Run `gr ready` to see issues with no blockers  
+> 3. Run `gr advisory next` for the AI-recommended next task
+>
+> Track all work with `gr create`, `gr update`, `gr close`. This is how context persists between sessions.
+
 Grits provides a set of CLI commands specifically designed to help AI agents manage complex projects, analyze issue graphs, and automate workflows.
 
 ## Global Options
@@ -24,9 +32,23 @@ Essential commands for everyday issue management:
 | `gr update <ID> --add-dependency <ID2>` | Add a dependency |
 | `gr update <ID> --assignee <NAME>` | Assign to someone |
 | `gr close <ID>` | Close an issue |
+| `gr edit <ID>` | Edit issue in your $EDITOR |
 | `gr sync` | Sync changes with Git |
 | `gr ready` | Show issues with no blockers |
 | `gr stats` | Show issue statistics |
+
+## Setup & Maintenance Commands
+
+| Command | Description |
+|---------|-------------|
+| `gr onboard` | Initialize grits in a new repository |
+| `gr config` | View/manage configuration settings |
+| `gr export` | Export issues to JSONL format (backup) |
+| `gr import` | Import issues from JSONL format (restore) |
+| `gr merge` | Git merge driver for grits JSONL files |
+
+> [!NOTE]
+> `gr serve-mcp` starts an MCP server for AI agent integration but is not currently tested/utilized in this project.
 
 ## Strategic Command Groups
 
