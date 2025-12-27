@@ -82,7 +82,11 @@ pub mod sqlite_impl {
                     deleted_at TEXT,
                     deleted_by TEXT DEFAULT '',
                     delete_reason TEXT DEFAULT '',
-                    original_type TEXT DEFAULT ''
+                    original_type TEXT DEFAULT '',
+                    affected_symbols TEXT DEFAULT '',
+                    solid_volume TEXT,
+                    topology_hash TEXT DEFAULT '',
+                    is_solid BOOLEAN DEFAULT 0
                 );
 
                 CREATE TABLE IF NOT EXISTS labels (
@@ -139,7 +143,8 @@ pub mod sqlite_impl {
                     status, priority, issue_type, assignee, estimated_minutes,
                     created_at, updated_at, closed_at, external_ref,
                     sender, ephemeral, replies_to, relates_to, duplicate_of, superseded_by,
-                    deleted_at, deleted_by, delete_reason, original_type
+                    deleted_at, deleted_by, delete_reason, original_type,
+                    affected_symbols, solid_volume, topology_hash, is_solid
                 FROM issues
                 ORDER BY id",
             )?;
@@ -161,6 +166,13 @@ pub mod sqlite_impl {
                     Vec::new()
                 } else {
                     serde_json::from_str(&relates_to_s).unwrap_or_default()
+                };
+
+                let affected_symbols_s: String = row.get(26).unwrap_or_default();
+                let affected_symbols = if affected_symbols_s.is_empty() {
+                    Vec::new()
+                } else {
+                    serde_json::from_str(&affected_symbols_s).unwrap_or_default()
                 };
 
                 Ok(Issue {
@@ -195,10 +207,11 @@ pub mod sqlite_impl {
                     labels: labels_map.get(&id).cloned().unwrap_or_default(),
                     dependencies: deps_map.get(&id).cloned().unwrap_or_default(),
                     comments: comments_map.get(&id).cloned().unwrap_or_default(),
-                    affected_symbols: vec![],
-                    solid_volume: None,
-                    topology_hash: String::new(),
-                    is_solid: false,
+
+                    affected_symbols,
+                    solid_volume: row.get(27).ok(),
+                    topology_hash: row.get(28).unwrap_or_default(),
+                    is_solid: row.get(29).unwrap_or(false),
                 })
             })?;
 
@@ -300,6 +313,7 @@ pub mod sqlite_impl {
         fn update_issue(&self, issue: &Issue) -> Result<()> {
             // Serialize nested fields
             let relates_to_json = serde_json::to_string(&issue.relates_to).unwrap_or_default();
+            let affected_symbols_json = serde_json::to_string(&issue.affected_symbols).unwrap_or_default();
 
             // Update main issue record
             self.conn.execute(
@@ -309,7 +323,8 @@ pub mod sqlite_impl {
                     sender = ?11, ephemeral = ?12, replies_to = ?13, relates_to = ?14,
                     duplicate_of = ?15, superseded_by = ?16,
                     deleted_at = ?17, deleted_by = ?18, delete_reason = ?19, original_type = ?20,
-                    assignee = ?21, estimated_minutes = ?22
+                    assignee = ?21, estimated_minutes = ?22,
+                    affected_symbols = ?23, solid_volume = ?24, topology_hash = ?25, is_solid = ?26
                 WHERE id = ?1",
                 params![
                     &issue.id,
@@ -334,6 +349,10 @@ pub mod sqlite_impl {
                     &issue.original_type,
                     &issue.assignee,
                     &issue.estimated_minutes,
+                    affected_symbols_json,
+                    &issue.solid_volume,
+                    &issue.topology_hash,
+                    issue.is_solid,
                 ],
             )?;
 
@@ -399,7 +418,8 @@ pub mod sqlite_impl {
                     status, priority, issue_type, assignee, estimated_minutes,
                     created_at, updated_at, closed_at, external_ref,
                     sender, ephemeral, replies_to, relates_to, duplicate_of, superseded_by,
-                    deleted_at, deleted_by, delete_reason, original_type
+                    deleted_at, deleted_by, delete_reason, original_type,
+                    affected_symbols, solid_volume, topology_hash, is_solid
                 FROM issues
                 WHERE id LIKE ?1
                 LIMIT 1",
@@ -476,6 +496,13 @@ pub mod sqlite_impl {
                 serde_json::from_str(&relates_to_s).unwrap_or_default()
             };
 
+            let affected_symbols_s: String = row.get(26).unwrap_or_default();
+            let affected_symbols = if affected_symbols_s.is_empty() {
+                Vec::new()
+            } else {
+                serde_json::from_str(&affected_symbols_s).unwrap_or_default()
+            };
+
             Ok(Some(Issue {
                 id,
                 content_hash: row.get(1).unwrap_or_default(),
@@ -506,10 +533,10 @@ pub mod sqlite_impl {
                 labels,
                 dependencies: deps,
                 comments,
-                affected_symbols: vec![],
-                solid_volume: None,
-                topology_hash: String::new(),
-                is_solid: false,
+                affected_symbols,
+                solid_volume: row.get(27).ok(),
+                topology_hash: row.get(28).unwrap_or_default(),
+                is_solid: row.get(29).unwrap_or(false),
             }))
         }
 
@@ -643,19 +670,22 @@ pub mod sqlite_impl {
                 let issue: Issue = serde_json::from_str(&line)?;
 
                 let relates_to_json = serde_json::to_string(&issue.relates_to).unwrap_or_default();
+                let affected_symbols_json = serde_json::to_string(&issue.affected_symbols).unwrap_or_default();
 
                 tx.execute(
                     "INSERT OR REPLACE INTO issues (
                         id, title, description, status, priority, issue_type,
                         created_at, updated_at, closed_at, external_ref,
                         sender, ephemeral, replies_to, relates_to, duplicate_of, superseded_by,
-                        deleted_at, deleted_by, delete_reason, original_type
+                        deleted_at, deleted_by, delete_reason, original_type,
+                        affected_symbols, solid_volume, topology_hash, is_solid
                     )
                     VALUES (
                         ?1, ?2, ?3, ?4, ?5, ?6,
                         ?7, ?8, ?9, ?10,
                         ?11, ?12, ?13, ?14, ?15, ?16,
-                        ?17, ?18, ?19, ?20
+                        ?17, ?18, ?19, ?20,
+                        ?21, ?22, ?23, ?24
                     )",
                     params![
                         &issue.id,
@@ -678,6 +708,10 @@ pub mod sqlite_impl {
                         &issue.deleted_by,
                         &issue.delete_reason,
                         &issue.original_type,
+                        affected_symbols_json,
+                        &issue.solid_volume,
+                        &issue.topology_hash,
+                        issue.is_solid,
                     ],
                 )?;
 
@@ -763,19 +797,22 @@ pub mod sqlite_impl {
 
         fn create_issue(&self, issue: &Issue) -> Result<()> {
             let relates_to_json = serde_json::to_string(&issue.relates_to).unwrap_or_default();
+            let affected_symbols_json = serde_json::to_string(&issue.affected_symbols).unwrap_or_default();
 
             self.conn.execute(
                 "INSERT INTO issues (
                     id, title, description, status, priority, issue_type,
                     created_at, updated_at, closed_at, external_ref,
                     sender, ephemeral, replies_to, relates_to, duplicate_of, superseded_by,
-                    deleted_at, deleted_by, delete_reason, original_type
+                    deleted_at, deleted_by, delete_reason, original_type,
+                    affected_symbols, solid_volume, topology_hash, is_solid
                 )
                 VALUES (
                     ?1, ?2, ?3, ?4, ?5, ?6,
                     ?7, ?8, ?9, ?10,
                     ?11, ?12, ?13, ?14, ?15, ?16,
-                    ?17, ?18, ?19, ?20
+                    ?17, ?18, ?19, ?20,
+                    ?21, ?22, ?23, ?24
                 )",
                 params![
                     &issue.id,
@@ -798,6 +835,10 @@ pub mod sqlite_impl {
                     &issue.deleted_by,
                     &issue.delete_reason,
                     &issue.original_type,
+                    affected_symbols_json,
+                    &issue.solid_volume,
+                    &issue.topology_hash,
+                    issue.is_solid,
                 ],
             )?;
 
