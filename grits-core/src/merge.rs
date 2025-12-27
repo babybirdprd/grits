@@ -293,6 +293,10 @@ fn merge_logic(base: Vec<Issue>, left: Vec<Issue>, right: Vec<Issue>) -> (Vec<Is
                     labels: Vec::new(),
                     dependencies: Vec::new(),
                     comments: Vec::new(),
+                    affected_symbols: Vec::new(),
+                    solid_volume: None,
+                    topology_hash: String::new(),
+                    is_solid: false,
                 };
                 let (merged, _) = merge_issue(empty_base, left_i, right_i);
                 result.push(merged);
@@ -584,6 +588,10 @@ mod tests {
             labels: Vec::new(),
             dependencies: Vec::new(),
             comments: Vec::new(),
+            affected_symbols: Vec::new(),
+            solid_volume: None,
+            topology_hash: String::new(),
+            is_solid: false,
         }
     }
 

@@ -62,11 +62,70 @@ const getLayoutedElements = (nodes: Node[], edges: Edge[], direction = 'TB') => 
 export const GraphView: React.FC<GraphViewProps> = ({ issues, onSelectIssue }) => {
     const [nodes, setNodes, onNodesChange] = useNodesState([]);
     const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+    const [showTopology, setShowTopology] = React.useState(false);
 
     useEffect(() => {
-        // Convert issues to Nodes and Edges
-        const initialNodes: Node[] = issues.map(issue => ({
-            id: issue.id,
+        if (showTopology) {
+            // Topology View: Render solid_volume subgraphs
+            const initialNodes: Node[] = [];
+            const initialEdges: Edge[] = [];
+
+            issues.forEach(issue => {
+                if (issue.solid_volume) {
+                    try {
+                        const volume = JSON.parse(issue.solid_volume);
+                        // volume.nodes is map id -> Symbol
+                        Object.values(volume.nodes || {}).forEach((sym: any) => {
+                             if (!initialNodes.find(n => n.id === sym.id)) {
+                                 initialNodes.push({
+                                     id: sym.id,
+                                     data: { label: sym.name },
+                                     position: { x: 0, y: 0 },
+                                     style: {
+                                         background: sym.kind === 'function' ? '#a78bfa' : '#34d399',
+                                         color: '#fff',
+                                         padding: '5px',
+                                         borderRadius: '3px',
+                                         width: 150,
+                                         fontSize: '10px'
+                                     }
+                                 });
+                             }
+                        });
+
+                        // volume.edges is list of [from, to, data]
+                        (volume.edges || []).forEach((edge: any) => {
+                             const [from, to, data] = edge;
+                             const edgeId = `${from}-${to}`;
+                             if (!initialEdges.find(e => e.id === edgeId)) {
+                                 initialEdges.push({
+                                     id: edgeId,
+                                     source: from,
+                                     target: to,
+                                     label: data.relation,
+                                     type: 'smoothstep',
+                                     animated: true
+                                 });
+                             }
+                        });
+                    } catch (e) {
+                        console.error("Failed to parse solid_volume for issue", issue.id, e);
+                    }
+                }
+            });
+
+            const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(
+                initialNodes,
+                initialEdges
+            );
+            setNodes(layoutedNodes);
+            setEdges(layoutedEdges);
+
+        } else {
+            // Default View: Issue Dependencies
+            // Convert issues to Nodes and Edges
+            const initialNodes: Node[] = issues.map(issue => ({
+                id: issue.id,
             data: { label: issue.title, status: issue.status },
             position: { x: 0, y: 0 },
             className: `node-${issue.status}`,
@@ -102,7 +161,8 @@ export const GraphView: React.FC<GraphViewProps> = ({ issues, onSelectIssue }) =
 
         setNodes(layoutedNodes);
         setEdges(layoutedEdges);
-    }, [issues, setNodes, setEdges]);
+    } // end else
+    }, [issues, setNodes, setEdges, showTopology]);
 
     const onConnect = useCallback(
         (params: Connection) => setEdges((eds: Edge[]) => addEdge(params, eds)),
@@ -118,6 +178,16 @@ export const GraphView: React.FC<GraphViewProps> = ({ issues, onSelectIssue }) =
 
     return (
         <div className="graph-view" style={{ width: '100%', height: '100%' }}>
+            <div className="graph-controls">
+                <label>
+                    <input
+                        type="checkbox"
+                        checked={showTopology}
+                        onChange={(e) => setShowTopology(e.target.checked)}
+                    />
+                    Show Code Topology
+                </label>
+            </div>
             <ReactFlow
                 nodes={nodes}
                 edges={edges}

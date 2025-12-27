@@ -443,6 +443,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3a3076410a55c90011c298b04d0cfa770b00fa04e1e3c97d3f6c9de105a03844"
 
 [[package]]
+name = "fixedbitset"
+version = "0.4.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0ce7134b9999ecaf8bcd65542e436736ef32ddca1b3e06094cb6ec5755203b80"
+
+[[package]]
 name = "float-cmp"
 version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -637,6 +643,7 @@ dependencies = [
  "chrono",
  "hex",
  "js-sys",
+ "petgraph",
  "regex",
  "rusqlite",
  "serde",
@@ -645,7 +652,12 @@ dependencies = [
  "tempfile",
  "thiserror 1.0.69",
  "tracing",
+ "tree-sitter",
+ "tree-sitter-javascript",
+ "tree-sitter-rust",
+ "tree-sitter-typescript",
  "uuid",
+ "walkdir",
  "wasm-bindgen",
  "web-sys",
 ]
@@ -1112,6 +1124,18 @@ name = "percent-encoding"
 version = "2.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9b4f627cb1b25917193a259e49bdad08f671f8d9708acfd5fe0a8c1455d87220"
+
+[[package]]
+name = "petgraph"
+version = "0.6.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b4c5cc86750666a3ed20bdaf5ca2a0344f9c67674cae0515bec2da16fbaa47db"
+dependencies = [
+ "fixedbitset",
+ "indexmap",
+ "serde",
+ "serde_derive",
+]
 
 [[package]]
 name = "pin-project-lite"
@@ -1712,6 +1736,46 @@ dependencies = [
  "thread_local",
  "tracing-core",
  "tracing-log",
+]
+
+[[package]]
+name = "tree-sitter"
+version = "0.20.10"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e747b1f9b7b931ed39a548c1fae149101497de3c1fc8d9e18c62c1a66c683d3d"
+dependencies = [
+ "cc",
+ "regex",
+]
+
+[[package]]
+name = "tree-sitter-javascript"
+version = "0.20.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2490fab08630b2c8943c320f7b63473cbf65511c8d83aec551beb9b4375906ed"
+dependencies = [
+ "cc",
+ "tree-sitter",
+]
+
+[[package]]
+name = "tree-sitter-rust"
+version = "0.20.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3df540a493d754015d22eaf57c38f58804be3713a22f6062db983ec15f85c3c9"
+dependencies = [
+ "cc",
+ "tree-sitter",
+]
+
+[[package]]
+name = "tree-sitter-typescript"
+version = "0.20.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a75049f0aafabb2aac205d7bb24da162b53dcd0cfb326785f25a2f32efa8071a"
+dependencies = [
+ "cc",
+ "tree-sitter",
 ]
 
 [[package]]

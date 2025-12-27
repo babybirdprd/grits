@@ -1050,6 +1050,10 @@ fn main() -> anyhow::Result<()> {
                                         })
                                         .collect(),
                                     comments: Vec::new(),
+                                    affected_symbols: vec![],
+                                    solid_volume: None,
+                                    topology_hash: String::new(),
+                                    is_solid: false,
                                 };
                                 store
                                     .create_issue(&issue)
@@ -1113,6 +1117,10 @@ fn main() -> anyhow::Result<()> {
                 labels: Vec::new(),
                 dependencies: Vec::new(),
                 comments: Vec::new(),
+                affected_symbols: vec![],
+                solid_volume: None,
+                topology_hash: String::new(),
+                is_solid: false,
             };
 
             store

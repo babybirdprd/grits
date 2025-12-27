@@ -7,6 +7,7 @@ pub mod store;
 pub mod strategic;
 pub mod sync;
 pub mod util;
+pub mod topology;
 
 pub use models::*;
 pub use store::Store;

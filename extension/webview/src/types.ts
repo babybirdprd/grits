@@ -17,6 +17,8 @@ export interface Issue {
     labels: string[];
     dependencies: Dependency[];
     comments: Comment[];
+    affected_symbols?: string[];
+    solid_volume?: string;
 }
 
 export interface Dependency {

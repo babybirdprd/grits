@@ -195,6 +195,10 @@ pub mod sqlite_impl {
                     labels: labels_map.get(&id).cloned().unwrap_or_default(),
                     dependencies: deps_map.get(&id).cloned().unwrap_or_default(),
                     comments: comments_map.get(&id).cloned().unwrap_or_default(),
+                    affected_symbols: vec![],
+                    solid_volume: None,
+                    topology_hash: String::new(),
+                    is_solid: false,
                 })
             })?;
 
@@ -502,6 +506,10 @@ pub mod sqlite_impl {
                 labels,
                 dependencies: deps,
                 comments,
+                affected_symbols: vec![],
+                solid_volume: None,
+                topology_hash: String::new(),
+                is_solid: false,
             }))
         }
 
@@ -604,6 +612,10 @@ pub mod sqlite_impl {
                     labels: Vec::new(),
                     dependencies: Vec::new(),
                     comments: Vec::new(),
+                    affected_symbols: vec![],
+                    solid_volume: None,
+                    topology_hash: String::new(),
+                    is_solid: false,
                 })
             })?;
 
