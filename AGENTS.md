@@ -30,6 +30,7 @@ Essential commands for everyday issue management:
 | `gr create "<TITLE>" -t <TYPE> -p <N>` | With type (`bug`, `feature`, `task`, `epic`) and priority |
 | `gr update <ID> --status <STATUS>` | Update issue status |
 | `gr update <ID> --add-dependency <ID2>` | Add a dependency |
+| `gr update <ID> --add-symbol <SYM>` | Link a code symbol to the issue |
 | `gr update <ID> --assignee <NAME>` | Assign to someone |
 | `gr close <ID>` | Close an issue |
 | `gr edit <ID>` | Edit issue in your $EDITOR |
@@ -68,19 +69,15 @@ High-level guidance on what to do next.
 
 Deep insights into the issue graph, repository, and **code topology**.
 
-| Command | Description |
-|---------|-------------|
-| `gr analysis graph` | Output JSON dependency graph of all issues |
-| `gr analysis duplicates` | Detect potential duplicate issues |
-| `gr analysis related <FILE>` | Find issues mentioning a specific file |
-| `gr analysis search "<QUERY>"` | BM25-ranked natural language search |
-| `gr analysis search "<QUERY>" --limit <N>` | Limit search results |
+| `gr analysis scan <DIR>` | Recursively scan a directory and build a unified symbol graph |
+| `gr analysis rebuild` | Force rebuild the project topology cache (`.grits/topology.json`) |
+| `gr analysis diff` | Compare current project topology with the cached version |
+| `gr analysis topology <ID>` | Retrieve stored code topology for an issue |
+| `gr analysis export <PATH>` | Export graph to DOT or JSON format |
 | `gr analysis validate-topology <FILE>` | Analyze code for circular dependencies (Betti numbers) |
-| `gr analysis star <FILE>` | Get "star neighborhood" - all connected symbols for LLM context |
-| `gr analysis star <FILE> --depth <N>` | Control neighborhood depth (default: 1) |
-| `gr analysis volumes <FILE>` | Find "feature volumes" - tightly coupled code clusters |
+| `gr analysis star <FILE>` | Get "star neighborhood" (Feature Volume) for context |
+| `gr analysis volumes <FILE>` | Find tightly coupled code clusters (Feature Volumes) |
 | `gr analysis check-layers <FILE>` | Check layer architecture invariants |
-| `gr analysis check-layers <FILE> --config <JSON>` | With custom layer config |
 
 > [!TIP]
 > **Solid Graph Topology**: The `validate-topology`, `star`, `volumes`, and `check-layers` commands implement simplicial complex analysis from algebraic topology. Use `validate-topology` to detect circular dependencies, `star` to load relevant context before AI edits, and `check-layers` to enforce architectural rules.
@@ -241,21 +238,37 @@ gr analysis check-layers src/module.rs
 
 When editing code, use topology to load precise context and validate changes:
 
-#### Step 1: Load Star Neighborhood (Before Editing)
+#### Step 1: Initialize Project Topology
+Before starting a session, ensure your topology cache is up-to-date:
+
+```bash
+gr analysis rebuild
+```
+
+#### Step 2: Load Star Neighborhood (Before Editing)
 
 ```bash
 # Get all code connected to the file you're editing
 gr analysis star src/payment.rs --depth 2
 ```
 
-This returns the **Feature Volume** - all symbols connected to your target. Use this output as context for your edit, not just the single file.
+#### Step 3: Link Work to Symbols
+Tie your current task to specific symbols to capture their topological context:
 
-#### Step 2: Propose Changes
+```bash
+gr update <ID> --add-symbol src/payment.rs::ProcessPayment
+```
 
-Make your edits with the full topological context in mind.
+#### Step 4: Validate and Diff (After Editing)
+Check for architectural drift or new circular dependencies:
 
-#### Step 3: Validate Topology (After Editing)
+```bash
+# General diff against cache
+gr analysis diff
 
+# Context-aware diff with inferred issue details and topology warnings
+gr context diff
+```
 ```bash
 # Check if your changes created cycles or broke architecture
 gr analysis validate-topology src/payment.rs

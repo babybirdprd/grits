@@ -78,6 +78,10 @@ enum Commands {
         add_dependency: Vec<String>,
         #[arg(long, action = clap::ArgAction::Append)]
         remove_dependency: Vec<String>,
+        #[arg(long, action = clap::ArgAction::Append)]
+        add_symbol: Vec<String>,
+        #[arg(long, action = clap::ArgAction::Append)]
+        remove_symbol: Vec<String>,
     },
     /// Edit an issue in your $EDITOR
     Edit {
@@ -200,6 +204,23 @@ enum AnalysisCommands {
         #[arg(long, default_value_t = 10)]
         limit: i32,
     },
+    /// Scan a directory recursively and build a unified symbol graph
+    Scan {
+        /// Directory to scan
+        dir: String,
+        /// Maximum depth to recurse (default: unlimited)
+        #[arg(long)]
+        max_depth: Option<usize>,
+        /// Patterns to exclude (glob format)
+        #[arg(long, value_delimiter = ',')]
+        exclude: Option<Vec<String>>,
+        /// File extensions to include (default: rs,ts,js)
+        #[arg(long, value_delimiter = ',')]
+        extensions: Option<Vec<String>>,
+        /// Output format: summary, json, or stats
+        #[arg(long, default_value = "summary")]
+        format: String,
+    },
     /// Get code topology for an issue (symbols, dependencies)
     Topology {
         /// Issue ID to get topology for
@@ -233,6 +254,27 @@ enum AnalysisCommands {
         /// Layer config JSON (inline or path)
         #[arg(long)]
         config: Option<String>,
+    },
+    /// Rebuild the topology cache for the current project
+    Rebuild {
+        /// Directory to scan (default: current directory)
+        dir: Option<String>,
+    },
+    /// Compare current project topology with the cached version
+    Diff {
+        /// Directory to scan (default: current directory)
+        dir: Option<String>,
+    },
+    /// Export the topology graph to a file (DOT or JSON format)
+    Export {
+        /// Output file path
+        output: String,
+        /// Format: dot or json
+        #[arg(long, default_value = "dot")]
+        format: String,
+        /// Directory to scan (default: current directory or cache)
+        #[arg(long)]
+        dir: Option<String>,
     },
 }
 
@@ -480,6 +522,8 @@ fn main() -> anyhow::Result<()> {
             remove_label,
             add_dependency,
             remove_dependency,
+            add_symbol,
+            remove_symbol,
         } => {
             if let Some(mut issue) = store.get_issue(&id)? {
                 let mut updated = false;
@@ -562,7 +606,52 @@ fn main() -> anyhow::Result<()> {
                     }
                 }
 
+                // Handle Symbols
+                for symbol in add_symbol {
+                    if !issue.affected_symbols.contains(&symbol) {
+                        issue.affected_symbols.push(symbol);
+                        updated = true;
+                    }
+                }
+                for symbol in remove_symbol {
+                    let initial_len = issue.affected_symbols.len();
+                    issue.affected_symbols.retain(|s| s != &symbol);
+                    if issue.affected_symbols.len() != initial_len {
+                        updated = true;
+                    }
+                }
+
                 if updated {
+                    // Update solid_volume if we have symbols
+                    if !issue.affected_symbols.is_empty() {
+                        use grits_core::topology::{
+                            analysis::TopologicalAnalysis, cache::TopologyCache,
+                        };
+                        let cache_path = db_path.parent().unwrap().join("topology.json");
+                        if let Ok(cache) = TopologyCache::load(&cache_path) {
+                            // Compute star neighborhood for all symbols combined
+                            let mut combined_neighbors = std::collections::HashSet::new();
+                            let mut combined_edges = Vec::new();
+
+                            for symbol_id in &issue.affected_symbols {
+                                let star =
+                                    TopologicalAnalysis::get_star(&cache.graph, symbol_id, 1);
+                                for n in star.neighbors {
+                                    combined_neighbors.insert(n);
+                                }
+                                for e in star.edges {
+                                    combined_edges.push(e);
+                                }
+                            }
+
+                            let volume_data = serde_json::json!({
+                                "nodes": combined_neighbors,
+                                "edges": combined_edges,
+                            });
+                            issue.solid_volume = Some(volume_data.to_string());
+                        }
+                    }
+
                     issue.updated_at = Utc::now();
                     store
                         .update_issue(&issue)
@@ -1366,6 +1455,63 @@ fn main() -> anyhow::Result<()> {
                     println!("\n✅ No circular dependencies found.");
                 }
             }
+            AnalysisCommands::Scan {
+                dir,
+                max_depth,
+                exclude,
+                extensions,
+                format,
+            } => {
+                use grits_core::topology::{
+                    analysis::TopologicalAnalysis, scanner::DirectoryScanner,
+                };
+                use std::path::Path;
+
+                let mut scanner = DirectoryScanner::new();
+                if let Some(depth) = max_depth {
+                    scanner = scanner.with_max_depth(depth);
+                }
+                if let Some(excl) = exclude {
+                    scanner = scanner.with_excludes(excl);
+                }
+                if let Some(exts) = extensions {
+                    scanner = scanner.with_extensions(exts);
+                }
+
+                let graph = scanner.scan(Path::new(&dir))?;
+                let analysis = TopologicalAnalysis::analyze(&graph);
+
+                if format == "json" {
+                    println!("{}", serde_json::to_string_pretty(&analysis)?);
+                } else if format == "stats" {
+                    println!("Nodes:      {}", analysis.node_count);
+                    println!("Edges:      {}", analysis.edge_count);
+                    println!("Triangles:  {}", analysis.triangle_count);
+                    println!("Volumes:    {}", analysis.feature_volumes.len());
+                    println!("Betti_0:    {}", analysis.betti_0);
+                    println!("Betti_1:    {}", analysis.betti_1);
+                } else {
+                    println!("Successfully scanned: {}", dir);
+                    println!(
+                        "Found {} symbols and {} dependencies.",
+                        analysis.node_count, analysis.edge_count
+                    );
+                    println!("Topological Invariants:");
+                    println!("  Connected Components (Betti_0): {}", analysis.betti_0);
+                    println!("  Cycles (Betti_1):               {}", analysis.betti_1);
+                    println!(
+                        "  Feature Volumes:                {}",
+                        analysis.feature_volumes.len()
+                    );
+
+                    if analysis.betti_1 > 0 {
+                        println!(
+                            "\n⚠️  WARNING: {} circular dependencies detected!",
+                            analysis.betti_1
+                        );
+                    }
+                }
+            }
             AnalysisCommands::Star {
                 file,
                 symbol,
@@ -1549,6 +1695,152 @@ fn main() -> anyhow::Result<()> {
                     }
                 }
             }
+            AnalysisCommands::Rebuild { dir } => {
+                use grits_core::topology::{cache::TopologyCache, scanner::DirectoryScanner};
+                use std::path::Path;
+
+                let scan_dir = dir.unwrap_or_else(|| ".".to_string());
+                let scanner = DirectoryScanner::new();
+                let mut cache = TopologyCache::new();
+
+                println!("Scanning {} and building topology cache...", scan_dir);
+                cache.update_from_dir(Path::new(&scan_dir), &scanner)?;
+
+                let cache_path = db_path.parent().unwrap().join("topology.json");
+                cache.save(&cache_path)?;
+                println!("Cache saved to: {:?}", cache_path);
+            }
+            AnalysisCommands::Diff { dir } => {
+                use grits_core::topology::{cache::TopologyCache, scanner::DirectoryScanner};
+                use std::path::Path;
+
+                let scan_dir = dir.unwrap_or_else(|| ".".to_string());
+                let scanner = DirectoryScanner::new();
+                let cache_path = db_path.parent().unwrap().join("topology.json");
+
+                if !cache_path.exists() {
+                    eprintln!("No cache found. Run 'gr analysis rebuild' first.");
+                    return Ok(());
+                }
+
+                let old_cache = TopologyCache::load(&cache_path)?;
+                let new_graph = scanner.scan(Path::new(&scan_dir))?;
+
+                // Compare graphs
+                let old_edges: std::collections::HashSet<_> = old_cache
+                    .graph
+                    .edges
+                    .iter()
+                    .map(|(f, t, e)| (f.clone(), t.clone(), e.relation.clone()))
+                    .collect();
+                let new_edges: std::collections::HashSet<_> = new_graph
+                    .edges
+                    .iter()
+                    .map(|(f, t, e)| (f.clone(), t.clone(), e.relation.clone()))
+                    .collect();
+
+                let added: Vec<_> = new_edges.difference(&old_edges).collect();
+                let removed: Vec<_> = old_edges.difference(&new_edges).collect();
+
+                println!("Topology Diff for: {}", scan_dir);
+                println!("  Added Edges:   {}", added.len());
+                println!("  Removed Edges: {}", removed.len());
+
+                if !added.is_empty() {
+                    println!("\n➕ Added Dependencies:");
+                    for (from, to, rel) in added.iter().take(10) {
+                        println!("  {} --[{}]--> {}", from, rel, to);
+                    }
+                    if added.len() > 10 {
+                        println!("  ... and {} more", added.len() - 10);
+                    }
+                }
+
+                if !removed.is_empty() {
+                    println!("\n➖ Removed Dependencies:");
+                    for (from, to, rel) in removed.iter().take(10) {
+                        println!("  {} --[{}]--> {}", from, rel, to);
+                    }
+                    if removed.len() > 10 {
+                        println!("  ... and {} more", removed.len() - 10);
+                    }
+                }
+
+                // Check invariants
+                let old_analysis =
+                    grits_core::topology::analysis::TopologicalAnalysis::analyze(&old_cache.graph);
+                let new_analysis =
+                    grits_core::topology::analysis::TopologicalAnalysis::analyze(&new_graph);
+
+                if new_analysis.betti_1 > old_analysis.betti_1 {
+                    println!(
+                        "\n⚠️  WARNING: Circular dependencies increased! ({} -> {})",
+                        old_analysis.betti_1, new_analysis.betti_1
+                    );
+                }
+                if new_analysis.betti_2 < old_analysis.betti_2 {
+                    println!("\n💡 INFO: Topological voids decreased. Architecture is becoming more 'solid'.");
+                }
+            }
+            AnalysisCommands::Export {
+                output,
+                format,
+                dir,
+            } => {
+                use grits_core::topology::{cache::TopologyCache, scanner::DirectoryScanner};
+                use std::path::Path;
+
+                let graph = if let Some(d) = dir {
+                    let scanner = DirectoryScanner::new();
+                    scanner.scan(Path::new(&d))?
+                } else {
+                    let cache_path = db_path.parent().unwrap().join("topology.json");
+                    if cache_path.exists() {
+                        TopologyCache::load(&cache_path)?.graph
+                    } else {
+                        let scanner = DirectoryScanner::new();
+                        scanner.scan(Path::new("."))?
+                    }
+                };
+
+                if format == "json" {
+                    let json = serde_json::to_string_pretty(&graph)?;
+                    std::fs::write(&output, json)?;
+                } else {
+                    // Export to DOT
+                    let mut dot = String::from("digraph G {\n");
+                    dot.push_str("  rankdir=LR;\n");
+                    dot.push_str("  node [shape=box, style=filled, fillcolor=lightblue];\n\n");
+
+                    for (id, symbol) in &graph.nodes {
+                        dot.push_str(&format!(
+                            "  \"{}\" [label=\"{}\\n({})\", color=\"{}\"];\n",
+                            id,
+                            symbol.name,
+                            symbol.kind,
+                            if symbol.kind == "function" {
+                                "green"
+                            } else {
+                                "blue"
+                            }
+                        ));
+                    }
+
+                    for (from, to, edge) in &graph.edges {
+                        dot.push_str(&format!(
+                            "  \"{}\" -> \"{}\" [label=\"{}\", penwidth={}];\n",
+                            from,
+                            to,
+                            edge.relation,
+                            if edge.strength > 0.8 { "2.0" } else { "1.0" }
+                        ));
+                    }
+
+                    dot.push_str("}\n");
+                    std::fs::write(&output, dot)?;
+                }
+                println!("Graph exported to: {}", output);
+            }
         },
         Commands::Workflow { command } => match command {
             WorkflowCommands::Triage {
@@ -1614,6 +1906,25 @@ fn main() -> anyhow::Result<()> {
                 println!("  Title:       {}", inferred.suggested_title);
                 println!("  Type:        {}", inferred.suggested_type);
                 println!("  Description: {}", inferred.suggested_description);
+
+                // Topological Check
+                let cache_path = db_path.parent().unwrap().join("topology.json");
+                if cache_path.exists() {
+                    use grits_core::topology::{
+                        analysis::TopologicalAnalysis, cache::TopologyCache,
+                        scanner::DirectoryScanner,
+                    };
+                    if let Ok(old_cache) = TopologyCache::load(&cache_path) {
+                        let scanner = DirectoryScanner::new();
+                        if let Ok(new_graph) = scanner.scan(std::path::Path::new(".")) {
+                            let old_analysis = TopologicalAnalysis::analyze(&old_cache.graph);
+                            let new_analysis = TopologicalAnalysis::analyze(&new_graph);
+                            if new_analysis.betti_1 > old_analysis.betti_1 {
+                                println!("\n⚠️  TOPOLOGY WARNING: This change introduces new circular dependencies ({} -> {}).", old_analysis.betti_1, new_analysis.betti_1);
+                            }
+                        }
+                    }
+                }
             }
             ContextCommands::Todo { file, line } => {
                 let content = std::fs::read_to_string(&file)?;

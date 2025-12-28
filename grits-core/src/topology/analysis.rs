@@ -92,24 +92,38 @@ impl TopologicalAnalysis {
         let triangles = Self::find_triangles(&undirected, &node_to_un, &edge_map);
         let triangle_count = triangles.len();
 
+        // Find all tetrahedra (4-cliques) for 3-simplexes
+        let tetra_count = Self::find_tetrahedra(&undirected, &node_to_un, &triangles);
+
         // Calculate Betti numbers using Euler characteristic
-        // For a simplicial complex: χ = V - E + F (faces/triangles)
-        // Betti_0 = components
-        // Betti_1 = E - V + Betti_0 - triangles (adjusted for filled triangles)
-        // Betti_2 = triangles that form "voids" (simplified: 0 for now)
-
+        // χ = V - E + F - T + ...
+        // χ = β0 - β1 + β2 - β3 + ...
         let node_count = all_node_ids.len();
-        let edge_count = digraph.edge_count();
+        let edge_count = undirected.edge_count();
 
-        let betti_1 = if edge_count + betti_0 >= node_count + triangle_count {
-            edge_count + betti_0 - node_count - triangle_count
+        // β0 is connected components
+        // β1 = (E - V + β0) - (independent triangles)
+        // We approximate independent triangles as triangle_count,
+        // but we must not exceed the cycle basis rank (E - V + β0).
+        let total_cycles = if edge_count + betti_0 >= node_count {
+            edge_count + betti_0 - node_count
         } else {
             0
         };
 
-        // Betti_2 would require finding tetrahedra (4-cliques) which is expensive
-        // For now, we approximate based on triangle clustering
-        let betti_2 = 0;
+        let independent_triangles = triangle_count.min(total_cycles);
+        let betti_1 = total_cycles - independent_triangles;
+
+        // β2 = χ - β0 + β1 = (V - E + F - T) - β0 + β1
+        // Putting it all together:
+        // β2 = (V - E + F - T) - β0 + (E - V + β0 - F_indep)
+        // If F_indep = F: β2 = -T (which means we have voids if T < something)
+        // Actually, the real formula for β2 is Rank(Z2) - Rank(B2).
+        // A simpler way: β2 is the number of "hollow" shells.
+        // We approximate β2 by looking for clusters of triangles that aren't filled by tetrahedra.
+        let chi = (node_count as i32) - (edge_count as i32) + (triangle_count as i32)
+            - (tetra_count as i32);
+        let betti_2 = (chi - (betti_0 as i32) + (betti_1 as i32)).max(0) as usize;
 
         // Group triangles into feature volumes
         let feature_volumes = Self::compute_feature_volumes(&triangles, graph_data);
@@ -181,6 +195,58 @@ impl TopologicalAnalysis {
         }
 
         triangles
+    }
+
+    /// Find all tetrahedra (4-cliques) in an undirected graph
+    fn find_tetrahedra(
+        graph: &UnGraph<String, ()>,
+        node_map: &HashMap<String, NodeIndex>,
+        triangles: &[Triangle],
+    ) -> usize {
+        let mut tetra_count = 0;
+        let mut seen = HashSet::new();
+
+        // A tetrahedron is a 4-clique.
+        // We can find it by taking a triangle (u, v, w) and finding a common neighbor x.
+        for tri in triangles {
+            let u = match node_map.get(&tri.nodes[0]) {
+                Some(&idx) => idx,
+                None => continue,
+            };
+            let v = match node_map.get(&tri.nodes[1]) {
+                Some(&idx) => idx,
+                None => continue,
+            };
+            let w = match node_map.get(&tri.nodes[2]) {
+                Some(&idx) => idx,
+                None => continue,
+            };
+
+            let u_neighbors: HashSet<NodeIndex> = graph.neighbors(u).collect();
+            let v_neighbors: HashSet<NodeIndex> = graph.neighbors(v).collect();
+            let w_neighbors: HashSet<NodeIndex> = graph.neighbors(w).collect();
+
+            let common_uv: HashSet<_> = u_neighbors.intersection(&v_neighbors).copied().collect();
+            let common_uvw: HashSet<_> = common_uv.intersection(&w_neighbors).copied().collect();
+
+            for x in common_uvw {
+                let mut nodes = [
+                    tri.nodes[0].clone(),
+                    tri.nodes[1].clone(),
+                    tri.nodes[2].clone(),
+                    graph[x].clone(),
+                ];
+                nodes.sort();
+
+                let key = format!("{}-{}-{}-{}", nodes[0], nodes[1], nodes[2], nodes[3]);
+                if !seen.contains(&key) {
+                    seen.insert(key);
+                    tetra_count += 1;
+                }
+            }
+        }
+
+        tetra_count
     }
 
     /// Group triangles into feature volumes (connected clique regions)

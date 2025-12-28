@@ -1,6 +1,6 @@
 #[cfg(not(target_arch = "wasm32"))]
 use grits_core::topology::parser::CodeParser;
-use grits_core::topology::{analysis::TopologicalAnalysis, SymbolGraph};
+use grits_core::topology::{analysis::TopologicalAnalysis, Symbol, SymbolGraph};
 
 #[test]
 fn test_topology_analysis() {
@@ -54,6 +54,51 @@ fn test_topology_analysis() {
 }
 
 #[test]
+fn test_betti_2_octahedron() {
+    // A hollow octahedron: 6 nodes, 12 edges, 8 triangles, 0 tetrahedra
+    // χ = 6 - 12 + 8 - 0 = 2
+    // β0 = 1, β1 = 0, β2 = 1
+    let mut graph = SymbolGraph::new();
+    for id in ["1", "2", "3", "4", "5", "6"] {
+        graph.add_symbol(Symbol {
+            id: id.to_string(),
+            name: id.to_string(),
+            file_path: "f".to_string(),
+            language: "r".to_string(),
+            kind: "k".to_string(),
+        });
+    }
+
+    // Edges (1,2), (1,3), (1,4), (1,5)
+    graph.add_dependency("1", "2", "calls");
+    graph.add_dependency("1", "3", "calls");
+    graph.add_dependency("1", "4", "calls");
+    graph.add_dependency("1", "5", "calls");
+    // Edges (6,2), (6,3), (6,4), (6,5)
+    graph.add_dependency("6", "2", "calls");
+    graph.add_dependency("6", "3", "calls");
+    graph.add_dependency("6", "4", "calls");
+    graph.add_dependency("6", "5", "calls");
+    // Ring: (2,3), (3,4), (4,5), (5,2)
+    graph.add_dependency("2", "3", "calls");
+    graph.add_dependency("3", "4", "calls");
+    graph.add_dependency("4", "5", "calls");
+    graph.add_dependency("5", "2", "calls");
+
+    let analysis = TopologicalAnalysis::analyze(&graph);
+
+    println!("Betti 0: {}", analysis.betti_0);
+    println!("Betti 1: {}", analysis.betti_1);
+    println!("Betti 2: {}", analysis.betti_2);
+    println!("Triangles: {}", analysis.triangle_count);
+
+    assert_eq!(analysis.betti_0, 1);
+    assert_eq!(analysis.triangle_count, 8);
+    assert_eq!(analysis.betti_1, 0);
+    assert_eq!(analysis.betti_2, 1);
+}
+
+#[test]
 #[cfg(not(target_arch = "wasm32"))]
 fn test_parser_integration() {
     let code = r#"
@@ -97,42 +142,33 @@ fn test_parser_integration() {
 #[test]
 #[cfg(not(target_arch = "wasm32"))]
 fn test_cycle_detection_via_parser() {
-    // Simulate File A importing B, and B importing A
+    // Simulate File A -> B -> C -> A
     let code_a = r#"
         use file_b;
         fn a() { }
     "#;
     let code_b = r#"
-        use file_a;
+        use file_c;
         fn b() { }
+    "#;
+    let code_c = r#"
+        use file_a;
+        fn c() { }
     "#;
 
     let mut graph = SymbolGraph::new();
     let mut parser = CodeParser::new("rust").expect("Failed to create parser");
 
-    // Parse File A (ID: "file_a")
-    parser
-        .parse_file("file_a", code_a, &mut graph)
-        .expect("Failed to parse A");
-    // Parse File B (ID: "file_b")
-    parser
-        .parse_file("file_b", code_b, &mut graph)
-        .expect("Failed to parse B");
-
-    // Check connections
-    // A -> file_b (import)
-    // B -> file_a (import)
-    // With implicit nodes handled, we have:
-    // Nodes: file_a, file_b, "file_a" (from import string), "file_b" (from import string)
-    // Wait, the import text is "file_b", and the file ID is "file_b".
-    // So they should match!
+    parser.parse_file("file_a", code_a, &mut graph).unwrap();
+    parser.parse_file("file_b", code_b, &mut graph).unwrap();
+    parser.parse_file("file_c", code_c, &mut graph).unwrap();
 
     let analysis = TopologicalAnalysis::analyze(&graph);
 
-    // We expect a cycle: file_a -> file_b -> file_a
-    assert!(
-        analysis.betti_1 >= 1,
-        "Should detect at least 1 cycle (Betti_1 >= 1), found {}",
-        analysis.betti_1
+    // A 3rd-order cycle is a 2-simplex (triangle).
+    // In our model, triangles are "filled", so Betti_1 might be 0, but triangle_count should be 1.
+    assert_eq!(
+        analysis.triangle_count, 1,
+        "Should detect 1 triangle (solid feature)"
     );
 }

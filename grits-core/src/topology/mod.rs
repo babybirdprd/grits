@@ -35,12 +35,16 @@ impl SymbolGraph {
     }
 
     pub fn add_dependency(&mut self, from: &str, to: &str, relation: &str) {
+        self.add_weighted_dependency(from, to, relation, 1.0);
+    }
+
+    pub fn add_weighted_dependency(&mut self, from: &str, to: &str, relation: &str, weight: f32) {
         self.edges.push((
             from.to_string(),
             to.to_string(),
             DependencyEdge {
                 relation: relation.to_string(),
-                strength: 1.0,
+                strength: weight,
             },
         ));
     }
@@ -50,3 +54,9 @@ pub mod analysis;
 
 #[cfg(not(target_arch = "wasm32"))]
 pub mod parser;
+
+#[cfg(not(target_arch = "wasm32"))]
+pub mod scanner;
+
+#[cfg(not(target_arch = "wasm32"))]
+pub mod cache;

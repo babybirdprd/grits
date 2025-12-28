@@ -79,15 +79,27 @@ impl CodeParser {
                                 kind: capture.node.kind().to_string(),
                             });
                             // Also link symbol to file
-                            graph.add_dependency(&id, file_path, "defined_in");
+                            graph.add_weighted_dependency(&id, file_path, "defined_in", 1.0);
                         } else if capture_name == "mod_name" {
                             // "mod utils;" -> text is "utils"
                             // This is a file-level import in Rust
-                            graph.add_dependency(file_path, text, "imports");
+                            graph.add_weighted_dependency(file_path, text, "imports", 0.3);
                         } else if capture_name == "call" {
-                            // Heuristic: call to X depends on X
-                            // We link from the FILE for now (simplification)
-                            graph.add_dependency(file_path, text, "calls");
+                            // Heuristic for call strength
+                            let mut strength = 0.6;
+                            let mut parent = capture.node.parent();
+                            while let Some(p) = parent {
+                                let kind = p.kind();
+                                if kind.contains("loop")
+                                    || kind == "for_expression"
+                                    || kind == "while_expression"
+                                {
+                                    strength = 1.0;
+                                    break;
+                                }
+                                parent = p.parent();
+                            }
+                            graph.add_weighted_dependency(file_path, text, "calls", strength);
                         } else if capture_name == "import" {
                             // "use std::io;" -> text is "std::io"
                             // Extract the first part (crate name) for local crate imports
@@ -96,10 +108,17 @@ impl CodeParser {
                                 // "crate::validate_store" -> link to the module
                                 let parts: Vec<&str> = import_path.split("::").collect();
                                 if parts.len() >= 2 {
-                                    graph.add_dependency(file_path, parts[1], "imports");
+                                    graph.add_weighted_dependency(
+                                        file_path, parts[1], "imports", 0.3,
+                                    );
                                 }
                             } else {
-                                graph.add_dependency(file_path, import_path, "imports");
+                                graph.add_weighted_dependency(
+                                    file_path,
+                                    import_path,
+                                    "imports",
+                                    0.3,
+                                );
                             }
                         }
                     }
@@ -134,13 +153,27 @@ impl CodeParser {
                                 language: self.language.clone(),
                                 kind: capture.node.kind().to_string(),
                             });
-                            graph.add_dependency(&id, file_path, "defined_in");
+                            graph.add_weighted_dependency(&id, file_path, "defined_in", 1.0);
                         } else if capture_name == "call" {
-                            graph.add_dependency(file_path, text, "calls");
+                            let mut strength = 0.6;
+                            let mut parent = capture.node.parent();
+                            while let Some(p) = parent {
+                                let kind = p.kind();
+                                if kind.contains("Statement")
+                                    && (kind.contains("For")
+                                        || kind.contains("While")
+                                        || kind.contains("Do"))
+                                {
+                                    strength = 1.0;
+                                    break;
+                                }
+                                parent = p.parent();
+                            }
+                            graph.add_weighted_dependency(file_path, text, "calls", strength);
                         } else if capture_name == "import" {
                             // Remove quotes
                             let clean_import = text.trim_matches(|c| c == '\'' || c == '"');
-                            graph.add_dependency(file_path, clean_import, "imports");
+                            graph.add_weighted_dependency(file_path, clean_import, "imports", 0.3);
                         }
                     }
                 }
@@ -173,13 +206,27 @@ impl CodeParser {
                                 language: self.language.clone(),
                                 kind: capture.node.kind().to_string(),
                             });
-                            graph.add_dependency(&id, file_path, "defined_in");
+                            graph.add_weighted_dependency(&id, file_path, "defined_in", 1.0);
                         } else if capture_name == "call" {
-                            graph.add_dependency(file_path, text, "calls");
+                            let mut strength = 0.6;
+                            let mut parent = capture.node.parent();
+                            while let Some(p) = parent {
+                                let kind = p.kind();
+                                if kind.contains("Statement")
+                                    && (kind.contains("For")
+                                        || kind.contains("While")
+                                        || kind.contains("Do"))
+                                {
+                                    strength = 1.0;
+                                    break;
+                                }
+                                parent = p.parent();
+                            }
+                            graph.add_weighted_dependency(file_path, text, "calls", strength);
                         } else if capture_name == "import" {
                             // Remove quotes: './util' -> ./util
                             let clean_import = text.trim_matches(|c| c == '\'' || c == '"');
-                            graph.add_dependency(file_path, clean_import, "imports");
+                            graph.add_weighted_dependency(file_path, clean_import, "imports", 0.3);
                         }
                     }
                 }

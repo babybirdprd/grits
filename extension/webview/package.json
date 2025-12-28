@@ -1,7 +1,7 @@
 {
     "name": "grits-webview",
     "private": true,
-    "version": "1.0.8",
+    "version": "1.1.0",
     "type": "module",
     "scripts": {
         "dev": "vite",

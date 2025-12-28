@@ -4,7 +4,7 @@ A Git-native, local-first issue tracker with a **Twin Engine** architecture:
 - 🤖 **Agent Engine**: MCP server for AI integration (Antigravity, Claude, etc.)
 - 👀 **Visual Engine**: VS Code extension with WASM-powered UI
 
-**Status**: Production Ready (v1.0.8)
+**Status**: Production Ready (v1.1.0)
 
 ## Quick Start
 
@@ -139,30 +139,30 @@ pnpm run build
 
 ## 🔬 Solid Graph Topology
 
-Grits includes **simplicial complex analysis** for code architecture:
+Grits includes **simplicial complex analysis** for code architecture, allowing you to treat code as a "solid" multidimensional structure:
 
 ```bash
-# Detect circular dependencies using Betti numbers
+# 1. Build project-wide topology cache
+gr analysis rebuild
+
+# 2. Detect circular dependencies using Betti numbers
 gr analysis validate-topology src/lib.rs
 
-# Load "star neighborhood" context for AI edits
-gr analysis star src/lib.rs --depth 2
+# 3. Detect architectural drift (new cycles, removed edges)
+gr analysis diff
 
-# Find tightly coupled code clusters (feature volumes)
-gr analysis volumes src/lib.rs
-
-# Check layer architecture rules
-gr analysis check-layers src/lib.rs
+# 4. Export for visualization (Graphviz/JSON)
+gr analysis export topology.dot
 ```
 
 | Feature | Description |
 |---------|-------------|
-| **Betti_0** | Connected components (isolated clusters) |
-| **Betti_1** | 1-cycles (circular dependencies / holes) |
-| **Triangles** | 2-simplexes (tightly coupled triplets) |
-| **Feature Volumes** | Grouped cliques with cohesion scores |
-| **Star Neighborhoods** | Context loading for LLM edits |
-| **Layer Invariants** | Architecture rule enforcement |
+| **Project Scanning** | Recursively build a unified graph of your codebase |
+| **Betti_0/1/2** | Detect components, circular cycles, and 2D voids |
+| **Feature Volumes** | Find tightly coupled code clusters ($2$-simplexes) |
+| **Star Neighborhoods** | Load precise context for AI editing sessions |
+| **Persistence** | Cache topology in `.grits/topology.json` for fast diffs |
+| **Issue Linking** | Bind symbols to issues to capture topological context |
 
 > Based on the ["Solid Graph" philosophy](https://arxiv.org/html/2512.19736v1) from algebraic topology.
 
