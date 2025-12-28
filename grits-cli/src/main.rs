@@ -129,7 +129,11 @@ enum Commands {
     /// Initialize grits in the current repository
     Onboard,
     /// Show issues ready to work on (no blockers)
-    Ready,
+    Ready {
+        /// Filter by assignee
+        #[arg(long)]
+        assignee: Option<String>,
+    },
     /// Synchronize issues with git remote
     Sync {
         /// Squash all changes into a single commit
@@ -876,10 +880,16 @@ fn main() -> anyhow::Result<()> {
 
             println!("Onboarding complete!");
         }
-        Commands::Ready => {
-            // Get current user
-            let user = store.get_config("user.name")?;
-            let assignee = user.as_deref().unwrap_or("unassigned");
+        Commands::Ready {
+            assignee: arg_assignee,
+        } => {
+            // Get current user if not provided
+            let user = if arg_assignee.is_some() {
+                arg_assignee
+            } else {
+                store.get_config("user.name")?
+            };
+            let display_assignee = user.as_deref().unwrap_or("unassigned");
 
             // List issues not closed, assigned to user or unassigned (if user not set?)
             // Requirement: "alias for listing open issues assigned to user or unassigned"
@@ -899,44 +909,52 @@ fn main() -> anyhow::Result<()> {
 
             let all_issues = store.list_issues(None, None, None, None, None, None)?;
 
-            println!("Ready issues for {}:", assignee);
+            println!("Ready issues for {}:", display_assignee);
             println!(
                 "{:<10} {:<10} {:<10} {}",
                 "ID", "STATUS", "PRIORITY", "TITLE"
             );
             println!("{:-<60}", "");
 
-            for issue in all_issues {
-                if issue.status == "closed" {
+            for candidate in &all_issues {
+                if candidate.status == "closed" {
                     continue;
                 }
 
-                let matches_assignee = if let Some(a) = &issue.assignee {
+                // Filter by assignee
+                let matches_assignee = if let Some(a) = &candidate.assignee {
                     if let Some(u) = &user {
                         a == u
                     } else {
-                        // No user configured.
-                        // Should we show unassigned? Or everything?
-                        // "gr ready" implies "ready for ME".
-                        // If I don't know who ME is, I can't filter by assignee efficiently.
-                        // Maybe just show unassigned?
-                        // Let's assume matches_assignee = true if user is None (show all open?) or false?
-                        // Go with: if user is known, match it. If not, match nothing?
-                        // Or maybe prompt user to configure user.name?
                         false
                     }
                 } else {
-                    // Issue is unassigned.
-                    // Often "ready" queue includes unassigned issues one could pick up.
-                    // Let's include unassigned.
                     true
                 };
 
-                if matches_assignee {
-                    println!(
-                        "{:<10} {:<10} {:<10} {}",
-                        issue.id, issue.status, issue.priority, issue.title
-                    );
+                if !matches_assignee {
+                    continue;
+                }
+
+                // Fetch full issue to get dependencies
+                if let Ok(Some(issue)) = store.get_issue(&candidate.id) {
+                    let mut is_blocked = false;
+                    for dep in &issue.dependencies {
+                        if let Some(target) = all_issues.iter().find(|i| i.id == dep.depends_on_id)
+                        {
+                            if target.status != "closed" {
+                                is_blocked = true;
+                                break;
+                            }
+                        }
+                    }
+
+                    if !is_blocked {
+                        println!(
+                            "{:<10} {:<10} {:<10} {}",
+                            issue.id, issue.status, issue.priority, issue.title
+                        );
+                    }
                 }
             }
         }

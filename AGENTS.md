@@ -1,416 +1,163 @@
-# Grits CLI for AI Agents
+# Grits: The Definitive Agent Guide
+
+This documentation is the **sole source of truth** for AI agents using Grits. It provides an opinionated, intent-based workflow for managing issues and code topology.
 
 > [!IMPORTANT]
-> **This project uses Grits for issue tracking.** At the start of every session:
-> 1. Run `gr list` to see all open issues
-> 2. Run `gr ready` to see issues with no blockers  
-> 3. Run `gr advisory next` for the AI-recommended next task
->
-> Track all work with `gr create`, `gr update`, `gr close`. This is how context persists between sessions.
-
-Grits provides a set of CLI commands specifically designed to help AI agents manage complex projects, analyze issue graphs, and automate workflows.
-
-## Global Options
-
-All commands accept:
-- `--root <PATH>`: Explicitly set the project root directory
-
-## Basic CRUD Commands
-
-Essential commands for everyday issue management:
-
-| Command | Description |
-|---------|-------------|
-| `gr list` | Show all open issues |
-| `gr list --status <STATUS>` | Filter by status: `open`, `in_progress`, `blocked`, `closed` |
-| `gr list --priority <N>` | Filter by priority (1=critical to 5=trivial) |
-| `gr list --assignee <NAME>` | Filter by assignee |
-| `gr show <ID>` | View issue details |
-| `gr create "<TITLE>" -d "<DESC>"` | Create a new issue (title is positional) |
-| `gr create "<TITLE>" -t <TYPE> -p <N>` | With type (`bug`, `feature`, `task`, `epic`) and priority |
-| `gr update <ID> --status <STATUS>` | Update issue status |
-| `gr update <ID> --add-dependency <ID2>` | Add a dependency |
-| `gr update <ID> --add-symbol <SYM>` | Link a code symbol to the issue |
-| `gr update <ID> --assignee <NAME>` | Assign to someone |
-| `gr close <ID>` | Close an issue |
-| `gr edit <ID>` | Edit issue in your $EDITOR |
-| `gr sync` | Sync changes with Git |
-| `gr sync --validate-topology` | Sync with topology validation (blocks on cycles) |
-| `gr ready` | Show issues with no blockers |
-| `gr stats` | Show issue statistics |
-
-## Setup & Maintenance Commands
-
-| Command | Description |
-|---------|-------------|
-| `gr onboard` | Initialize grits in a new repository |
-| `gr config` | View/manage configuration settings |
-| `gr export` | Export issues to JSONL format (backup) |
-| `gr import` | Import issues from JSONL format (restore) |
-| `gr merge` | Git merge driver for grits JSONL files |
-
-> [!NOTE]
-> `gr serve-mcp` starts an MCP server for AI agent integration but is not currently tested/utilized in this project.
-
-## Strategic Command Groups
-
-### 1. Advisory (`gr advisory`)
-
-High-level guidance on what to do next.
-
-| Command | Description |
-|---------|-------------|
-| `gr advisory next` | Suggest the next actionable task |
-| `gr advisory next --assignee <NAME>` | Filter for a specific person |
-| `gr advisory next --file <PATH>` | Boost context based on current file |
-| `gr advisory sprint` | Summarize progress over the last week |
-| `gr advisory sprint --days <N>` | Change lookback period (default: 7) |
-
-### 2. Analysis (`gr analysis`)
-
-Deep insights into the issue graph, repository, and **code topology**.
-
-| `gr analysis scan <DIR>` | Recursively scan a directory and build a unified symbol graph |
-| `gr analysis rebuild` | Force rebuild the project topology cache (`.grits/topology.json`) |
-| `gr analysis diff` | Compare current project topology with the cached version |
-| `gr analysis topology <ID>` | Retrieve stored code topology for an issue |
-| `gr analysis export <PATH>` | Export graph to DOT or JSON format |
-| `gr analysis validate-topology <FILE>` | Analyze code for circular dependencies (Betti numbers) |
-| `gr analysis star <FILE>` | Get "star neighborhood" (Feature Volume) for context |
-| `gr analysis volumes <FILE>` | Find tightly coupled code clusters (Feature Volumes) |
-| `gr analysis check-layers <FILE>` | Check layer architecture invariants |
-
-> [!TIP]
-> **Solid Graph Topology**: The `validate-topology`, `star`, `volumes`, and `check-layers` commands implement simplicial complex analysis from algebraic topology. Use `validate-topology` to detect circular dependencies, `star` to load relevant context before AI edits, and `check-layers` to enforce architectural rules.
-
-### 3. Workflow (`gr workflow`)
-
-Automation and batch operations.
-
-| Command | Description |
-|---------|-------------|
-| `gr workflow triage <ID1> <ID2> ...` | Batch update multiple issues (IDs are positional) |
-| `gr workflow triage <IDs> --status <STATUS>` | Set status for all |
-| `gr workflow triage <IDs> --priority <N>` | Set priority for all |
-| `gr workflow triage <IDs> --assignee <NAME>` | Assign all to someone |
-| `gr workflow stale` | Identify issues not updated in 30 days |
-| `gr workflow stale --days <N>` | Custom staleness threshold |
-
-### 4. Context (`gr context`)
-
-Bridge the gap between code and issues.
-
-| Command | Description |
-|---------|-------------|
-| `gr context error "<MESSAGE>"` | Match error message against existing issues |
-| `gr context error "<MSG>" --limit <N>` | Limit results (default: 5) |
-| `gr context diff` | Analyze current Git changes, suggest issue details |
-| `gr context diff --path <PATH>` | Analyze specific file diff |
-| `gr context todo <FILE>` | Scan file for TODO comments |
-| `gr context todo <FILE> --line <N>` | Focus on specific line |
-
-## Integration Points
-
-When to use Grits during your workflow:
-
-- **Starting work**: Run `gr advisory next` to pick your next task
-- **On error**: Use `gr context error "<msg>"` to check if it's a known issue  
-- **After coding**: Use `gr context diff` to link your changes to issues
-- **Before committing**: Update status with `gr update <ID> --status in_progress`
-- **Creating issues**: Always run `gr analysis duplicates` first to avoid redundancy
-
-## Output Formats
-
-- `gr analysis graph` outputs JSON (can be parsed programmatically)
-- `gr list` outputs a formatted table
-- Most commands output human-readable text
+> **Twin Engine Synchronization**: Grits uses a SQLite database for speed (`.grits/grits.db`) and a JSONL file for version control (`.grits/issues.jsonl`). All CLI commands automatically import/export between these engines. **Syncing with Git** via `gr sync` is mandatory for session continuity.
 
 ---
 
-## Example Workflows
+## 🛠️ The Agent's Golden Rules
 
-These are step-by-step guides you can follow without needing to be re-taught.
+1.  **Always Forward Slashes**: Symbol IDs and file paths **must** use `/` normalization, even on Windows (e.g., `src/main.rs::run`).
+2.  **Rebuild Often**: Run `gr analysis rebuild` after any significant code change to update the topological cache (`.grits/topology.json`).
+3.  **Link Your Work**: Use `gr update <ID> --add-symbol <SYM>` to populate the **Focus View** in the VS Code extension.
+4.  **Ready Over List**: Use `gr ready` to find actionable work. It automatically filters out blocked tasks.
+5.  **Sync Before Handoff**: `gr sync` is mandatory before every session end to preserve your progress for the next agent.
 
-### 🚀 Starting a Work Session
+---
 
-When you begin working on a project, always start here:
+## 📍 Phase 1: Onboarding & State
+*Goal: Understand who you are and what the project looks like.*
 
+### Initializing
 ```bash
-# 1. See what's ready to work on (no blockers)
-gr ready
+# 1. Identity yourself (Used for assignee filtering and created_by field)
+gr config set user.name "your_agent_name"
 
-# 2. Get AI-suggested next task based on priority and dependencies
-gr advisory next
-
-# 3. If working on a specific file, get context-aware suggestion
-gr advisory next --file src/main.rs
-
-# 4. Once you pick a task, mark it in progress
-gr update <ID> --status in_progress
+# 2. Initialize Grits if not already present
+gr onboard
 ```
 
-### 🐛 Encountered an Error
-
-Before debugging from scratch, check if it's a known issue:
-
+### High-Level Pulse
 ```bash
-# 1. Search for matching issues
-gr context error "cannot find module 'foo'"
+# Get overall project health and issue distribution
+gr stats
 
-# 2. If no results, try a broader search
-gr analysis search "module not found"
-
-# 3. If it's new, create an issue (check for dupes first)
-gr analysis duplicates
-gr create "Module 'foo' not found error" -d "Error occurs when..." -t bug
-```
-
-### ✅ Completing a Task
-
-After finishing work on an issue:
-
-```bash
-# 1. Mark as closed
-gr close <ID>
-
-# 2. Check if this unblocks other issues
-gr ready
-
-# 3. Sync with Git
-gr sync
-```
-
-### 📝 Creating a New Issue
-
-Always check for duplicates before creating:
-
-```bash
-# 1. Check for similar existing issues
-gr analysis duplicates
-gr analysis search "your proposed title keywords"
-
-# 2. If no duplicates found, create it
-gr create "Clear descriptive title" -d "Detailed description" -t feature -p 2
-
-# 3. Add dependencies if this blocks/is blocked by other work
-gr update <NEW_ID> --add-dependency <BLOCKER_ID>
-```
-
-### 🔄 Mid-Session: Stuck or Context-Switching
-
-If you're blocked or need to switch tasks:
-
-```bash
-# 1. Mark current task as blocked (with reason in update)
-gr update <ID> --status blocked
-
-# 2. Find something else to work on
-gr advisory next
-
-# 3. Or see the full picture
+# View the full dependency graph in JSON format (ideal for prompt ingestion)
 gr analysis graph
 ```
 
 ---
 
-## Advanced: Experimental Workflows
+## 🔍 Phase 2: Finding Work
+*Goal: Identify the highest-impact, actionable task.*
 
-### 🔬 Code Topology Analysis (Solid Graph)
+### Picking a Task
+```bash
+# 1. See what is actually reachable (excludes blocked tasks)
+gr ready
 
-Before making architectural changes, analyze code structure:
+# 2. Get an AI-ranked suggestion for the next task
+gr advisory next --assignee "your_agent_name"
+
+# 3. If working on a specific file, find its context
+gr analysis related "src/core/logic.rs"
+```
+
+### Searching & Triage
+```bash
+# Search issues using natural language (BM25 ranked)
+gr analysis search "circular dependency"
+
+# Check for potential duplicates before creating new issues
+gr analysis duplicates
+```
+
+---
+
+## 🏗️ Phase 3: Execution & Context
+*Goal: Load mathematical context before making edits and track your progress.*
+
+### Topological Context (Solid Graph)
+Grits uses **Weighted PageRank** and **Simplicial Complex Analysis** to identify high-impact code.
 
 ```bash
-# 1. Check for circular dependencies in a file
-gr analysis validate-topology src/module.rs
+# 1. Get the "Star Neighborhood" of a file (all connected code context)
+gr analysis star "src/utils.rs" --depth 2
 
-# 2. Load context for AI edits (star neighborhood)
-gr analysis star src/module.rs --depth 2
-
-# 3. Find tightly coupled clusters (feature volumes)
-gr analysis volumes src/module.rs
-
-# 4. Verify architectural layers
-gr analysis check-layers src/module.rs
+# 2. Find "Feature Volumes" (tightly coupled clusters of code)
+gr analysis volumes "src/engine.rs"
 ```
 
-### 🎯 Topological Edit Workflow
-
-> **Source**: [Solid Graph Philosophy](https://arxiv.org/html/2512.19736v1)
-
-This workflow ties your code topology to Grits issues, giving AI agents (and you) precise context for edits.
-
-#### Step 1: Build Topology Cache for Your Working Directory
-
-> [!IMPORTANT]  
-> The cache scope matters. Only symbols in the cached directory can be linked to issues.
-
+### Tracking Progress
 ```bash
-# Build cache for the directory you're working in
-gr analysis rebuild src/
+# Create an issue with a specific type and priority
+gr create "Refactor store trait" -t task -p 2
 
-# Check what was cached
-gr analysis scan src/ --format summary
+# Link specific code symbols to the issue (This powers the Extension Focus View)
+gr update gr-abc123 --add-symbol "src/store.rs::SqliteStore"
+
+# Update status as you work
+gr update gr-abc123 --status in_progress
 ```
 
-**Output example:**
-```
-Scanning [21/21] wasm.rs
-✅ Cache saved to ".grits/topology.json"
-   564 nodes, 674 edges, 111 cycles detected
-```
+---
 
-#### Step 2: Pick Up or Create an Issue
+## 🛡️ Phase 4: Verification & Validation
+*Goal: Ensure your changes are architecturally sound.*
 
+### Architectural Invariants
 ```bash
-# Start working on an issue
-gr advisory next
+# Check the entire project against defined layers in layers.yaml
+gr analysis check-layers --all
 
-# Or create one for new work
-gr create "Refactor payment module" --type task
+# Check a specific file for circular dependencies
+gr analysis validate-topology "src/main.rs"
 ```
 
-#### Step 3: Understand the Code Structure
-
-Before editing, get the star neighborhood (all connected context):
-
+### Sync Validation
 ```bash
-gr analysis star src/payment.rs --depth 2
-```
-
-**Output shows exactly what code will be affected:**
-```
-Star Neighborhood for: src/payment.rs
-  Neighbors: 12
-  Edges: 15
-
-🌟 Connected Nodes:
-  - src/payment.rs::ProcessPayment
-  - src/payment.rs::Validator
-  - src/utils.rs
-  ...
-```
-
-#### Step 4: Link Symbols to Your Issue (KEY STEP)
-
-> [!TIP]  
-> **Symbol IDs are cross-platform.** Always use forward slashes (`/`) even on Windows. Symbol names must match the cache exactly. Use the format shown by `gr analysis star`.
-
-```bash
-# Link the symbol you're modifying (notice forward slash normalization)
-gr update gr-abc123 --add-symbol topology/analysis.rs::TopologicalAnalysis
-
-# The issue now stores the topological context (solid_volume)
-```
-
-#### Step 5: Retrieve Context Later
-
-When resuming work or handing off to another AI agent:
-
-```bash
-# Get stored topology for an issue
-gr analysis topology gr-abc123
-```
-
-**Output:**
-```json
-{"nodes":["src/payment.rs","src/validator.rs"], "edges":[...]}
-```
-
-This is the exact context needed to continue working on that issue.
-
-#### Step 6: Validate After Editing
-
-```bash
-# Check if your changes created cycles
-gr analysis validate-topology src/payment.rs
-
-# Compare against cached baseline
-gr analysis diff
-```
-
-**If cycles detected**: Refactor before committing.
-**If "no cycles"**: Safe to commit.
-
-#### Complete Example: Fix a Circular Dependency
-
-```bash
-# 1. Build cache for the problematic code
-gr analysis rebuild examples/rust/
-
-# 2. Analyze the cycle
-gr analysis scan examples/rust/ --format summary
-# Output: "1 circular dependencies detected"
-
-# 3. Create issue
-gr create "Fix circular dependency in rust module" --type bug
-
-# 4. Link the problematic symbols
-gr update gr-xxx --add-symbol lib.rs::validate_store
-gr update gr-xxx --add-symbol utils.rs::batch_process
-
-# 5. Get full context for editing
-gr analysis topology gr-xxx
-# Returns topology graph for those symbols
-
-# 6. After fixing, validate
-gr analysis validate-topology lib.rs
-# Should show: "0 cycles detected"
-
-# 7. Sync with topology check
+# Block synchronization if new circular dependencies are detected
 gr sync --validate-topology
 ```
 
-#### Why This Works
+---
 
-| Traditional RAG | Topological Retrieval |
-|-----------------|----------------------|
-| Loads files by text similarity | Loads files by actual dependencies |
-| May miss related code | Mathematically correct context |
-| Context drifts over time | Context tied to issue permanently |
+## 📂 Phase 5: Session Continuity & Handoff
+*Goal: Preserve context for the next session or agent.*
 
-The star neighborhood gives you *exactly* the code affected by changes.
-
-### 🧠 Session Memory Handoff
-
-**Problem:** Your memory resets every session. You lose context on what you were doing.
-
-**Solution:** Before ending any session, save your state to an issue. Next session, load it.
-
-#### Saving State (End of Session)
-
+### Bulk Operations
 ```bash
-# Create a "session handoff" issue capturing current state
-gr create "SESSION: [Date] Work Handoff" \
-  -d "## What I Was Working On
-[Current task ID and description]
-
-## Progress Made
-- [x] Completed item 1
-- [x] Completed item 2
-- [ ] In progress: item 3
-
-## Next Steps
-1. Finish item 3
-2. Then move to [next task]
-
-## Blockers/Notes
-- [Any blockers encountered]
-- [Important context the next session needs]" \
-  -t task -p 1
+# Triage multiple issues at once
+gr workflow triage gr-id1 gr-id2 --status in_progress --assignee "next_agent"
 ```
 
-#### Loading State (Start of Session)
-
+### The Mandatory Handoff
 ```bash
-# Find the most recent handoff
-gr analysis search "SESSION handoff"
+# 1. Export all changes to issues.jsonl and sync with Git
+gr sync
 
-# Read the handoff issue
-gr show <HANDOFF_ID>
-
-# Resume the task mentioned in the handoff
-gr update <ORIGINAL_TASK_ID> --status in_progress
-
-# Close the handoff issue once loaded
-gr close <HANDOFF_ID>
+# 2. Create a "Handoff Epic" if leaving a complex multi-step task
+gr create "CONTINUITY: [Task Name] Handoff" -d "State: Finished step 2. Next: Fix step 3." -t task
 ```
+
+---
+
+## 📺 VS Code Extension Integration
+
+The Grits CLI directly populates the VS Code Extension views. Understanding this bridge is key to "showing" your work.
+
+| Extension View | CLI Population Mechanism |
+| :--- | :--- |
+| **List View** | Standard `gr list` / `gr list --all` data. |
+| **Kanban View** | Grouped by standard `status` field. |
+| **Graph View** | Populated by **Issue Dependencies** (`--add-dependency`) and the **Symbol Graph** (`gr analysis scan`). Central nodes are determined by PageRank. |
+| **Focus View** | Populated by the **Solid Volume** of an issue. Use `gr update <ID> --add-symbol <SYM>` to add symbols to this view. |
+
+> [!TIP]
+> To "own" the UI for a human reviewer, ensure you've linked the 3-5 most relevant symbols to your active issue. This makes them appear instantly in the **Focus View**, proving you've identified the correct impact area.
+
+---
+
+## 🧮 Command Reference (AI Cheat Sheet)
+
+| Command | Arguments/Flags | Use Case |
+| :--- | :--- | :--- |
+| `gr create` | `<TITLE>` `-d` `-t` `-p` | POSITIONAL Title first. Non-interactive. |
+| `gr update` | `<ID>` `--status` `--add-symbol` `--add-dependency` | Link topology and manage blockers. |
+| `gr ready` | `--assignee` | Filter for actionable tasks you own. |
+| `gr advisory` | `next` `sprint` | Strategic guidance and summaries. |
+| `gr analysis` | `scan` `rebuild` `star` `volumes` `check-layers` | Deep topological and architectural analysis. |
+| `gr context` | `error` `diff` `todo` | Map code/runtime states back to issues. |
+| `gr workflow` | `triage` `stale` | Bulk updates and repository cleaning. |

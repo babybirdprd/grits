@@ -133,6 +133,12 @@ pub fn find_related_issues(
             relevance = Some("File explicitly mentioned in description");
         } else if issue.title.to_lowercase().contains(&file_path_lower) {
             relevance = Some("File explicitly mentioned in title");
+        } else if issue
+            .affected_symbols
+            .iter()
+            .any(|s| s.to_lowercase().contains(&file_path_lower))
+        {
+            relevance = Some("File linked to issue via symbols");
         }
 
         if let Some(reason) = relevance {

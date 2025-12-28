@@ -313,26 +313,33 @@ pub mod sqlite_impl {
         fn update_issue(&self, issue: &Issue) -> Result<()> {
             // Serialize nested fields
             let relates_to_json = serde_json::to_string(&issue.relates_to).unwrap_or_default();
-            let affected_symbols_json = serde_json::to_string(&issue.affected_symbols).unwrap_or_default();
+            let affected_symbols_json =
+                serde_json::to_string(&issue.affected_symbols).unwrap_or_default();
 
             // Update main issue record
             self.conn.execute(
                 "UPDATE issues SET
-                    title = ?2, description = ?3, status = ?4, priority = ?5, issue_type = ?6,
-                    created_at = ?7, updated_at = ?8, closed_at = ?9, external_ref = ?10,
-                    sender = ?11, ephemeral = ?12, replies_to = ?13, relates_to = ?14,
-                    duplicate_of = ?15, superseded_by = ?16,
-                    deleted_at = ?17, deleted_by = ?18, delete_reason = ?19, original_type = ?20,
-                    assignee = ?21, estimated_minutes = ?22,
-                    affected_symbols = ?23, solid_volume = ?24, topology_hash = ?25, is_solid = ?26
+                    content_hash = ?2, title = ?3, description = ?4, design = ?5, acceptance_criteria = ?6, notes = ?7,
+                    status = ?8, priority = ?9, issue_type = ?10, assignee = ?11, estimated_minutes = ?12,
+                    created_at = ?13, updated_at = ?14, closed_at = ?15, external_ref = ?16,
+                    sender = ?17, ephemeral = ?18, replies_to = ?19, relates_to = ?20,
+                    duplicate_of = ?21, superseded_by = ?22,
+                    deleted_at = ?23, deleted_by = ?24, delete_reason = ?25, original_type = ?26,
+                    affected_symbols = ?27, solid_volume = ?28, topology_hash = ?29, is_solid = ?30
                 WHERE id = ?1",
                 params![
                     &issue.id,
+                    &issue.content_hash,
                     &issue.title,
                     &issue.description,
+                    &issue.design,
+                    &issue.acceptance_criteria,
+                    &issue.notes,
                     &issue.status,
                     &issue.priority,
                     &issue.issue_type,
+                    &issue.assignee,
+                    &issue.estimated_minutes,
                     issue.created_at.to_rfc3339(),
                     issue.updated_at.to_rfc3339(),
                     issue.closed_at.map(|t| t.to_rfc3339()),
@@ -347,8 +354,6 @@ pub mod sqlite_impl {
                     &issue.deleted_by,
                     &issue.delete_reason,
                     &issue.original_type,
-                    &issue.assignee,
-                    &issue.estimated_minutes,
                     affected_symbols_json,
                     &issue.solid_volume,
                     &issue.topology_hash,
@@ -576,7 +581,7 @@ pub mod sqlite_impl {
                 args.push(Box::new(t.to_string()));
             }
 
-            let mut sql = "SELECT issues.id, issues.title, issues.description, issues.status, issues.priority, issues.issue_type, issues.created_at, issues.updated_at, issues.assignee FROM issues".to_string();
+            let mut sql = "SELECT issues.id, issues.title, issues.description, issues.status, issues.priority, issues.issue_type, issues.created_at, issues.updated_at, issues.assignee, issues.affected_symbols FROM issues".to_string();
 
             if let Some(l) = label {
                 sql.push_str(" INNER JOIN labels ON issues.id = labels.issue_id");
@@ -606,6 +611,13 @@ pub mod sqlite_impl {
 
                 let created_at = parse_timestamp(&created_at_s).unwrap_or_else(|| Utc::now());
                 let updated_at = parse_timestamp(&updated_at_s).unwrap_or_else(|| Utc::now());
+
+                let affected_symbols_s: String = row.get(9).unwrap_or_default();
+                let affected_symbols = if affected_symbols_s.is_empty() {
+                    Vec::new()
+                } else {
+                    serde_json::from_str(&affected_symbols_s).unwrap_or_default()
+                };
 
                 Ok(Issue {
                     id: row.get(0)?,
@@ -639,7 +651,7 @@ pub mod sqlite_impl {
                     labels: Vec::new(),
                     dependencies: Vec::new(),
                     comments: Vec::new(),
-                    affected_symbols: vec![],
+                    affected_symbols,
                     solid_volume: None,
                     topology_hash: String::new(),
                     is_solid: false,
@@ -670,30 +682,36 @@ pub mod sqlite_impl {
                 let issue: Issue = serde_json::from_str(&line)?;
 
                 let relates_to_json = serde_json::to_string(&issue.relates_to).unwrap_or_default();
-                let affected_symbols_json = serde_json::to_string(&issue.affected_symbols).unwrap_or_default();
+                let affected_symbols_json =
+                    serde_json::to_string(&issue.affected_symbols).unwrap_or_default();
 
                 tx.execute(
                     "INSERT OR REPLACE INTO issues (
-                        id, title, description, status, priority, issue_type,
+                        id, content_hash, title, description, design, acceptance_criteria, notes,
+                        status, priority, issue_type, assignee, estimated_minutes,
                         created_at, updated_at, closed_at, external_ref,
                         sender, ephemeral, replies_to, relates_to, duplicate_of, superseded_by,
                         deleted_at, deleted_by, delete_reason, original_type,
                         affected_symbols, solid_volume, topology_hash, is_solid
                     )
                     VALUES (
-                        ?1, ?2, ?3, ?4, ?5, ?6,
-                        ?7, ?8, ?9, ?10,
-                        ?11, ?12, ?13, ?14, ?15, ?16,
-                        ?17, ?18, ?19, ?20,
-                        ?21, ?22, ?23, ?24
+                        ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12,
+                        ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21, ?22,
+                        ?23, ?24, ?25, ?26, ?27, ?28, ?29, ?30
                     )",
                     params![
                         &issue.id,
+                        &issue.content_hash,
                         &issue.title,
                         &issue.description,
+                        &issue.design,
+                        &issue.acceptance_criteria,
+                        &issue.notes,
                         &issue.status,
                         &issue.priority,
                         &issue.issue_type,
+                        &issue.assignee,
+                        &issue.estimated_minutes,
                         issue.created_at.to_rfc3339(),
                         issue.updated_at.to_rfc3339(),
                         issue.closed_at.map(|t| t.to_rfc3339()),
@@ -797,30 +815,36 @@ pub mod sqlite_impl {
 
         fn create_issue(&self, issue: &Issue) -> Result<()> {
             let relates_to_json = serde_json::to_string(&issue.relates_to).unwrap_or_default();
-            let affected_symbols_json = serde_json::to_string(&issue.affected_symbols).unwrap_or_default();
+            let affected_symbols_json =
+                serde_json::to_string(&issue.affected_symbols).unwrap_or_default();
 
             self.conn.execute(
                 "INSERT INTO issues (
-                    id, title, description, status, priority, issue_type,
+                    id, content_hash, title, description, design, acceptance_criteria, notes,
+                    status, priority, issue_type, assignee, estimated_minutes,
                     created_at, updated_at, closed_at, external_ref,
                     sender, ephemeral, replies_to, relates_to, duplicate_of, superseded_by,
                     deleted_at, deleted_by, delete_reason, original_type,
                     affected_symbols, solid_volume, topology_hash, is_solid
                 )
                 VALUES (
-                    ?1, ?2, ?3, ?4, ?5, ?6,
-                    ?7, ?8, ?9, ?10,
-                    ?11, ?12, ?13, ?14, ?15, ?16,
-                    ?17, ?18, ?19, ?20,
-                    ?21, ?22, ?23, ?24
+                    ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12,
+                    ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21, ?22,
+                    ?23, ?24, ?25, ?26, ?27, ?28, ?29, ?30
                 )",
                 params![
                     &issue.id,
+                    &issue.content_hash,
                     &issue.title,
                     &issue.description,
+                    &issue.design,
+                    &issue.acceptance_criteria,
+                    &issue.notes,
                     &issue.status,
                     &issue.priority,
                     &issue.issue_type,
+                    &issue.assignee,
+                    &issue.estimated_minutes,
                     issue.created_at.to_rfc3339(),
                     issue.updated_at.to_rfc3339(),
                     issue.closed_at.map(|t| t.to_rfc3339()),
