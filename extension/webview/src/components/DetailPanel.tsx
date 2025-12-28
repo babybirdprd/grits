@@ -109,6 +109,24 @@ export const DetailPanel: React.FC<DetailPanelProps> = ({
                     />
                 </div>
 
+                {issue.affected_symbols && issue.affected_symbols.length > 0 && (
+                    <div className="detail-field full-width">
+                        <label>Affected Symbols</label>
+                        <ul className="affected-symbols-list">
+                            {issue.affected_symbols.map((symbol) => (
+                                <li key={symbol}>
+                                    <a href="#" onClick={(e) => {
+                                        e.preventDefault();
+                                        window.vscode.postMessage({ command: 'openFile', file: symbol.split('::')[0] });
+                                    }}>
+                                        {symbol}
+                                    </a>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                )}
+
                 <div className="detail-field full-width comments-section">
                     <h3>Comments</h3>
                     <div className="comments-list">

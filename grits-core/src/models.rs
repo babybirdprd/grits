@@ -104,4 +104,17 @@ pub struct Issue {
 
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub comments: Vec<Comment>,
+
+    // Topology fields
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub affected_symbols: Vec<String>,
+
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub solid_volume: Option<String>,
+
+    #[serde(default)]
+    pub topology_hash: String,
+
+    #[serde(default)]
+    pub is_solid: bool,
 }

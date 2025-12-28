@@ -200,6 +200,40 @@ enum AnalysisCommands {
         #[arg(long, default_value_t = 10)]
         limit: i32,
     },
+    /// Get code topology for an issue (symbols, dependencies)
+    Topology {
+        /// Issue ID to get topology for
+        issue_id: String,
+    },
+    /// Validate if a file change creates circular dependencies
+    ValidateTopology {
+        /// File path to validate
+        file: String,
+    },
+    /// Get star neighborhood for a symbol (all connected context)
+    Star {
+        /// File path to analyze
+        file: String,
+        /// Symbol name to get star for (optional, uses file if not specified)
+        #[arg(long)]
+        symbol: Option<String>,
+        /// Depth of neighborhood (default: 1)
+        #[arg(long, default_value_t = 1)]
+        depth: usize,
+    },
+    /// Find all feature volumes (tightly coupled code clusters)
+    Volumes {
+        /// File path to analyze
+        file: String,
+    },
+    /// Check layer architecture invariants
+    CheckLayers {
+        /// File path to analyze
+        file: String,
+        /// Layer config JSON (inline or path)
+        #[arg(long)]
+        config: Option<String>,
+    },
 }
 
 #[derive(Subcommand)]
@@ -1050,6 +1084,10 @@ fn main() -> anyhow::Result<()> {
                                         })
                                         .collect(),
                                     comments: Vec::new(),
+                                    affected_symbols: vec![],
+                                    solid_volume: None,
+                                    topology_hash: String::new(),
+                                    is_solid: false,
                                 };
                                 store
                                     .create_issue(&issue)
@@ -1113,6 +1151,10 @@ fn main() -> anyhow::Result<()> {
                 labels: Vec::new(),
                 dependencies: Vec::new(),
                 comments: Vec::new(),
+                affected_symbols: vec![],
+                solid_volume: None,
+                topology_hash: String::new(),
+                is_solid: false,
             };
 
             store
@@ -1190,6 +1232,320 @@ fn main() -> anyhow::Result<()> {
                             "{} ({}) [Score: {}] - {}",
                             r.title, r.id, r.relevance_score, r.snippet
                         );
+                    }
+                }
+            }
+            AnalysisCommands::Topology { issue_id } => {
+                if let Some(issue) = store.get_issue(&issue_id)? {
+                    if let Some(ref volume_json) = issue.solid_volume {
+                        println!("{}", volume_json);
+                    } else {
+                        println!("{{\"nodes\": {{}}, \"edges\": []}}");
+                    }
+                } else {
+                    eprintln!("Issue not found: {}", issue_id);
+                }
+            }
+            AnalysisCommands::ValidateTopology { file } => {
+                use grits_core::topology::{
+                    analysis::TopologicalAnalysis, parser::CodeParser, SymbolGraph,
+                };
+
+                let lang = if file.ends_with(".rs") {
+                    "rust"
+                } else if file.ends_with(".ts") {
+                    "typescript"
+                } else if file.ends_with(".js") {
+                    "javascript"
+                } else {
+                    println!("Skipped: Unsupported language (only .rs, .ts, .js supported)");
+                    return Ok(());
+                };
+
+                let content = std::fs::read_to_string(&file)
+                    .context(format!("Failed to read file: {}", file))?;
+
+                let mut graph = SymbolGraph::new();
+                let mut parser = CodeParser::new(lang).context("Failed to create parser")?;
+
+                parser
+                    .parse_file(&file, &content, &mut graph)
+                    .context("Failed to parse file")?;
+
+                // Find imports and try to load those files too
+                let imports: Vec<String> = graph
+                    .edges
+                    .iter()
+                    .filter(|(_, _, e)| e.relation == "imports")
+                    .map(|(_, to, _)| to.clone())
+                    .collect();
+
+                let file_dir = std::path::Path::new(&file).parent();
+
+                for import in imports {
+                    // Try to resolve relative imports
+                    let possible_paths = if let Some(dir) = file_dir {
+                        vec![
+                            dir.join(format!("{}.rs", import)),
+                            dir.join(format!("{}.ts", import)),
+                            dir.join(format!("{}.js", import)),
+                            dir.join(&import).with_extension("rs"),
+                            dir.join(&import).with_extension("ts"),
+                            dir.join(&import).with_extension("js"),
+                        ]
+                    } else {
+                        vec![]
+                    };
+
+                    for p in possible_paths {
+                        if p.exists() {
+                            if let Ok(import_content) = std::fs::read_to_string(&p) {
+                                let ext = p.extension().and_then(|s| s.to_str()).unwrap_or("");
+                                let import_lang = match ext {
+                                    "rs" => "rust",
+                                    "ts" => "typescript",
+                                    "js" => "javascript",
+                                    _ => continue,
+                                };
+                                if let Ok(mut sub_parser) = CodeParser::new(import_lang) {
+                                    let rel = p.to_string_lossy();
+                                    let _ =
+                                        sub_parser.parse_file(&rel, &import_content, &mut graph);
+                                }
+                            }
+                            break;
+                        }
+                    }
+                }
+
+                // Analyze topology
+                let analysis = TopologicalAnalysis::analyze(&graph);
+
+                println!("Topology Analysis for: {}", file);
+                println!("  Nodes: {}", analysis.node_count);
+                println!("  Edges: {}", analysis.edge_count);
+                println!("  Triangles (2-simplexes): {}", analysis.triangle_count);
+                println!("  Connected Components (Betti_0): {}", analysis.betti_0);
+                println!("  Cycles (Betti_1): {}", analysis.betti_1);
+                println!("  Feature Volumes: {}", analysis.feature_volumes.len());
+
+                if !analysis.triangles.is_empty() {
+                    println!("\n📐 Detected Triangles (tightly coupled clusters):");
+                    for (i, tri) in analysis.triangles.iter().take(5).enumerate() {
+                        println!(
+                            "  {}. {} ↔ {} ↔ {}",
+                            i + 1,
+                            tri.nodes[0],
+                            tri.nodes[1],
+                            tri.nodes[2]
+                        );
+                    }
+                    if analysis.triangles.len() > 5 {
+                        println!("  ... and {} more", analysis.triangles.len() - 5);
+                    }
+                }
+
+                if !analysis.feature_volumes.is_empty() {
+                    println!("\n📦 Feature Volumes:");
+                    for vol in &analysis.feature_volumes {
+                        println!(
+                            "  {} ({} nodes, cohesion: {:.2})",
+                            vol.id,
+                            vol.nodes.len(),
+                            vol.cohesion_score
+                        );
+                    }
+                }
+
+                if analysis.betti_1 > 0 {
+                    println!(
+                        "\n⚠️  WARNING: {} circular dependencies detected!",
+                        analysis.betti_1
+                    );
+                } else {
+                    println!("\n✅ No circular dependencies found.");
+                }
+            }
+            AnalysisCommands::Star {
+                file,
+                symbol,
+                depth,
+            } => {
+                use grits_core::topology::{
+                    analysis::TopologicalAnalysis, parser::CodeParser, SymbolGraph,
+                };
+
+                let lang = if file.ends_with(".rs") {
+                    "rust"
+                } else if file.ends_with(".ts") {
+                    "typescript"
+                } else if file.ends_with(".js") {
+                    "javascript"
+                } else {
+                    println!("Skipped: Unsupported language");
+                    return Ok(());
+                };
+
+                let content = std::fs::read_to_string(&file)
+                    .context(format!("Failed to read file: {}", file))?;
+
+                let mut graph = SymbolGraph::new();
+                let mut parser = CodeParser::new(lang).context("Failed to create parser")?;
+                parser
+                    .parse_file(&file, &content, &mut graph)
+                    .context("Failed to parse")?;
+
+                let center = symbol.unwrap_or_else(|| file.clone());
+                let star = TopologicalAnalysis::get_star(&graph, &center, depth);
+
+                println!("Star Neighborhood for: {}", star.center);
+                println!("  Depth: {}", star.depth);
+                println!("  Neighbors: {}", star.neighbors.len());
+
+                if !star.neighbors.is_empty() {
+                    println!("\n🌟 Connected Nodes:");
+                    for neighbor in &star.neighbors {
+                        println!("  - {}", neighbor);
+                    }
+                }
+
+                if !star.edges.is_empty() {
+                    println!("\n🔗 Edges:");
+                    for (from, to, rel) in &star.edges {
+                        println!("  {} --[{}]--> {}", from, rel, to);
+                    }
+                }
+            }
+            AnalysisCommands::Volumes { file } => {
+                use grits_core::topology::{
+                    analysis::TopologicalAnalysis, parser::CodeParser, SymbolGraph,
+                };
+
+                let lang = if file.ends_with(".rs") {
+                    "rust"
+                } else if file.ends_with(".ts") {
+                    "typescript"
+                } else if file.ends_with(".js") {
+                    "javascript"
+                } else {
+                    println!("Skipped: Unsupported language");
+                    return Ok(());
+                };
+
+                let content = std::fs::read_to_string(&file)
+                    .context(format!("Failed to read file: {}", file))?;
+
+                let mut graph = SymbolGraph::new();
+                let mut parser = CodeParser::new(lang).context("Failed to create parser")?;
+                parser
+                    .parse_file(&file, &content, &mut graph)
+                    .context("Failed to parse")?;
+
+                let analysis = TopologicalAnalysis::analyze(&graph);
+
+                println!("Feature Volumes in: {}", file);
+                println!("  Total Triangles: {}", analysis.triangle_count);
+                println!("  Total Volumes: {}", analysis.feature_volumes.len());
+
+                for vol in &analysis.feature_volumes {
+                    println!("\n📦 {}", vol.id);
+                    println!("   Cohesion: {:.2}", vol.cohesion_score);
+                    println!("   Nodes ({}):", vol.nodes.len());
+                    for node in &vol.nodes {
+                        println!("     - {}", node);
+                    }
+                }
+
+                if analysis.feature_volumes.is_empty() {
+                    println!("\nNo feature volumes found (no triangular dependencies).");
+                }
+            }
+            AnalysisCommands::CheckLayers { file, config } => {
+                use grits_core::topology::{
+                    analysis::{InvariantResult, Layer, LayerConfig},
+                    parser::CodeParser,
+                    SymbolGraph,
+                };
+
+                let lang = if file.ends_with(".rs") {
+                    "rust"
+                } else if file.ends_with(".ts") {
+                    "typescript"
+                } else if file.ends_with(".js") {
+                    "javascript"
+                } else {
+                    println!("Skipped: Unsupported language");
+                    return Ok(());
+                };
+
+                let content = std::fs::read_to_string(&file)
+                    .context(format!("Failed to read file: {}", file))?;
+
+                let mut graph = SymbolGraph::new();
+                let mut parser = CodeParser::new(lang).context("Failed to create parser")?;
+                parser
+                    .parse_file(&file, &content, &mut graph)
+                    .context("Failed to parse")?;
+
+                // Parse layer config or use default
+                let layer_config = if let Some(cfg) = config {
+                    if std::path::Path::new(&cfg).exists() {
+                        let cfg_content = std::fs::read_to_string(&cfg)?;
+                        serde_json::from_str(&cfg_content)?
+                    } else {
+                        serde_json::from_str(&cfg)?
+                    }
+                } else {
+                    // Default layer config
+                    LayerConfig {
+                        layers: vec![
+                            Layer {
+                                name: "domain".to_string(),
+                                patterns: vec!["domain".to_string(), "model".to_string()],
+                                allowed_deps: vec![],
+                            },
+                            Layer {
+                                name: "application".to_string(),
+                                patterns: vec!["service".to_string(), "handler".to_string()],
+                                allowed_deps: vec!["domain".to_string()],
+                            },
+                            Layer {
+                                name: "infrastructure".to_string(),
+                                patterns: vec![
+                                    "db".to_string(),
+                                    "api".to_string(),
+                                    "store".to_string(),
+                                ],
+                                allowed_deps: vec!["domain".to_string(), "application".to_string()],
+                            },
+                        ],
+                    }
+                };
+
+                let result = InvariantResult::check(&graph, &layer_config);
+
+                println!("Layer Invariant Check for: {}", file);
+                println!(
+                    "  Valid: {}",
+                    if result.is_valid { "✅ Yes" } else { "❌ No" }
+                );
+                println!("  Violations: {}", result.layer_violations.len());
+                println!("  Orphaned Nodes: {}", result.orphaned_nodes.len());
+
+                if !result.layer_violations.is_empty() {
+                    println!("\n⚠️  Layer Violations:");
+                    for v in &result.layer_violations {
+                        println!(
+                            "  {} ({}) --> {} ({}): {}",
+                            v.from_node, v.from_layer, v.to_node, v.to_layer, v.violation_type
+                        );
+                    }
+                }
+
+                if !result.orphaned_nodes.is_empty() {
+                    println!("\n🔌 Orphaned Nodes:");
+                    for node in &result.orphaned_nodes {
+                        println!("  - {}", node);
                     }
                 }
             }

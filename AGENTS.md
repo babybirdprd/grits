@@ -66,7 +66,7 @@ High-level guidance on what to do next.
 
 ### 2. Analysis (`gr analysis`)
 
-Deep insights into the issue graph and repository.
+Deep insights into the issue graph, repository, and **code topology**.
 
 | Command | Description |
 |---------|-------------|
@@ -75,6 +75,15 @@ Deep insights into the issue graph and repository.
 | `gr analysis related <FILE>` | Find issues mentioning a specific file |
 | `gr analysis search "<QUERY>"` | BM25-ranked natural language search |
 | `gr analysis search "<QUERY>" --limit <N>` | Limit search results |
+| `gr analysis validate-topology <FILE>` | Analyze code for circular dependencies (Betti numbers) |
+| `gr analysis star <FILE>` | Get "star neighborhood" - all connected symbols for LLM context |
+| `gr analysis star <FILE> --depth <N>` | Control neighborhood depth (default: 1) |
+| `gr analysis volumes <FILE>` | Find "feature volumes" - tightly coupled code clusters |
+| `gr analysis check-layers <FILE>` | Check layer architecture invariants |
+| `gr analysis check-layers <FILE> --config <JSON>` | With custom layer config |
+
+> [!TIP]
+> **Solid Graph Topology**: The `validate-topology`, `star`, `volumes`, and `check-layers` commands implement simplicial complex analysis from algebraic topology. Use `validate-topology` to detect circular dependencies, `star` to load relevant context before AI edits, and `check-layers` to enforce architectural rules.
 
 ### 3. Workflow (`gr workflow`)
 
@@ -207,6 +216,67 @@ gr analysis graph
 ---
 
 ## Advanced: Experimental Workflows
+
+### 🔬 Code Topology Analysis (Solid Graph)
+
+Before making architectural changes, analyze code structure:
+
+```bash
+# 1. Check for circular dependencies in a file
+gr analysis validate-topology src/module.rs
+
+# 2. Load context for AI edits (star neighborhood)
+gr analysis star src/module.rs --depth 2
+
+# 3. Find tightly coupled clusters (feature volumes)
+gr analysis volumes src/module.rs
+
+# 4. Verify architectural layers
+gr analysis check-layers src/module.rs
+```
+
+### 🎯 Topological Edit Workflow (Experimental)
+
+> **Source**: [Solid Graph Philosophy](https://arxiv.org/html/2512.19736v1)
+
+When editing code, use topology to load precise context and validate changes:
+
+#### Step 1: Load Star Neighborhood (Before Editing)
+
+```bash
+# Get all code connected to the file you're editing
+gr analysis star src/payment.rs --depth 2
+```
+
+This returns the **Feature Volume** - all symbols connected to your target. Use this output as context for your edit, not just the single file.
+
+#### Step 2: Propose Changes
+
+Make your edits with the full topological context in mind.
+
+#### Step 3: Validate Topology (After Editing)
+
+```bash
+# Check if your changes created cycles or broke architecture
+gr analysis validate-topology src/payment.rs
+```
+
+**If cycles detected**: Refactor to eliminate circular dependency before committing.  
+**If solid**: Safe to commit.
+
+#### Step 4: Check Layer Invariants (Optional)
+
+```bash
+# Ensure Domain doesn't depend on Infrastructure, etc.
+gr analysis check-layers src/payment.rs
+```
+
+#### Why This Works
+
+- **Traditional RAG**: Loads context based on text similarity (often wrong files)
+- **Topological Retrieval**: Loads context based on actual code dependencies (mathematically correct)
+
+The star neighborhood gives you exactly the code that will be affected by your changes.
 
 ### 🧠 Session Memory Handoff
 

@@ -137,6 +137,35 @@ pnpm run build
 # Then press F5 in VS Code in this workspace
 ```
 
+## 🔬 Solid Graph Topology
+
+Grits includes **simplicial complex analysis** for code architecture:
+
+```bash
+# Detect circular dependencies using Betti numbers
+gr analysis validate-topology src/lib.rs
+
+# Load "star neighborhood" context for AI edits
+gr analysis star src/lib.rs --depth 2
+
+# Find tightly coupled code clusters (feature volumes)
+gr analysis volumes src/lib.rs
+
+# Check layer architecture rules
+gr analysis check-layers src/lib.rs
+```
+
+| Feature | Description |
+|---------|-------------|
+| **Betti_0** | Connected components (isolated clusters) |
+| **Betti_1** | 1-cycles (circular dependencies / holes) |
+| **Triangles** | 2-simplexes (tightly coupled triplets) |
+| **Feature Volumes** | Grouped cliques with cohesion scores |
+| **Star Neighborhoods** | Context loading for LLM edits |
+| **Layer Invariants** | Architecture rule enforcement |
+
+> Based on the ["Solid Graph" philosophy](https://arxiv.org/html/2512.19736v1) from algebraic topology.
+
 ## Project Structure
 
 ```

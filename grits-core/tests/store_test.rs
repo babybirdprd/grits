@@ -60,6 +60,10 @@ fn test_export_to_jsonl() -> anyhow::Result<()> {
             text: "Fix this!".to_string(),
             created_at: now,
         }],
+        affected_symbols: vec![],
+        solid_volume: None,
+        topology_hash: String::new(),
+        is_solid: false,
     };
 
     // Create issue (should insert all fields including nested tables)

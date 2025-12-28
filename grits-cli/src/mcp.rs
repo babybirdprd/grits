@@ -201,6 +201,17 @@ pub struct GenerateIssueFromTodoParams {
     pub line_number: Option<i32>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+pub struct GetIssueTopologyParams {
+    pub issue_id: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+pub struct ValidateArchitecturalChangeParams {
+    pub file_path: String,
+    pub content: String,
+}
+
 // Results types for strategic tools are now imported from grits_core::strategic
 
 /// MCP Server for Grits issue tracking
@@ -715,6 +726,73 @@ impl GritsServer {
             .map_err(|e| McpError::internal_error(e.to_string(), None))?;
 
         Ok(CallToolResult::success(vec![Content::text(json)]))
+    }
+
+    // ============================================================
+    // ARCHITECTURAL TOOLS - Solid Graph
+    // ============================================================
+
+    #[tool(description = "Get the topological skeleton of code affected by an issue.")]
+    async fn get_issue_topology(
+        &self,
+        params: rmcp::handler::server::wrapper::Parameters<GetIssueTopologyParams>,
+    ) -> Result<CallToolResult, McpError> {
+        let store = self.get_store()?;
+        let issue = store
+            .get_issue(&params.0.issue_id)
+            .map_err(|e| McpError::internal_error(e.to_string(), None))?
+            .ok_or_else(|| McpError::invalid_params("Issue not found".to_string(), None))?;
+
+        if let Some(volume_json) = issue.solid_volume {
+            Ok(CallToolResult::success(vec![Content::text(volume_json)]))
+        } else {
+            // If no volume yet, maybe return empty graph or try to calculate one?
+            // For now, return empty graph structure
+            Ok(CallToolResult::success(vec![Content::text(
+                "{\"nodes\": {}, \"edges\": []}",
+            )]))
+        }
+    }
+
+    #[tool(
+        description = "Validate if a code change violates architectural topology (creates cycles or voids)."
+    )]
+    async fn validate_architectural_change(
+        &self,
+        params: rmcp::handler::server::wrapper::Parameters<ValidateArchitecturalChangeParams>,
+    ) -> Result<CallToolResult, McpError> {
+        // Write content to a temp file if provided, otherwise use file directly
+        let file_path = if !params.0.content.is_empty() {
+            let temp_dir = std::env::temp_dir();
+            let temp_file = temp_dir.join(format!(
+                "grits_validate_{}",
+                std::path::Path::new(&params.0.file_path)
+                    .file_name()
+                    .map(|n| n.to_string_lossy().to_string())
+                    .unwrap_or_else(|| "temp.rs".to_string())
+            ));
+            std::fs::write(&temp_file, &params.0.content).map_err(|e| {
+                McpError::internal_error(format!("Failed to write temp file: {}", e), None)
+            })?;
+            temp_file.to_string_lossy().to_string()
+        } else {
+            params.0.file_path.clone()
+        };
+
+        // Call CLI command
+        let output = std::process::Command::new("gr")
+            .args(["analysis", "validate-topology", &file_path])
+            .output()
+            .map_err(|e| McpError::internal_error(format!("Failed to run CLI: {}", e), None))?;
+
+        let result = String::from_utf8_lossy(&output.stdout).to_string();
+        let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+
+        if !stderr.is_empty() && result.is_empty() {
+            Ok(CallToolResult::success(vec![Content::text(stderr)]))
+        } else {
+            Ok(CallToolResult::success(vec![Content::text(result)]))
+        }
     }
 }
 
