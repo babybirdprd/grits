@@ -233,64 +233,142 @@ gr analysis volumes src/module.rs
 gr analysis check-layers src/module.rs
 ```
 
-### 🎯 Topological Edit Workflow (Experimental)
+### 🎯 Topological Edit Workflow
 
 > **Source**: [Solid Graph Philosophy](https://arxiv.org/html/2512.19736v1)
 
-When editing code, use topology to load precise context and validate changes:
+This workflow ties your code topology to Grits issues, giving AI agents (and you) precise context for edits.
 
-#### Step 1: Initialize Project Topology
-Before starting a session, ensure your topology cache is up-to-date:
+#### Step 1: Build Topology Cache for Your Working Directory
+
+> [!IMPORTANT]  
+> The cache scope matters. Only symbols in the cached directory can be linked to issues.
 
 ```bash
-gr analysis rebuild
+# Build cache for the directory you're working in
+gr analysis rebuild src/
+
+# Check what was cached
+gr analysis scan src/ --format summary
 ```
 
-#### Step 2: Load Star Neighborhood (Before Editing)
+**Output example:**
+```
+Scanning [21/21] wasm.rs
+✅ Cache saved to ".grits/topology.json"
+   564 nodes, 674 edges, 111 cycles detected
+```
+
+#### Step 2: Pick Up or Create an Issue
 
 ```bash
-# Get all code connected to the file you're editing
+# Start working on an issue
+gr advisory next
+
+# Or create one for new work
+gr create "Refactor payment module" --type task
+```
+
+#### Step 3: Understand the Code Structure
+
+Before editing, get the star neighborhood (all connected context):
+
+```bash
 gr analysis star src/payment.rs --depth 2
 ```
 
-#### Step 3: Link Work to Symbols
-Tie your current task to specific symbols to capture their topological context:
+**Output shows exactly what code will be affected:**
+```
+Star Neighborhood for: src/payment.rs
+  Neighbors: 12
+  Edges: 15
 
-```bash
-gr update <ID> --add-symbol src/payment.rs::ProcessPayment
+🌟 Connected Nodes:
+  - src/payment.rs::ProcessPayment
+  - src/payment.rs::Validator
+  - src/utils.rs
+  ...
 ```
 
-#### Step 4: Validate and Diff (After Editing)
-Check for architectural drift or new circular dependencies:
+#### Step 4: Link Symbols to Your Issue (KEY STEP)
+
+> [!TIP]  
+> Symbol names must match the cache. Use the format shown by `gr analysis star`.
 
 ```bash
-# General diff against cache
-gr analysis diff
+# Link the symbol you're modifying
+gr update gr-abc123 --add-symbol src/payment.rs::ProcessPayment
 
-# Context-aware diff with inferred issue details and topology warnings
-gr context diff
+# The issue now stores the topological context (solid_volume)
 ```
+
+#### Step 5: Retrieve Context Later
+
+When resuming work or handing off to another AI agent:
+
 ```bash
-# Check if your changes created cycles or broke architecture
+# Get stored topology for an issue
+gr analysis topology gr-abc123
+```
+
+**Output:**
+```json
+{"nodes":["src/payment.rs","src/validator.rs"], "edges":[...]}
+```
+
+This is the exact context needed to continue working on that issue.
+
+#### Step 6: Validate After Editing
+
+```bash
+# Check if your changes created cycles
 gr analysis validate-topology src/payment.rs
+
+# Compare against cached baseline
+gr analysis diff
 ```
 
-**If cycles detected**: Refactor to eliminate circular dependency before committing.  
-**If solid**: Safe to commit.
+**If cycles detected**: Refactor before committing.
+**If "no cycles"**: Safe to commit.
 
-#### Step 4: Check Layer Invariants (Optional)
+#### Complete Example: Fix a Circular Dependency
 
 ```bash
-# Ensure Domain doesn't depend on Infrastructure, etc.
-gr analysis check-layers src/payment.rs
+# 1. Build cache for the problematic code
+gr analysis rebuild examples/rust/
+
+# 2. Analyze the cycle
+gr analysis scan examples/rust/ --format summary
+# Output: "1 circular dependencies detected"
+
+# 3. Create issue
+gr create "Fix circular dependency in rust module" --type bug
+
+# 4. Link the problematic symbols
+gr update gr-xxx --add-symbol lib.rs::validate_store
+gr update gr-xxx --add-symbol utils.rs::batch_process
+
+# 5. Get full context for editing
+gr analysis topology gr-xxx
+# Returns topology graph for those symbols
+
+# 6. After fixing, validate
+gr analysis validate-topology examples/rust/lib.rs
+# Should show: "0 cycles detected"
+
+# 7. Sync with topology check
+gr sync --validate-topology
 ```
 
 #### Why This Works
 
-- **Traditional RAG**: Loads context based on text similarity (often wrong files)
-- **Topological Retrieval**: Loads context based on actual code dependencies (mathematically correct)
+| Traditional RAG | Topological Retrieval |
+|-----------------|----------------------|
+| Loads files by text similarity | Loads files by actual dependencies |
+| May miss related code | Mathematically correct context |
+| Context drifts over time | Context tied to issue permanently |
 
-The star neighborhood gives you exactly the code that will be affected by your changes.
+The star neighborhood gives you *exactly* the code affected by changes.
 
 ### 🧠 Session Memory Handoff
 
