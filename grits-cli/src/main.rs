@@ -200,6 +200,16 @@ enum AnalysisCommands {
         #[arg(long, default_value_t = 10)]
         limit: i32,
     },
+    /// Get code topology for an issue (symbols, dependencies)
+    Topology {
+        /// Issue ID to get topology for
+        issue_id: String,
+    },
+    /// Validate if a file change creates circular dependencies
+    ValidateTopology {
+        /// File path to validate
+        file: String,
+    },
 }
 
 #[derive(Subcommand)]
@@ -1199,6 +1209,107 @@ fn main() -> anyhow::Result<()> {
                             r.title, r.id, r.relevance_score, r.snippet
                         );
                     }
+                }
+            }
+            AnalysisCommands::Topology { issue_id } => {
+                if let Some(issue) = store.get_issue(&issue_id)? {
+                    if let Some(ref volume_json) = issue.solid_volume {
+                        println!("{}", volume_json);
+                    } else {
+                        println!("{{\"nodes\": {{}}, \"edges\": []}}");
+                    }
+                } else {
+                    eprintln!("Issue not found: {}", issue_id);
+                }
+            }
+            AnalysisCommands::ValidateTopology { file } => {
+                use grits_core::topology::{
+                    analysis::TopologicalAnalysis, parser::CodeParser, SymbolGraph,
+                };
+
+                let lang = if file.ends_with(".rs") {
+                    "rust"
+                } else if file.ends_with(".ts") {
+                    "typescript"
+                } else if file.ends_with(".js") {
+                    "javascript"
+                } else {
+                    println!("Skipped: Unsupported language (only .rs, .ts, .js supported)");
+                    return Ok(());
+                };
+
+                let content = std::fs::read_to_string(&file)
+                    .context(format!("Failed to read file: {}", file))?;
+
+                let mut graph = SymbolGraph::new();
+                let mut parser = CodeParser::new(lang).context("Failed to create parser")?;
+
+                parser
+                    .parse_file(&file, &content, &mut graph)
+                    .context("Failed to parse file")?;
+
+                // Find imports and try to load those files too
+                let imports: Vec<String> = graph
+                    .edges
+                    .iter()
+                    .filter(|(_, _, e)| e.relation == "imports")
+                    .map(|(_, to, _)| to.clone())
+                    .collect();
+
+                let file_dir = std::path::Path::new(&file).parent();
+
+                for import in imports {
+                    // Try to resolve relative imports
+                    let possible_paths = if let Some(dir) = file_dir {
+                        vec![
+                            dir.join(format!("{}.rs", import)),
+                            dir.join(format!("{}.ts", import)),
+                            dir.join(format!("{}.js", import)),
+                            dir.join(&import).with_extension("rs"),
+                            dir.join(&import).with_extension("ts"),
+                            dir.join(&import).with_extension("js"),
+                        ]
+                    } else {
+                        vec![]
+                    };
+
+                    for p in possible_paths {
+                        if p.exists() {
+                            if let Ok(import_content) = std::fs::read_to_string(&p) {
+                                let ext = p.extension().and_then(|s| s.to_str()).unwrap_or("");
+                                let import_lang = match ext {
+                                    "rs" => "rust",
+                                    "ts" => "typescript",
+                                    "js" => "javascript",
+                                    _ => continue,
+                                };
+                                if let Ok(mut sub_parser) = CodeParser::new(import_lang) {
+                                    let rel = p.to_string_lossy();
+                                    let _ =
+                                        sub_parser.parse_file(&rel, &import_content, &mut graph);
+                                }
+                            }
+                            break;
+                        }
+                    }
+                }
+
+                // Analyze topology
+                let analysis = TopologicalAnalysis::analyze(&graph);
+
+                println!("Topology Analysis for: {}", file);
+                println!("  Nodes: {}", graph.nodes.len());
+                println!("  Edges: {}", graph.edges.len());
+                println!("  Connected Components (Betti_0): {}", analysis.betti_0);
+                println!("  Cycles (Betti_1): {}", analysis.betti_1);
+
+                if analysis.betti_1 > 0 {
+                    println!(
+                        "\n⚠️  WARNING: {} circular dependencies detected!",
+                        analysis.betti_1
+                    );
+                } else {
+                    println!("\n✅ No circular dependencies found.");
                 }
             }
         },

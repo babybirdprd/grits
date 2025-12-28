@@ -1,5 +1,4 @@
 use serde::{Deserialize, Serialize};
-use petgraph::graph::{DiGraph, NodeIndex};
 use std::collections::HashMap;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -5,8 +5,6 @@
 use chrono::Utc;
 use git2::Repository;
 use grits_core::{Issue, SqliteStore, StdFileSystem, Store};
-#[cfg(not(target_arch = "wasm32"))]
-use grits_core::topology::{SymbolGraph, analysis::TopologicalAnalysis, parser::CodeParser};
 use rmcp::{
     handler::server::tool::ToolRouter,
     model::{CallToolResult, Content},
@@ -740,104 +738,60 @@ impl GritsServer {
         params: rmcp::handler::server::wrapper::Parameters<GetIssueTopologyParams>,
     ) -> Result<CallToolResult, McpError> {
         let store = self.get_store()?;
-        let issue = store.get_issue(&params.0.issue_id)
+        let issue = store
+            .get_issue(&params.0.issue_id)
             .map_err(|e| McpError::internal_error(e.to_string(), None))?
             .ok_or_else(|| McpError::invalid_params("Issue not found".to_string(), None))?;
 
         if let Some(volume_json) = issue.solid_volume {
-             Ok(CallToolResult::success(vec![Content::text(volume_json)]))
+            Ok(CallToolResult::success(vec![Content::text(volume_json)]))
         } else {
-             // If no volume yet, maybe return empty graph or try to calculate one?
-             // For now, return empty graph structure
-             Ok(CallToolResult::success(vec![Content::text("{\"nodes\": {}, \"edges\": []}")]))
+            // If no volume yet, maybe return empty graph or try to calculate one?
+            // For now, return empty graph structure
+            Ok(CallToolResult::success(vec![Content::text(
+                "{\"nodes\": {}, \"edges\": []}",
+            )]))
         }
     }
 
-    #[tool(description = "Validate if a code change violates architectural topology (creates cycles or voids).")]
+    #[tool(
+        description = "Validate if a code change violates architectural topology (creates cycles or voids)."
+    )]
     async fn validate_architectural_change(
         &self,
         params: rmcp::handler::server::wrapper::Parameters<ValidateArchitecturalChangeParams>,
     ) -> Result<CallToolResult, McpError> {
-        // 1. Parse the new content
-        let mut graph = SymbolGraph::new();
-        let lang = if params.0.file_path.ends_with(".rs") { "rust" }
-                   else if params.0.file_path.ends_with(".ts") { "typescript" }
-                   else { return Ok(CallToolResult::success(vec![Content::text("Skipped: Unsupported language")])); };
+        // Write content to a temp file if provided, otherwise use file directly
+        let file_path = if !params.0.content.is_empty() {
+            let temp_dir = std::env::temp_dir();
+            let temp_file = temp_dir.join(format!(
+                "grits_validate_{}",
+                std::path::Path::new(&params.0.file_path)
+                    .file_name()
+                    .map(|n| n.to_string_lossy().to_string())
+                    .unwrap_or_else(|| "temp.rs".to_string())
+            ));
+            std::fs::write(&temp_file, &params.0.content).map_err(|e| {
+                McpError::internal_error(format!("Failed to write temp file: {}", e), None)
+            })?;
+            temp_file.to_string_lossy().to_string()
+        } else {
+            params.0.file_path.clone()
+        };
 
-        #[cfg(not(target_arch = "wasm32"))]
-        {
-            // Build Context:
-            // We need to know what this file imports and who imports it to detect cycles.
-            // Loading the whole project graph is ideal but slow.
-            // For now, let's load the *existing* graph if we could (we don't persist it globally yet, only per issue).
-            // So we must re-scan at least the files this file imports.
-            // This is a "Solid Graph" MVP, so we will do a shallow check:
-            // Parse the new content to find imports.
-            // If it imports X, we check if X imports this file (A -> X -> A).
-            // We won't check deep chains (A->B->C->A) without a full graph.
+        // Call CLI command
+        let output = std::process::Command::new("gr")
+            .args(["analysis", "validate-topology", &file_path])
+            .output()
+            .map_err(|e| McpError::internal_error(format!("Failed to run CLI: {}", e), None))?;
 
-            let mut parser = CodeParser::new(lang)
-                 .map_err(|e| McpError::internal_error(e.to_string(), None))?;
+        let result = String::from_utf8_lossy(&output.stdout).to_string();
+        let stderr = String::from_utf8_lossy(&output.stderr).to_string();
 
-            // Parse the *candidate* file content
-            parser.parse_file(&params.0.file_path, &params.0.content, &mut graph)
-                 .map_err(|e| McpError::internal_error(e.to_string(), None))?;
-
-            // Find imports in the new content
-            let imports: Vec<String> = graph.edges.iter()
-                .filter(|(_, _, e)| e.relation == "imports")
-                .map(|(_, to, _)| to.clone())
-                .collect();
-
-            // For each import, try to find the file and parse it to see if it calls back
-            // Warning: `to` is just the import string (e.g. "std::io" or "./utils").
-            // Resolution is hard. We assume simplistic file resolution for "./" or same dir.
-            let db_path = &self.db_path;
-            let root = db_path.parent().unwrap().parent().unwrap_or(db_path.parent().unwrap()); // .grits/.. -> root
-
-            for import in imports {
-                // Try to resolve file
-                // Very naive resolution for MVP
-                let possible_paths = vec![
-                    root.join(format!("{}.rs", import)),
-                    root.join(format!("{}.ts", import)),
-                    root.join(&params.0.file_path).parent().unwrap().join(format!("{}.rs", import)),
-                    root.join(&params.0.file_path).parent().unwrap().join(format!("{}.ts", import)),
-                ];
-
-                for p in possible_paths {
-                    if p.exists() {
-                         if let Ok(content) = std::fs::read_to_string(&p) {
-                             let ext = p.extension().and_then(|s| s.to_str()).unwrap_or("");
-                             let lang_dep = match ext {
-                                "rs" => "rust",
-                                "ts" => "typescript",
-                                _ => continue,
-                             };
-                             if let Ok(mut sub_parser) = CodeParser::new(lang_dep) {
-                                 let rel = p.strip_prefix(root).unwrap_or(&p).to_string_lossy();
-                                 let _ = sub_parser.parse_file(&rel, &content, &mut graph);
-                             }
-                         }
-                    }
-                }
-            }
-
-            // 2. Analyze topology
-            let analysis = TopologicalAnalysis::analyze(&graph);
-
-            // 3. Check for violations (simplified: if cycles > 0, reject)
-            if analysis.betti_1 > 0 {
-                return Ok(CallToolResult::success(vec![Content::text(format!(
-                    "Rejected: Change creates {} circular dependencies (1-cycles).", analysis.betti_1
-                ))]));
-            }
-
-            Ok(CallToolResult::success(vec![Content::text("Approved: Topology is solid.")]))
-        }
-        #[cfg(target_arch = "wasm32")]
-        {
-             Ok(CallToolResult::success(vec![Content::text("Skipped: Not available in WASM")]))
+        if !stderr.is_empty() && result.is_empty() {
+            Ok(CallToolResult::success(vec![Content::text(stderr)]))
+        } else {
+            Ok(CallToolResult::success(vec![Content::text(result)]))
         }
     }
 }
