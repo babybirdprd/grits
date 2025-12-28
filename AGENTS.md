@@ -35,6 +35,7 @@ Essential commands for everyday issue management:
 | `gr close <ID>` | Close an issue |
 | `gr edit <ID>` | Edit issue in your $EDITOR |
 | `gr sync` | Sync changes with Git |
+| `gr sync --validate-topology` | Sync with topology validation (blocks on cycles) |
 | `gr ready` | Show issues with no blockers |
 | `gr stats` | Show issue statistics |
 

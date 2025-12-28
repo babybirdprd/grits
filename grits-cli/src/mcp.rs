@@ -755,44 +755,84 @@ impl GritsServer {
     }
 
     #[tool(
-        description = "Validate if a code change violates architectural topology (creates cycles or voids)."
+        description = "Validate if a code change violates architectural topology (creates cycles or voids). Returns both validation result AND star neighborhood context for AI editing."
     )]
     async fn validate_architectural_change(
         &self,
         params: rmcp::handler::server::wrapper::Parameters<ValidateArchitecturalChangeParams>,
     ) -> Result<CallToolResult, McpError> {
-        // Write content to a temp file if provided, otherwise use file directly
-        let file_path = if !params.0.content.is_empty() {
-            let temp_dir = std::env::temp_dir();
-            let temp_file = temp_dir.join(format!(
-                "grits_validate_{}",
-                std::path::Path::new(&params.0.file_path)
-                    .file_name()
-                    .map(|n| n.to_string_lossy().to_string())
-                    .unwrap_or_else(|| "temp.rs".to_string())
-            ));
-            std::fs::write(&temp_file, &params.0.content).map_err(|e| {
-                McpError::internal_error(format!("Failed to write temp file: {}", e), None)
-            })?;
-            temp_file.to_string_lossy().to_string()
-        } else {
-            params.0.file_path.clone()
+        use grits_core::topology::{
+            analysis::TopologicalAnalysis, parser::CodeParser, SymbolGraph,
         };
 
-        // Call CLI command
-        let output = std::process::Command::new("gr")
-            .args(["analysis", "validate-topology", &file_path])
-            .output()
-            .map_err(|e| McpError::internal_error(format!("Failed to run CLI: {}", e), None))?;
-
-        let result = String::from_utf8_lossy(&output.stdout).to_string();
-        let stderr = String::from_utf8_lossy(&output.stderr).to_string();
-
-        if !stderr.is_empty() && result.is_empty() {
-            Ok(CallToolResult::success(vec![Content::text(stderr)]))
+        // Determine language from file extension
+        let lang = if params.0.file_path.ends_with(".rs") {
+            "rust"
+        } else if params.0.file_path.ends_with(".ts") {
+            "typescript"
+        } else if params.0.file_path.ends_with(".js") {
+            "javascript"
         } else {
-            Ok(CallToolResult::success(vec![Content::text(result)]))
-        }
+            return Ok(CallToolResult::success(vec![Content::text(
+                r#"{"error": "Unsupported language. Only .rs, .ts, .js supported."}"#,
+            )]));
+        };
+
+        // Use provided content or read from file
+        let content = if !params.0.content.is_empty() {
+            params.0.content.clone()
+        } else {
+            std::fs::read_to_string(&params.0.file_path).map_err(|e| {
+                McpError::internal_error(format!("Failed to read file: {}", e), None)
+            })?
+        };
+
+        // Parse and analyze
+        let mut graph = SymbolGraph::new();
+        let mut parser = CodeParser::new(lang).map_err(|e| {
+            McpError::internal_error(format!("Failed to create parser: {}", e), None)
+        })?;
+
+        parser
+            .parse_file(&params.0.file_path, &content, &mut graph)
+            .map_err(|e| McpError::internal_error(format!("Failed to parse: {}", e), None))?;
+
+        let analysis = TopologicalAnalysis::analyze(&graph);
+        let star = TopologicalAnalysis::get_star(&graph, &params.0.file_path, 2);
+
+        // Compute importance rankings
+        let ranks = TopologicalAnalysis::weighted_pagerank(&graph, 0.85, 20);
+        let mut ranked_nodes: Vec<_> = ranks.into_iter().collect();
+        ranked_nodes.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
+        let top_nodes: Vec<_> = ranked_nodes.into_iter().take(10).collect();
+
+        // Build structured response
+        let response = serde_json::json!({
+            "validation": {
+                "is_valid": analysis.betti_1 == 0,
+                "cycles_detected": analysis.betti_1,
+                "nodes": analysis.node_count,
+                "edges": analysis.edge_count,
+                "triangles": analysis.triangle_count,
+                "feature_volumes": analysis.feature_volumes.len(),
+            },
+            "star_neighborhood": {
+                "center": star.center,
+                "depth": star.depth,
+                "neighbors": star.neighbors,
+                "edges": star.edges,
+            },
+            "important_nodes": top_nodes,
+            "context_files": star.neighbors.iter()
+                .filter(|n| n.contains('/') || n.contains('\\'))
+                .take(5)
+                .collect::<Vec<_>>(),
+        });
+
+        let json = serde_json::to_string_pretty(&response)
+            .map_err(|e| McpError::internal_error(e.to_string(), None))?;
+
+        Ok(CallToolResult::success(vec![Content::text(json)]))
     }
 }
 

@@ -370,6 +370,74 @@ impl TopologicalAnalysis {
             depth,
         }
     }
+
+    /// Compute weighted PageRank for nodes based on edge strengths.
+    /// Higher strength edges contribute more to rank propagation.
+    /// Returns a map of node_id -> rank (0.0 to 1.0, higher = more important)
+    pub fn weighted_pagerank(
+        graph_data: &SymbolGraph,
+        damping: f32,
+        iterations: usize,
+    ) -> HashMap<String, f32> {
+        // Collect all node ids
+        let mut all_nodes: HashSet<String> = HashSet::new();
+        for (id, _) in &graph_data.nodes {
+            all_nodes.insert(id.clone());
+        }
+        for (from, to, _) in &graph_data.edges {
+            all_nodes.insert(from.clone());
+            all_nodes.insert(to.clone());
+        }
+
+        let n = all_nodes.len() as f32;
+        if n == 0.0 {
+            return HashMap::new();
+        }
+
+        // Initialize ranks
+        let initial_rank = 1.0 / n;
+        let mut ranks: HashMap<String, f32> = all_nodes
+            .iter()
+            .map(|id| (id.clone(), initial_rank))
+            .collect();
+
+        // Build outgoing edge weights per node
+        let mut out_weights: HashMap<String, f32> = HashMap::new();
+        for (from, _, edge) in &graph_data.edges {
+            *out_weights.entry(from.clone()).or_insert(0.0) += edge.strength;
+        }
+
+        // Iterate
+        for _ in 0..iterations {
+            let mut new_ranks: HashMap<String, f32> = all_nodes
+                .iter()
+                .map(|id| (id.clone(), (1.0 - damping) / n))
+                .collect();
+
+            for (from, to, edge) in &graph_data.edges {
+                let from_rank = *ranks.get(from).unwrap_or(&0.0);
+                let total_out = *out_weights.get(from).unwrap_or(&1.0);
+
+                if total_out > 0.0 {
+                    // Weighted contribution: (rank * edge_weight / total_out_weight) * damping
+                    let contribution = damping * from_rank * (edge.strength / total_out);
+                    *new_ranks.entry(to.clone()).or_insert(0.0) += contribution;
+                }
+            }
+
+            ranks = new_ranks;
+        }
+
+        // Normalize to 0-1 range
+        let max_rank = ranks.values().cloned().fold(0.0f32, f32::max);
+        if max_rank > 0.0 {
+            for rank in ranks.values_mut() {
+                *rank /= max_rank;
+            }
+        }
+
+        ranks
+    }
 }
 
 /// Layer configuration for invariant checking

@@ -1,4 +1,7 @@
-use super::{scanner::DirectoryScanner, SymbolGraph};
+use super::{
+    scanner::{DirectoryScanner, ScanProgress},
+    SymbolGraph,
+};
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -37,10 +40,22 @@ impl TopologyCache {
 
     pub fn update_from_dir(&mut self, dir: &Path, scanner: &DirectoryScanner) -> Result<()> {
         let new_graph = scanner.scan(dir)?;
-
-        // In Phase 4 we will implement incremental updates here.
         self.graph = new_graph;
+        Ok(())
+    }
 
+    /// Update from directory with progress callback
+    pub fn update_from_dir_with_progress<F>(
+        &mut self,
+        dir: &Path,
+        scanner: &DirectoryScanner,
+        on_progress: F,
+    ) -> Result<()>
+    where
+        F: Fn(ScanProgress),
+    {
+        let new_graph = scanner.scan_with_progress(dir, on_progress)?;
+        self.graph = new_graph;
         Ok(())
     }
 

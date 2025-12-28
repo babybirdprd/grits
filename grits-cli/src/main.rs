@@ -138,6 +138,9 @@ enum Commands {
         /// Show what would happen without making changes
         #[arg(long)]
         dry_run: bool,
+        /// Validate topology before syncing (block on cycles)
+        #[arg(long)]
+        validate_topology: bool,
     },
     /// Show issue statistics
     Stats,
@@ -934,7 +937,40 @@ fn main() -> anyhow::Result<()> {
                 }
             }
         }
-        Commands::Sync { squash, dry_run } => {
+        Commands::Sync {
+            squash,
+            dry_run,
+            validate_topology,
+        } => {
+            // Validate topology before sync if flag is set
+            if validate_topology {
+                use grits_core::topology::{
+                    analysis::TopologicalAnalysis, scanner::DirectoryScanner,
+                };
+                use std::path::Path;
+
+                let git_root = db_path.parent().unwrap().parent().unwrap_or(Path::new("."));
+                let scanner = DirectoryScanner::new();
+
+                print!("Validating topology... ");
+                std::io::stdout().flush()?;
+
+                let graph = scanner.scan(git_root)?;
+                let analysis = TopologicalAnalysis::analyze(&graph);
+
+                if analysis.betti_1 > 0 {
+                    println!("❌ BLOCKED");
+                    eprintln!(
+                        "\n⚠️  Cannot sync: {} circular dependencies detected!",
+                        analysis.betti_1
+                    );
+                    eprintln!("Run 'gr analysis diff' to see details.");
+                    eprintln!("Fix cycles before syncing or use --no-validate-topology to skip.");
+                    return Ok(());
+                }
+                println!("✓ OK");
+            }
+
             let grits_dir = db_path.parent().unwrap();
             let git_root = grits_dir.parent().unwrap_or(std::path::Path::new("."));
             let git = grits_core::StdGit::new(git_root);
@@ -1703,12 +1739,36 @@ fn main() -> anyhow::Result<()> {
                 let scanner = DirectoryScanner::new();
                 let mut cache = TopologyCache::new();
 
-                println!("Scanning {} and building topology cache...", scan_dir);
-                cache.update_from_dir(Path::new(&scan_dir), &scanner)?;
+                cache.update_from_dir_with_progress(
+                    Path::new(&scan_dir),
+                    &scanner,
+                    |progress| {
+                        if let Some(total) = progress.total_files {
+                            print!(
+                                "\r\x1b[KScanning [{}/{}] {}",
+                                progress.files_scanned, total, progress.current_file
+                            );
+                        } else {
+                            print!(
+                                "\r\x1b[KScanning [{}] {}",
+                                progress.files_scanned, progress.current_file
+                            );
+                        }
+                        std::io::stdout().flush().ok();
+                    },
+                )?;
+                println!(); // New line after progress
 
                 let cache_path = db_path.parent().unwrap().join("topology.json");
                 cache.save(&cache_path)?;
-                println!("Cache saved to: {:?}", cache_path);
+
+                let analysis =
+                    grits_core::topology::analysis::TopologicalAnalysis::analyze(&cache.graph);
+                println!("✅ Cache saved to: {:?}", cache_path);
+                println!(
+                    "   {} nodes, {} edges, {} cycles detected",
+                    analysis.node_count, analysis.edge_count, analysis.betti_1
+                );
             }
             AnalysisCommands::Diff { dir } => {
                 use grits_core::topology::{cache::TopologyCache, scanner::DirectoryScanner};
