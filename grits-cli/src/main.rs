@@ -252,11 +252,14 @@ enum AnalysisCommands {
     },
     /// Check layer architecture invariants
     CheckLayers {
-        /// File path to analyze
-        file: String,
-        /// Layer config JSON (inline or path)
-        #[arg(long)]
+        /// File to check (optional if --all is used)
+        file: Option<String>,
+        /// Layer config (YAML/JSON path or raw)
+        #[arg(short, long)]
         config: Option<String>,
+        /// Check the entire project graph from cache
+        #[arg(short, long)]
+        all: bool,
     },
     /// Rebuild the topology cache for the current project
     Rebuild {
@@ -1070,185 +1073,10 @@ fn main() -> anyhow::Result<()> {
         },
         Commands::Create {
             title,
-            mut description,
+            description,
             type_,
             priority,
         } => {
-            // Interactive editing if description is empty
-            if description.is_empty() {
-                let mut content_init = String::new();
-
-                // Check for templates
-                let templates_dir = db_path.parent().unwrap().join("templates");
-                if templates_dir.exists() {
-                    let mut templates = Vec::new();
-                    if let Ok(entries) = std::fs::read_dir(&templates_dir) {
-                        for entry in entries.flatten() {
-                            let path = entry.path();
-                            if path.extension().map_or(false, |e| e == "md") {
-                                templates.push(path);
-                            }
-                        }
-                    }
-
-                    if !templates.is_empty() {
-                        println!("Available templates:");
-                        for (i, t) in templates.iter().enumerate() {
-                            println!("{}. {}", i + 1, t.file_name().unwrap().to_string_lossy());
-                        }
-                        println!("0. None (Default)");
-
-                        print!("Select a template [0]: ");
-                        std::io::stdout().flush()?;
-                        let mut input = String::new();
-                        std::io::stdin().read_line(&mut input)?;
-                        let choice = input.trim().parse::<usize>().unwrap_or(0);
-
-                        if choice > 0 && choice <= templates.len() {
-                            if let Ok(t_content) = std::fs::read_to_string(&templates[choice - 1]) {
-                                content_init = t_content;
-                            }
-                        }
-                    }
-                }
-
-                let frontmatter = IssueFrontmatter {
-                    title: title.clone(),
-                    status: "open".to_string(),
-                    priority,
-                    issue_type: type_.clone(),
-                    assignee: None,
-                    labels: Vec::new(),
-                    dependencies: Vec::new(),
-                };
-
-                let content = if content_init.is_empty() {
-                    let yaml = serde_yaml::to_string(&frontmatter)?;
-                    format!("---\n{}---\n\n{}", yaml, "")
-                } else {
-                    // Prepend frontmatter if template doesn't have it, or merge?
-                    // Simple approach: If template has frontmatter, use it but override title/type/priority if passed?
-                    // Or just use template as body.
-                    // Let's assume template is body for now to be safe, but we wrap with our frontmatter.
-                    // If template has frontmatter, we might double wrap, which is bad.
-                    // Let's check for ---
-                    if content_init.starts_with("---") {
-                        content_init
-                    } else {
-                        let yaml = serde_yaml::to_string(&frontmatter)?;
-                        format!("---\n{}---\n\n{}", yaml, content_init)
-                    }
-                };
-
-                let mut file = tempfile::Builder::new().suffix(".md").tempfile()?;
-                write!(file, "{}", content)?;
-
-                let path = file.path().to_owned();
-                file.keep()?;
-
-                edit::edit_file(&path)?;
-
-                let new_content = std::fs::read_to_string(&path)?;
-                std::fs::remove_file(path)?;
-
-                if new_content.starts_with("---") {
-                    let parts: Vec<&str> = new_content.splitn(3, "---").collect();
-                    if parts.len() >= 3 {
-                        let body_part = parts[2].trim().to_string();
-                        // We could also parse the YAML to allow user to change title/priority/type during creation!
-                        // This is better UX.
-                        let yaml_part = parts[1];
-                        match serde_yaml::from_str::<IssueFrontmatter>(yaml_part) {
-                            Ok(new_fm) => {
-                                // Let's assume we use the parsed values if valid.
-                                description = body_part;
-
-                                let now = Utc::now();
-                                // Use new_fm values
-                                let prefix = store
-                                    .get_config("issue_id_prefix")?
-                                    .unwrap_or_else(|| "gr".to_string());
-                                let user = store
-                                    .get_config("user.name")?
-                                    .unwrap_or_else(|| "unknown".to_string());
-                                let short_id = store.generate_unique_id(
-                                    &prefix,
-                                    &new_fm.title,
-                                    &description,
-                                    &user,
-                                )?;
-
-                                let issue = Issue {
-                                    id: short_id.clone(),
-                                    content_hash: String::new(),
-                                    title: new_fm.title,
-                                    description,
-                                    design: String::new(),
-                                    acceptance_criteria: String::new(),
-                                    notes: String::new(),
-                                    status: new_fm.status,
-                                    priority: new_fm.priority,
-                                    issue_type: new_fm.issue_type,
-                                    assignee: new_fm.assignee,
-                                    estimated_minutes: None,
-                                    created_at: now,
-                                    updated_at: now,
-                                    closed_at: None,
-                                    external_ref: None,
-                                    sender: String::new(),
-                                    ephemeral: false,
-                                    replies_to: String::new(),
-                                    relates_to: Vec::new(),
-                                    duplicate_of: String::new(),
-                                    superseded_by: String::new(),
-
-                                    deleted_at: None,
-                                    deleted_by: String::new(),
-                                    delete_reason: String::new(),
-                                    original_type: String::new(),
-
-                                    labels: new_fm.labels,
-                                    dependencies: new_fm
-                                        .dependencies
-                                        .into_iter()
-                                        .map(|fd| {
-                                            use grits_core::models::Dependency;
-                                            Dependency {
-                                                issue_id: short_id.clone(),
-                                                depends_on_id: fd.id,
-                                                type_: fd.dep_type,
-                                                created_at: now,
-                                                created_by: user.clone(),
-                                            }
-                                        })
-                                        .collect(),
-                                    comments: Vec::new(),
-                                    affected_symbols: vec![],
-                                    solid_volume: None,
-                                    topology_hash: String::new(),
-                                    is_solid: false,
-                                };
-                                store
-                                    .create_issue(&issue)
-                                    .context("Failed to create issue")?;
-                                println!("Created issue {}", short_id);
-                                return Ok(());
-                            }
-                            Err(e) => {
-                                anyhow::bail!("Invalid frontmatter: {}", e);
-                            }
-                        }
-                    } else {
-                        anyhow::bail!("Invalid format: missing frontmatter delimiters");
-                    }
-                } else {
-                    anyhow::bail!("Invalid format: file must start with ---");
-                }
-            }
-
-            // Fallback only happens if description was NOT empty initially, which is handled above.
-            // If description IS empty, we returned or bailed above.
-            // So this path is only for non-interactive creation.
             let now = Utc::now();
             let prefix = store
                 .get_config("issue_id_prefix")?
@@ -1656,40 +1484,60 @@ fn main() -> anyhow::Result<()> {
                     println!("\nNo feature volumes found (no triangular dependencies).");
                 }
             }
-            AnalysisCommands::CheckLayers { file, config } => {
+            AnalysisCommands::CheckLayers { file, config, all } => {
                 use grits_core::topology::{
                     analysis::{InvariantResult, Layer, LayerConfig},
+                    cache::TopologyCache,
                     parser::CodeParser,
                     SymbolGraph,
                 };
 
-                let lang = if file.ends_with(".rs") {
-                    "rust"
-                } else if file.ends_with(".ts") {
-                    "typescript"
-                } else if file.ends_with(".js") {
-                    "javascript"
-                } else {
-                    println!("Skipped: Unsupported language");
-                    return Ok(());
-                };
-
-                let content = std::fs::read_to_string(&file)
-                    .context(format!("Failed to read file: {}", file))?;
-
                 let mut graph = SymbolGraph::new();
-                let mut parser = CodeParser::new(lang).context("Failed to create parser")?;
-                parser
-                    .parse_file(&file, &content, &mut graph)
-                    .context("Failed to parse")?;
+
+                if all {
+                    let cache_path = db_path.parent().unwrap().join("topology.json");
+                    if !cache_path.exists() {
+                        eprintln!("No cache found. Run 'gr analysis rebuild' first.");
+                        return Ok(());
+                    }
+                    let cache = TopologyCache::load(&cache_path)?;
+                    graph = cache.graph;
+                } else if let Some(file_path) = &file {
+                    let lang = if file_path.ends_with(".rs") {
+                        "rust"
+                    } else if file_path.ends_with(".ts") {
+                        "typescript"
+                    } else if file_path.ends_with(".js") {
+                        "javascript"
+                    } else {
+                        println!("Skipped: Unsupported language");
+                        return Ok(());
+                    };
+
+                    let content = std::fs::read_to_string(file_path)
+                        .context(format!("Failed to read file: {}", file_path))?;
+
+                    let mut parser = CodeParser::new(lang).context("Failed to create parser")?;
+                    parser
+                        .parse_file(file_path, &content, &mut graph)
+                        .context("Failed to parse")?;
+                } else {
+                    eprintln!("Either a file path or --all must be provided.");
+                    return Ok(());
+                }
 
                 // Parse layer config or use default
                 let layer_config = if let Some(cfg) = config {
                     if std::path::Path::new(&cfg).exists() {
                         let cfg_content = std::fs::read_to_string(&cfg)?;
-                        serde_json::from_str(&cfg_content)?
+                        if cfg.ends_with(".yaml") || cfg.ends_with(".yml") {
+                            serde_yaml::from_str(&cfg_content)?
+                        } else {
+                            serde_json::from_str(&cfg_content)?
+                        }
                     } else {
-                        serde_json::from_str(&cfg)?
+                        // Try parsing raw string as JSON or YAML
+                        serde_yaml::from_str(&cfg).or_else(|_| serde_json::from_str(&cfg))?
                     }
                 } else {
                     // Default layer config
@@ -1720,7 +1568,10 @@ fn main() -> anyhow::Result<()> {
 
                 let result = InvariantResult::check(&graph, &layer_config);
 
-                println!("Layer Invariant Check for: {}", file);
+                println!(
+                    "Layer Invariant Check for: {}",
+                    file.as_deref().unwrap_or("Full Project Graph")
+                );
                 println!(
                     "  Valid: {}",
                     if result.is_valid { "✅ Yes" } else { "❌ No" }

@@ -1,0 +1,10 @@
+layers:
+  - name: cli-core
+    patterns: ["grits-cli/src/main.rs"]
+    allowed_deps: ["mcp-server", "core"]
+  - name: mcp-server
+    patterns: ["grits-cli/src/mcp.rs"]
+    allowed_deps: ["core"]
+  - name: core
+    patterns: ["grits-core/src/**"]
+    allowed_deps: []

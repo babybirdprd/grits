@@ -201,7 +201,8 @@ impl DirectoryScanner {
 
             if let Ok(content) = std::fs::read_to_string(path) {
                 if let Ok(parser) = cache.get_or_create(lang) {
-                    let file_id = relative_path.to_string_lossy().to_string();
+                    // Normalize to forward slashes for cross-platform compatibility
+                    let file_id = relative_path.to_string_lossy().replace('\\', "/");
                     let _ = parser.parse_file(&file_id, &content, &mut graph);
                 }
             }

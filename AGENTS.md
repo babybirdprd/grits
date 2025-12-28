@@ -293,11 +293,11 @@ Star Neighborhood for: src/payment.rs
 #### Step 4: Link Symbols to Your Issue (KEY STEP)
 
 > [!TIP]  
-> Symbol names must match the cache. Use the format shown by `gr analysis star`.
+> **Symbol IDs are cross-platform.** Always use forward slashes (`/`) even on Windows. Symbol names must match the cache exactly. Use the format shown by `gr analysis star`.
 
 ```bash
-# Link the symbol you're modifying
-gr update gr-abc123 --add-symbol src/payment.rs::ProcessPayment
+# Link the symbol you're modifying (notice forward slash normalization)
+gr update gr-abc123 --add-symbol topology/analysis.rs::TopologicalAnalysis
 
 # The issue now stores the topological context (solid_volume)
 ```
@@ -353,7 +353,7 @@ gr analysis topology gr-xxx
 # Returns topology graph for those symbols
 
 # 6. After fixing, validate
-gr analysis validate-topology examples/rust/lib.rs
+gr analysis validate-topology lib.rs
 # Should show: "0 cycles detected"
 
 # 7. Sync with topology check
