@@ -1,15 +1,18 @@
-use grits_core::topology::{SymbolGraph, analysis::TopologicalAnalysis};
 #[cfg(not(target_arch = "wasm32"))]
 use grits_core::topology::parser::CodeParser;
+use grits_core::topology::{analysis::TopologicalAnalysis, SymbolGraph};
 
 #[test]
 fn test_topology_analysis() {
     let mut graph = SymbolGraph::new();
 
-    // Create a simple cycle: A -> B -> C -> A
+    // Create a 4-node cycle: A -> B -> C -> D -> A (this is a hole, not a filled simplex)
+    // A 3-node cycle (triangle) would be a 2-simplex (filled), so betti_1=0
+    // A 4-node cycle is a true 1-cycle (hole), so betti_1=1
     graph.add_dependency("A", "B", "calls");
     graph.add_dependency("B", "C", "calls");
-    graph.add_dependency("C", "A", "calls");
+    graph.add_dependency("C", "D", "calls");
+    graph.add_dependency("D", "A", "calls");
 
     // Add nodes
     graph.add_symbol(grits_core::topology::Symbol {
@@ -19,16 +22,23 @@ fn test_topology_analysis() {
         language: "rust".to_string(),
         kind: "fn".to_string(),
     });
-     graph.add_symbol(grits_core::topology::Symbol {
+    graph.add_symbol(grits_core::topology::Symbol {
         id: "B".to_string(),
         name: "B".to_string(),
         file_path: "f1".to_string(),
         language: "rust".to_string(),
         kind: "fn".to_string(),
     });
-     graph.add_symbol(grits_core::topology::Symbol {
+    graph.add_symbol(grits_core::topology::Symbol {
         id: "C".to_string(),
         name: "C".to_string(),
+        file_path: "f1".to_string(),
+        language: "rust".to_string(),
+        kind: "fn".to_string(),
+    });
+    graph.add_symbol(grits_core::topology::Symbol {
+        id: "D".to_string(),
+        name: "D".to_string(),
         file_path: "f1".to_string(),
         language: "rust".to_string(),
         kind: "fn".to_string(),
@@ -36,10 +46,11 @@ fn test_topology_analysis() {
 
     let analysis = TopologicalAnalysis::analyze(&graph);
 
-    // Nodes=3, Edges=3, Components=1
-    // Cycles = E - V + C = 3 - 3 + 1 = 1
+    // Nodes=4, Edges=4, Components=1, Triangles=0
+    // Cycles = E - V + C - T = 4 - 4 + 1 - 0 = 1
     assert_eq!(analysis.betti_1, 1);
     assert_eq!(analysis.betti_0, 1);
+    assert_eq!(analysis.triangle_count, 0);
 }
 
 #[test]
@@ -58,7 +69,9 @@ fn test_parser_integration() {
 
     let mut graph = SymbolGraph::new();
     let mut parser = CodeParser::new("rust").expect("Failed to create parser");
-    parser.parse_file("test.rs", code, &mut graph).expect("Failed to parse");
+    parser
+        .parse_file("test.rs", code, &mut graph)
+        .expect("Failed to parse");
 
     // Should find main and MyStruct
     let found_main = graph.nodes.values().any(|s| s.name == "main");
@@ -68,8 +81,14 @@ fn test_parser_integration() {
     assert!(found_struct, "Should find MyStruct");
 
     // Should find imports and calls
-    let found_import = graph.edges.iter().any(|(_, to, e)| to.contains("io") && e.relation == "imports");
-    let found_call = graph.edges.iter().any(|(_, to, e)| to == "my_func" && e.relation == "calls");
+    let found_import = graph
+        .edges
+        .iter()
+        .any(|(_, to, e)| to.contains("io") && e.relation == "imports");
+    let found_call = graph
+        .edges
+        .iter()
+        .any(|(_, to, e)| to == "my_func" && e.relation == "calls");
 
     assert!(found_import, "Should find import");
     assert!(found_call, "Should find call to my_func");
@@ -92,9 +111,13 @@ fn test_cycle_detection_via_parser() {
     let mut parser = CodeParser::new("rust").expect("Failed to create parser");
 
     // Parse File A (ID: "file_a")
-    parser.parse_file("file_a", code_a, &mut graph).expect("Failed to parse A");
+    parser
+        .parse_file("file_a", code_a, &mut graph)
+        .expect("Failed to parse A");
     // Parse File B (ID: "file_b")
-    parser.parse_file("file_b", code_b, &mut graph).expect("Failed to parse B");
+    parser
+        .parse_file("file_b", code_b, &mut graph)
+        .expect("Failed to parse B");
 
     // Check connections
     // A -> file_b (import)
@@ -107,5 +130,9 @@ fn test_cycle_detection_via_parser() {
     let analysis = TopologicalAnalysis::analyze(&graph);
 
     // We expect a cycle: file_a -> file_b -> file_a
-    assert!(analysis.betti_1 >= 1, "Should detect at least 1 cycle (Betti_1 >= 1), found {}", analysis.betti_1);
+    assert!(
+        analysis.betti_1 >= 1,
+        "Should detect at least 1 cycle (Betti_1 >= 1), found {}",
+        analysis.betti_1
+    );
 }
