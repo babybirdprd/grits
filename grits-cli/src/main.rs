@@ -952,23 +952,37 @@ fn main() -> anyhow::Result<()> {
                 let git_root = db_path.parent().unwrap().parent().unwrap_or(Path::new("."));
                 let scanner = DirectoryScanner::new();
 
-                print!("Validating topology... ");
-                std::io::stdout().flush()?;
+                let graph = scanner.scan_with_progress(git_root, |progress| {
+                    if let Some(total) = progress.total_files {
+                        print!(
+                            "\r\x1b[KValidating topology [{}/{}] {}",
+                            progress.files_scanned, total, progress.current_file
+                        );
+                    } else {
+                        print!(
+                            "\r\x1b[KValidating topology [{}] {}",
+                            progress.files_scanned, progress.current_file
+                        );
+                    }
+                    std::io::stdout().flush().ok();
+                })?;
+                println!(); // New line after progress
 
-                let graph = scanner.scan(git_root)?;
                 let analysis = TopologicalAnalysis::analyze(&graph);
 
                 if analysis.betti_1 > 0 {
-                    println!("❌ BLOCKED");
-                    eprintln!(
-                        "\n⚠️  Cannot sync: {} circular dependencies detected!",
+                    println!(
+                        "❌ BLOCKED: {} circular dependencies detected!",
                         analysis.betti_1
                     );
                     eprintln!("Run 'gr analysis diff' to see details.");
-                    eprintln!("Fix cycles before syncing or use --no-validate-topology to skip.");
+                    eprintln!("Fix cycles before syncing or remove --validate-topology to skip.");
                     return Ok(());
                 }
-                println!("✓ OK");
+                println!(
+                    "✅ Topology OK ({} nodes, {} edges, no cycles)",
+                    analysis.node_count, analysis.edge_count
+                );
             }
 
             let grits_dir = db_path.parent().unwrap();
