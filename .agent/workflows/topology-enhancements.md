@@ -1,3 +1,7 @@
+---
+description: Implementation of topology enhancements for advanced simplicial complex x issue tracking
+---
+
 # Solid Graph Topology Enhancement - Implementation Plan
 
 ## References
