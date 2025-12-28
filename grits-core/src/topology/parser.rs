@@ -3,6 +3,8 @@ use super::{Symbol, SymbolGraph};
 #[cfg(not(target_arch = "wasm32"))]
 use anyhow::Result;
 #[cfg(not(target_arch = "wasm32"))]
+use streaming_iterator::StreamingIterator;
+#[cfg(not(target_arch = "wasm32"))]
 use tree_sitter::{Parser, Query, QueryCursor};
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -15,14 +17,14 @@ pub struct CodeParser {
 impl CodeParser {
     pub fn new(language: &str) -> Result<Self> {
         let mut parser = Parser::new();
-        let lang = match language {
-            "rust" => tree_sitter_rust::language(),
-            "typescript" | "ts" => tree_sitter_typescript::language_typescript(),
-            "javascript" | "js" => tree_sitter_javascript::language(),
+        let lang: tree_sitter::Language = match language {
+            "rust" => tree_sitter_rust::LANGUAGE.into(),
+            "typescript" | "ts" => tree_sitter_typescript::LANGUAGE_TYPESCRIPT.into(),
+            "javascript" | "js" => tree_sitter_javascript::LANGUAGE.into(),
             _ => return Err(anyhow::anyhow!("Unsupported language: {}", language)),
         };
 
-        parser.set_language(lang)?;
+        parser.set_language(&lang)?;
 
         Ok(Self {
             parser,
@@ -51,6 +53,8 @@ impl CodeParser {
             kind: "file".to_string(),
         });
 
+        let content_bytes = content.as_bytes();
+
         // For Rust: function_item, impl_item, struct_item, mod_item
         if self.language == "rust" {
             let query_str = r#"
@@ -60,13 +64,18 @@ impl CodeParser {
                 (use_declaration argument: (_) @import) @use
                 (call_expression function: (identifier) @call) @call
              "#;
-            if let Ok(query) = Query::new(tree_sitter_rust::language(), query_str) {
+            let lang: tree_sitter::Language = tree_sitter_rust::LANGUAGE.into();
+            if let Ok(query) = Query::new(&lang, query_str) {
                 let mut cursor = QueryCursor::new();
-                for match_ in cursor.matches(&query, root, content.as_bytes()) {
+                let mut matches = cursor.matches(&query, root, content_bytes);
+                while let Some(match_) = matches.next() {
                     for capture in match_.captures {
                         let idx = capture.index as usize;
-                        let capture_name = query.capture_names()[idx].as_str();
+                        let capture_name: &str = &query.capture_names()[idx];
                         let range = capture.node.byte_range();
+                        if range.end > content.len() {
+                            continue;
+                        }
                         let text = &content[range.start..range.end];
 
                         if capture_name == "name" {
@@ -81,11 +90,8 @@ impl CodeParser {
                             // Also link symbol to file
                             graph.add_weighted_dependency(&id, file_path, "defined_in", 1.0);
                         } else if capture_name == "mod_name" {
-                            // "mod utils;" -> text is "utils"
-                            // This is a file-level import in Rust
                             graph.add_weighted_dependency(file_path, text, "imports", 0.3);
                         } else if capture_name == "call" {
-                            // Heuristic for call strength
                             let mut strength = 0.6;
                             let mut parent = capture.node.parent();
                             while let Some(p) = parent {
@@ -101,11 +107,8 @@ impl CodeParser {
                             }
                             graph.add_weighted_dependency(file_path, text, "calls", strength);
                         } else if capture_name == "import" {
-                            // "use std::io;" -> text is "std::io"
-                            // Extract the first part (crate name) for local crate imports
                             let import_path = text.trim();
                             if import_path.starts_with("crate::") {
-                                // "crate::validate_store" -> link to the module
                                 let parts: Vec<&str> = import_path.split("::").collect();
                                 if parts.len() >= 2 {
                                     graph.add_weighted_dependency(
@@ -134,14 +137,18 @@ impl CodeParser {
                 (import_statement source: (string) @import) @import
                 (call_expression function: (identifier) @call) @call
              "#;
-            if let Ok(query) = Query::new(tree_sitter_typescript::language_typescript(), query_str)
-            {
+            let lang: tree_sitter::Language = tree_sitter_typescript::LANGUAGE_TYPESCRIPT.into();
+            if let Ok(query) = Query::new(&lang, query_str) {
                 let mut cursor = QueryCursor::new();
-                for match_ in cursor.matches(&query, root, content.as_bytes()) {
+                let mut matches = cursor.matches(&query, root, content_bytes);
+                while let Some(match_) = matches.next() {
                     for capture in match_.captures {
                         let idx = capture.index as usize;
-                        let capture_name = query.capture_names()[idx].as_str();
+                        let capture_name: &str = &query.capture_names()[idx];
                         let range = capture.node.byte_range();
+                        if range.end > content.len() {
+                            continue;
+                        }
                         let text = &content[range.start..range.end];
 
                         if capture_name == "name" {
@@ -171,7 +178,6 @@ impl CodeParser {
                             }
                             graph.add_weighted_dependency(file_path, text, "calls", strength);
                         } else if capture_name == "import" {
-                            // Remove quotes
                             let clean_import = text.trim_matches(|c| c == '\'' || c == '"');
                             graph.add_weighted_dependency(file_path, clean_import, "imports", 0.3);
                         }
@@ -188,13 +194,18 @@ impl CodeParser {
                 (import_statement source: (string) @import) @import
                 (call_expression function: (identifier) @call) @call
              "#;
-            if let Ok(query) = Query::new(tree_sitter_javascript::language(), query_str) {
+            let lang: tree_sitter::Language = tree_sitter_javascript::LANGUAGE.into();
+            if let Ok(query) = Query::new(&lang, query_str) {
                 let mut cursor = QueryCursor::new();
-                for match_ in cursor.matches(&query, root, content.as_bytes()) {
+                let mut matches = cursor.matches(&query, root, content_bytes);
+                while let Some(match_) = matches.next() {
                     for capture in match_.captures {
                         let idx = capture.index as usize;
-                        let capture_name = query.capture_names()[idx].as_str();
+                        let capture_name: &str = &query.capture_names()[idx];
                         let range = capture.node.byte_range();
+                        if range.end > content.len() {
+                            continue;
+                        }
                         let text = &content[range.start..range.end];
 
                         if capture_name == "name" {
@@ -224,7 +235,6 @@ impl CodeParser {
                             }
                             graph.add_weighted_dependency(file_path, text, "calls", strength);
                         } else if capture_name == "import" {
-                            // Remove quotes: './util' -> ./util
                             let clean_import = text.trim_matches(|c| c == '\'' || c == '"');
                             graph.add_weighted_dependency(file_path, clean_import, "imports", 0.3);
                         }
