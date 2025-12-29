@@ -71,6 +71,13 @@ $webviewPackageContent = $webviewPackageContent -replace '"version"\s*:\s*"[\d.]
 Set-Content $webviewPackagePath $webviewPackageContent -NoNewline
 Write-Host "  Updated: extension/webview/package.json" -ForegroundColor Green
 
+# Update root package.json
+$rootPackagePath = "package.json"
+$rootPackageContent = Get-Content $rootPackagePath -Raw
+$rootPackageContent = $rootPackageContent -replace '"version"\s*:\s*"[\d.]+"', "`"version`": `"$newVersion`""
+Set-Content $rootPackagePath $rootPackageContent -NoNewline
+Write-Host "  Updated: package.json (root)" -ForegroundColor Green
+
 # Update README.md
 $readmePath = "README.md"
 $readmeContent = Get-Content $readmePath -Raw

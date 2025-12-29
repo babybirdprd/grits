@@ -35,7 +35,15 @@ Determine version based on change type:
 Update these files with new version:
 1. `grits-core/Cargo.toml` - `version = "X.Y.Z"`
 2. `grits-cli/Cargo.toml` - `version = "X.Y.Z"` AND `grits-core = { version = "X.Y.Z"`
-3. `README.md` - Status line version
+3. `extension/package.json` - `"version": "X.Y.Z"`
+4. `extension/webview/package.json` - `"version": "X.Y.Z"`
+5. `package.json` (root) - `"version": "X.Y.Z"`
+6. `README.md` - Status line version
+
+Alternatively, use the bump script:
+```powershell
+./scripts/bump-version.ps1 patch
+```
 
 ## Release Commands
 
@@ -61,7 +69,7 @@ git push origin main --tags
 This triggers GitHub Actions which:
 - Builds CLI for Linux, macOS (x86+arm), Windows
 - Packages VS Code extension (.vsix)
-- Creates GitHub Release with artifacts
+- Creates GitHub Release with all artifacts (binaries + VSIX)
 
 ## Post-Release Verification
 
@@ -74,6 +82,7 @@ gr --version
 2. Check GitHub Release page:
    - https://github.com/babybirdprd/grits/releases
    - Should have 5 artifacts: 4 binaries + 1 VSIX
+   - **Note**: VS Code Marketplace publishing is disabled. Install the VSIX manually from the release page.
 
 3. Test installed CLI:
 ```bash
