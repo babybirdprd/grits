@@ -136,27 +136,3 @@ jobs:
             artifacts/gr-*/*
             artifacts/grits-extension/*.vsix
           generate_release_notes: true
-
-#   publish-extension:
-#     name: Publish to VS Code Marketplace
-#     needs: [build-extension, release]
-#     runs-on: ubuntu-latest
-#     # Only run on non-prerelease tags
-#     if: "!contains(github.ref, 'alpha') && !contains(github.ref, 'beta') && !contains(github.ref, 'rc')"
-#     steps:
-#       - name: Download VSIX artifact
-#         uses: actions/download-artifact@v4
-#         with:
-#           name: grits-extension
-#           path: artifacts
-# 
-#       - name: Setup Node.js
-#         uses: actions/setup-node@v4
-#         with:
-#           node-version: '20'
-# 
-#       - name: Publish to VS Code Marketplace
-#         run: npx @vscode/vsce publish --packagePath artifacts/*.vsix
-#         env:
-#           VSCE_PAT: ${{ secrets.VSCE_PAT }}
-

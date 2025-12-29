@@ -223,6 +223,19 @@ use crate::search::SearchIndex;
 use crate::store::Store;
 use serde_json::Value;
 
+fn extract_graph(json: &str) -> Result<crate::topology::SymbolGraph, JsValue> {
+    let v: Value = serde_json::from_str(json)
+        .map_err(|e| JsValue::from_str(&format!("Parse JSON failed: {}", e)))?;
+
+    if v.get("graph").is_some() {
+        serde_json::from_value(v["graph"].clone())
+            .map_err(|e| JsValue::from_str(&format!("Parse nested graph failed: {}", e)))
+    } else {
+        serde_json::from_value(v)
+            .map_err(|e| JsValue::from_str(&format!("Parse raw graph failed: {}", e)))
+    }
+}
+
 /// Stateful WASM store wrapping MemoryStore.
 #[wasm_bindgen]
 pub struct WasmStore {
@@ -527,8 +540,7 @@ impl WasmStore {
         use crate::topology::SymbolGraph;
 
         // Parse the cached topology JSON
-        let graph: SymbolGraph = serde_json::from_str(topology_json)
-            .map_err(|e| JsValue::from_str(&format!("Parse topology failed: {}", e)))?;
+        let graph = extract_graph(topology_json)?;
 
         let analysis = TopologicalAnalysis::analyze(&graph);
         let pagerank = TopologicalAnalysis::weighted_pagerank(&graph, 0.85, 50);
@@ -582,8 +594,7 @@ impl WasmStore {
         use crate::topology::analysis::TopologicalAnalysis;
         use crate::topology::SymbolGraph;
 
-        let graph: SymbolGraph = serde_json::from_str(topology_json)
-            .map_err(|e| JsValue::from_str(&format!("Parse topology failed: {}", e)))?;
+        let graph = extract_graph(topology_json)?;
 
         let analysis = TopologicalAnalysis::analyze(&graph);
         let score = analysis.solid_score();
@@ -601,8 +612,7 @@ impl WasmStore {
         use crate::topology::analysis::TopologicalAnalysis;
         use crate::topology::SymbolGraph;
 
-        let graph: SymbolGraph = serde_json::from_str(topology_json)
-            .map_err(|e| JsValue::from_str(&format!("Parse topology failed: {}", e)))?;
+        let graph = extract_graph(topology_json)?;
 
         let pagerank = TopologicalAnalysis::weighted_pagerank(&graph, 0.85, 50);
 
@@ -630,11 +640,10 @@ impl WasmStore {
             .list_issues(None, None, None, None, None, None)
             .map_err(|e| JsValue::from_str(&format!("List failed: {}", e)))?;
 
-        let in_progress = issues.iter().filter(|i| i.status == "in_progress").count();
+        let in_progress = issues.iter().filter(|i| i.status == "in-progress").count();
 
         let (solid_score, betti0, betti1, hotspots) = if let Some(topo_json) = topology_json {
-            let graph: SymbolGraph = serde_json::from_str(&topo_json)
-                .map_err(|e| JsValue::from_str(&format!("Parse topology failed: {}", e)))?;
+            let graph = extract_graph(&topo_json)?;
 
             let analysis = TopologicalAnalysis::analyze(&graph);
             let score = analysis.solid_score();
@@ -706,9 +715,9 @@ impl WasmTopologyStore {
     pub fn load_topology(&mut self, topology_json: &str) -> Result<String, JsValue> {
         use crate::topology::analysis::TopologicalAnalysis;
         use crate::topology::SymbolGraph;
+        use serde_json::Value;
 
-        let graph: SymbolGraph = serde_json::from_str(topology_json)
-            .map_err(|e| JsValue::from_str(&format!("Parse failed: {}", e)))?;
+        let graph = extract_graph(topology_json)?;
 
         // Pre-compute analysis (this is the expensive part, do it once)
         let analysis = TopologicalAnalysis::analyze(&graph);

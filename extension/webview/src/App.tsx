@@ -362,7 +362,7 @@ export function App() {
                                 betti0={vitals.betti0}
                                 betti1={vitals.betti1}
                                 hotspots={vitals.hotspots}
-                                inProgressCount={issues.filter(i => i.status === 'in_progress').length}
+                                inProgressCount={issues.filter(i => i.status === 'in-progress').length}
                             />
                         </div>
                     </div>
