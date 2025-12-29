@@ -3,7 +3,7 @@
 This documentation is the **sole source of truth** for AI agents using Grits. It provides an opinionated, intent-based workflow for managing issues and code topology.
 
 > [!IMPORTANT]
-> **Twin Engine Synchronization**: Grits uses a SQLite database for speed (`.grits/grits.db`) and a JSONL file for version control (`.grits/issues.jsonl`). All CLI commands automatically import/export between these engines. **Syncing with Git** via `gr sync` is mandatory for session continuity.
+> **Twin Engine Synchronization**: Grits uses a SQLite database for speed (`.grits/grits.db`) and a JSONL file for version control (`.grits/issues.jsonl`). All CLI commands automatically import/export between these engines.
 
 ---
 
@@ -15,7 +15,6 @@ This documentation is the **sole source of truth** for AI agents using Grits. It
 4.  **Sticky Focus**: After `gr workon`, use `gr set stat:ip` without ID — it auto-targets the focused issue.
 5.  **Link Your Work**: Use `gr update <ID> --add-symbol <SYM>` to populate the **Focus View**.
 6.  **Fix Cycles**: Use `gr refactor` to detect and auto-fix architectural issues.
-7.  **Sync Before Handoff**: `gr sync` is mandatory before every session end.
 
 ---
 
@@ -200,10 +199,10 @@ gr analysis validate-topology src/changed_file.rs
 gr analysis check-layers
 ```
 
-### Block Bad Syncs
+### Block Bad Commits
 ```bash
-# Only sync if topology is clean
-gr sync --validate-topology
+# Verify topology is clean before committing
+gr analysis validate-topology src/main.rs
 ```
 
 ---
@@ -212,8 +211,11 @@ gr sync --validate-topology
 
 ### Sync Everything
 ```bash
-# Export to JSONL + commit + push
-gr sync
+# Export to JSONL happens automatically on every command.
+# Simply git add/commit/push your changes.
+git add .grits/issues.jsonl
+git commit -m "update issues"
+git push
 ```
 
 ### Bulk Operations
@@ -269,7 +271,7 @@ The extension now opens as a **full dashboard panel** with:
 | `gr create` | `<TITLE>` `-d` `-t` `-p` | Create issue |
 | `gr update` | `<ID>` `--status` `--add-symbol` | Update issue |
 | `gr ready` | `--assignee` | Find actionable work |
-| `gr sync` | `--validate-topology` | Save and push |
+| `gr ready` | `--assignee` | Find actionable work |
 
 ### Analysis Commands
 | Command | Purpose |
@@ -301,15 +303,9 @@ gr onboard  # Reinitialize
 gr analysis rebuild
 ```
 
-### Cycle Detected During Sync
-```bash
-# Check what cycles exist
-gr refactor
-
 # Fix and retry
 gr refactor --apply --cycle 0
-gr sync --validate-topology
-```
+gr analysis validate-topology src/changed_file.rs
 
 ### Issue Not Found
 ```bash
@@ -323,8 +319,10 @@ gr show abc  # Works if gr-abc123 exists
 
 ### Before Ending Session
 ```bash
-# 1. Sync all work
-gr sync
+# 1. Comit your work
+git add .grits/issues.jsonl
+git commit -m "update issues"
+git push
 
 # 2. Create continuity issue if work is incomplete
 gr create "CONTINUITY: [Feature] Description" \

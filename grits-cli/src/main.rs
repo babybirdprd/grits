@@ -127,7 +127,11 @@ enum Commands {
         debug: bool,
     },
     /// Initialize grits in the current repository
-    Onboard,
+    Onboard {
+        /// Skip interactive prompts
+        #[arg(long)]
+        non_interactive: bool,
+    },
     /// Show issues ready to work on (no blockers)
     Ready {
         /// Filter by assignee
@@ -135,17 +139,6 @@ enum Commands {
         assignee: Option<String>,
     },
     /// Synchronize issues with git remote
-    Sync {
-        /// Squash all changes into a single commit
-        #[arg(long)]
-        squash: bool,
-        /// Show what would happen without making changes
-        #[arg(long)]
-        dry_run: bool,
-        /// Validate topology before syncing (block on cycles)
-        #[arg(long)]
-        validate_topology: bool,
-    },
     /// Show issue statistics
     Stats,
     /// Manage configuration settings
@@ -203,6 +196,7 @@ enum Commands {
     /// Quick update with fuzzy key matching (e.g., "stat:ip pri:1 +label:bug")
     Set {
         /// Issue ID (optional if focus is set via 'gr workon')
+        #[arg(long)]
         id: Option<String>,
         /// Changes in shorthand format
         changes: Vec<String>,
@@ -457,7 +451,7 @@ fn main() -> anyhow::Result<()> {
     // Find DB
     // Note: ServeMcp uses find_db_path() to ensure it finds the project's database
     // even when launched from a different working directory by the IDE
-    let db_path = if matches!(cli.command, Commands::Onboard) {
+    let db_path = if matches!(cli.command, Commands::Onboard { .. }) {
         PathBuf::from(".grits/grits.db")
     } else {
         find_db_path(cli.root.clone())
@@ -479,13 +473,13 @@ fn main() -> anyhow::Result<()> {
     }
 
     // Ensure parent dir exists if we are onboarding
-    if let Commands::Onboard = &cli.command {
+    if let Commands::Onboard { .. } = &cli.command {
         if let Some(parent) = db_path.parent() {
             std::fs::create_dir_all(parent)?;
         }
     }
 
-    let is_onboard = matches!(cli.command, Commands::Onboard);
+    let is_onboard = matches!(cli.command, Commands::Onboard { .. });
     let is_mcp = matches!(cli.command, Commands::ServeMcp);
     let jsonl_path = db_path.parent().unwrap().join("issues.jsonl");
 
@@ -887,7 +881,7 @@ fn main() -> anyhow::Result<()> {
             let fs = StdFileSystem;
             grits_core::merge::merge3way(&output, &base, &left, &right, debug, &fs)?;
         }
-        Commands::Onboard => {
+        Commands::Onboard { non_interactive } => {
             // Check git init
             if !std::path::Path::new(".git").exists() {
                 println!("Not a git repository. Initializing...");
@@ -918,29 +912,45 @@ fn main() -> anyhow::Result<()> {
             }
 
             // User config
-            // Try to read git config
-            let output = std::process::Command::new("git")
-                .args(["config", "user.name"])
-                .output();
+            let user = if !non_interactive {
+                // Try to read git config
+                let output = std::process::Command::new("git")
+                    .args(["config", "user.name"])
+                    .output();
 
-            let default_user = if let Ok(out) = output {
-                String::from_utf8_lossy(&out.stdout).trim().to_string()
+                let default_user = if let Ok(out) = output {
+                    String::from_utf8_lossy(&out.stdout).trim().to_string()
+                } else {
+                    String::new()
+                };
+
+                print!("Enter your username [{}]: ", default_user);
+                use std::io::Write;
+                std::io::stdout().flush()?;
+
+                let mut input = String::new();
+                std::io::stdin().read_line(&mut input)?;
+                let input = input.trim();
+
+                if input.is_empty() {
+                    default_user
+                } else {
+                    input.to_string()
+                }
             } else {
-                String::new()
-            };
-
-            print!("Enter your username [{}]: ", default_user);
-            use std::io::Write;
-            std::io::stdout().flush()?;
-
-            let mut input = String::new();
-            std::io::stdin().read_line(&mut input)?;
-            let input = input.trim();
-
-            let user = if input.is_empty() {
-                default_user
-            } else {
-                input.to_string()
+                // Non-interactive mode: try git config or default to 'agent'
+                let output = std::process::Command::new("git")
+                    .args(["config", "user.name"])
+                    .output();
+                let mut u = if let Ok(out) = output {
+                    String::from_utf8_lossy(&out.stdout).trim().to_string()
+                } else {
+                    "agent".to_string()
+                };
+                if u.is_empty() {
+                    u = "agent".to_string();
+                }
+                u
             };
 
             if !user.is_empty() {
@@ -949,6 +959,37 @@ fn main() -> anyhow::Result<()> {
             } else {
                 println!("No user configured.");
             }
+
+            // Auto-build topology
+            println!("Building code topology...");
+            use grits_core::topology::{cache::TopologyCache, scanner::DirectoryScanner};
+            let scanner = DirectoryScanner::new();
+            let graph = scanner.scan_with_progress(std::path::Path::new("."), |p| {
+                if let Some(total) = p.total_files {
+                    print!(
+                        "\r\x1b[KScanning topology [{}/{}] {}",
+                        p.files_scanned, total, p.current_file
+                    );
+                } else {
+                    print!(
+                        "\r\x1b[KScanning topology [{}] {}",
+                        p.files_scanned, p.current_file
+                    );
+                }
+                use std::io::Write;
+                std::io::stdout().flush().ok();
+            })?;
+            println!();
+
+            let cache = TopologyCache::from_graph(graph);
+            cache.save(&grits_dir.join("topology.json"))?;
+            println!("Saved topology cache.");
+
+            // Initial export to issues.jsonl
+            let jsonl_path = grits_dir.join("issues.jsonl");
+            let fs = StdFileSystem;
+            store.export_to_jsonl(&jsonl_path, &fs)?;
+            println!("Exported initial issues.jsonl");
 
             println!("Onboarding complete!");
         }
@@ -1028,75 +1069,6 @@ fn main() -> anyhow::Result<()> {
                         );
                     }
                 }
-            }
-        }
-        Commands::Sync {
-            squash,
-            dry_run,
-            validate_topology,
-        } => {
-            // Validate topology before sync if flag is set
-            if validate_topology {
-                use grits_core::topology::{
-                    analysis::TopologicalAnalysis, scanner::DirectoryScanner,
-                };
-                use std::path::Path;
-
-                let git_root = db_path.parent().unwrap().parent().unwrap_or(Path::new("."));
-                let scanner = DirectoryScanner::new();
-
-                let graph = scanner.scan_with_progress(git_root, |progress| {
-                    if let Some(total) = progress.total_files {
-                        print!(
-                            "\r\x1b[KValidating topology [{}/{}] {}",
-                            progress.files_scanned, total, progress.current_file
-                        );
-                    } else {
-                        print!(
-                            "\r\x1b[KValidating topology [{}] {}",
-                            progress.files_scanned, progress.current_file
-                        );
-                    }
-                    std::io::stdout().flush().ok();
-                })?;
-                println!(); // New line after progress
-
-                let analysis = TopologicalAnalysis::analyze(&graph);
-
-                if analysis.betti_1 > 0 {
-                    println!(
-                        "❌ BLOCKED: {} circular dependencies detected!",
-                        analysis.betti_1
-                    );
-                    eprintln!("Run 'gr analysis diff' to see details.");
-                    eprintln!("Fix cycles before syncing or remove --validate-topology to skip.");
-                    return Ok(());
-                }
-                println!(
-                    "✅ Topology OK ({} nodes, {} edges, no cycles)",
-                    analysis.node_count, analysis.edge_count
-                );
-            }
-
-            let grits_dir = db_path.parent().unwrap();
-            let git_root = grits_dir.parent().unwrap_or(std::path::Path::new("."));
-            let git = grits_core::StdGit::new(git_root);
-            let jsonl_path = grits_dir.join("issues.jsonl");
-            let fs = StdFileSystem;
-            grits_core::sync::run_sync(
-                &mut store,
-                &git,
-                git_root,
-                &jsonl_path,
-                &fs,
-                squash,
-                dry_run,
-            )
-            .context("Sync failed")?;
-            if dry_run {
-                println!("Sync complete (dry-run).");
-            } else {
-                println!("Sync complete.");
             }
         }
         Commands::Stats => {

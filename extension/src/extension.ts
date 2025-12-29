@@ -327,7 +327,39 @@ export class GritsEditorProvider implements vscode.CustomTextEditorProvider {
     }
 }
 
-// GritsTreeDataProvider removed - using viewsWelcome instead for zero-friction activation
+/**
+ * Simple Tree Data Provider for the Grits sidebar.
+ * Just provides a link to open the dashboard.
+ */
+class GritsTreeItem extends vscode.TreeItem {
+    constructor(
+        public readonly label: string,
+        public readonly command?: vscode.Command
+    ) {
+        super(label, vscode.TreeItemCollapsibleState.None);
+    }
+}
+
+class GritsTreeDataProvider implements vscode.TreeDataProvider<GritsTreeItem> {
+    private _onDidChangeTreeData: vscode.EventEmitter<GritsTreeItem | undefined | null | void> = new vscode.EventEmitter<GritsTreeItem | undefined | null | void>();
+    readonly onDidChangeTreeData: vscode.Event<GritsTreeItem | undefined | null | void> = this._onDidChangeTreeData.event;
+
+    getTreeItem(element: GritsTreeItem): vscode.TreeItem {
+        return element;
+    }
+
+    getChildren(element?: GritsTreeItem): Thenable<GritsTreeItem[]> {
+        if (element) {
+            return Promise.resolve([]);
+        }
+        return Promise.resolve([
+            new GritsTreeItem('Open Dashboard', {
+                command: 'grits.openDashboard',
+                title: 'Open Dashboard'
+            })
+        ]);
+    }
+}
 
 /**
  * Extension activation
@@ -336,7 +368,11 @@ export function activate(context: vscode.ExtensionContext) {
     // Register custom editor provider (for .jsonl files)
     context.subscriptions.push(GritsEditorProvider.register(context));
 
-    // viewsWelcome handles sidebar - no tree provider needed
+    // Register tree data provider for sidebar
+    const treeDataProvider = new GritsTreeDataProvider();
+    context.subscriptions.push(
+        vscode.window.registerTreeDataProvider('grits.welcome', treeDataProvider)
+    );
 
     // Register command to open the FULL dashboard panel
     context.subscriptions.push(

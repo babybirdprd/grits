@@ -44,7 +44,6 @@ impl IncrementalScanner {
         self
     }
 
-    /// Perform incremental scan, only re-parsing changed files
     pub fn scan_incremental<F>(
         &self,
         dir: &Path,
@@ -54,10 +53,19 @@ impl IncrementalScanner {
     where
         F: Fn(ScanProgress) + Sync,
     {
+        tracing::info!("Incremental scan starting...");
+
         // Get current HEAD
         let current_head = match TopologyCache::get_current_head(dir) {
-            Ok(h) => h,
-            Err(_) => {
+            Ok(h) => {
+                tracing::info!("Current HEAD: {}", h);
+                h
+            }
+            Err(e) => {
+                tracing::warn!(
+                    "Failed to get current HEAD: {:?}. Falling back to full rebuild.",
+                    e
+                );
                 // Not a git repo or error - do full rebuild
                 return self.full_rebuild(dir, cache, on_progress);
             }
@@ -65,6 +73,7 @@ impl IncrementalScanner {
 
         // Check if cache is stale
         if !cache.is_stale(&current_head) {
+            tracing::info!("Cache is up to date (HEAD: {}).", current_head);
             // Cache is up to date
             return Ok(IncrementalScanResult {
                 added_nodes: vec![],
@@ -75,12 +84,37 @@ impl IncrementalScanner {
             });
         }
 
+        tracing::info!(
+            "Cache is stale (cached: {:?}, current: {}).",
+            cache.git_commit_hash,
+            current_head
+        );
+
         // Get changed files
         let changed_files = cache.get_changed_files(dir)?;
+        tracing::info!(
+            "Changed files from git: {} files found.",
+            changed_files.len()
+        );
 
-        if changed_files.is_empty() || cache.git_commit_hash.is_none() {
-            // No cached hash or git diff failed - do full rebuild
-            return self.full_rebuild(dir, cache, on_progress);
+        if changed_files.is_empty() {
+            if cache.git_commit_hash.is_none() {
+                tracing::info!("No cached hash found. Falling back to full rebuild.");
+                return self.full_rebuild(dir, cache, on_progress);
+            } else {
+                tracing::info!(
+                    "No changed files detected by git. Updating hash to {}.",
+                    current_head
+                );
+                cache.git_commit_hash = Some(current_head);
+                return Ok(IncrementalScanResult {
+                    added_nodes: vec![],
+                    removed_nodes: vec![],
+                    modified_edges: vec![],
+                    files_parsed: 0,
+                    was_full_rebuild: false,
+                });
+            }
         }
 
         // Filter to only supported extensions
@@ -94,6 +128,10 @@ impl IncrementalScanner {
             .collect();
 
         if relevant_files.is_empty() {
+            tracing::info!(
+                "No relevant (supported extension) files changed. Updating hash to {}.",
+                current_head
+            );
             // No relevant files changed, just update the hash
             cache.git_commit_hash = Some(current_head);
             return Ok(IncrementalScanResult {
@@ -104,6 +142,8 @@ impl IncrementalScanner {
                 was_full_rebuild: false,
             });
         }
+
+        tracing::info!("Re-parsing {} relevant files.", relevant_files.len());
 
         // Track nodes before update
         let old_nodes: HashSet<String> = cache.graph.nodes.keys().cloned().collect();

@@ -1,7 +1,7 @@
 {
     "name": "grits-webview",
     "private": true,
-    "version": "2.3.0",
+    "version": "2.4.0",
     "type": "module",
     "scripts": {
         "dev": "vite",
@@ -22,12 +22,14 @@
         "zustand": "^4.5.0"
     },
     "devDependencies": {
+        "@tailwindcss/vite": "^4.1.18",
         "@types/react": "^18.2.0",
         "@types/react-dom": "^18.2.0",
         "@types/react-virtualized-auto-sizer": "^1.0.4",
         "@types/react-window": "^1.8.8",
         "@types/three": "^0.182.0",
         "@vitejs/plugin-react": "^4.0.0",
+        "tailwindcss": "^4.1.18",
         "typescript": "^5.0.0",
         "vite": "^5.0.0"
     }

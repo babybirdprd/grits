@@ -27,6 +27,14 @@ impl TopologyCache {
         }
     }
 
+    pub fn from_graph(graph: SymbolGraph) -> Self {
+        Self {
+            graph,
+            file_hashes: HashMap::new(),
+            git_commit_hash: None,
+        }
+    }
+
     pub fn load(path: &Path) -> Result<Self> {
         let content = fs::read_to_string(path)?;
         let cache = serde_json::from_str(&content)?;
