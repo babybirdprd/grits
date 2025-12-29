@@ -38,7 +38,7 @@ export interface Comment {
 }
 
 // View types
-export type ViewType = 'list' | 'kanban' | 'graph' | 'agenda' | 'topology';
+export type ViewType = 'list' | 'kanban' | 'graph' | 'agenda' | 'topology' | 'settings';
 
 // VS Code postMessage API
 declare global {

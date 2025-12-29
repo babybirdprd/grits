@@ -7,6 +7,198 @@ use streaming_iterator::StreamingIterator;
 #[cfg(not(target_arch = "wasm32"))]
 use tree_sitter::{Parser, Query, QueryCursor};
 
+/// Language built-ins that should be excluded from topology analysis.
+/// These create "noise" in cycle detection as they're used everywhere.
+#[cfg(not(target_arch = "wasm32"))]
+fn is_builtin_symbol(name: &str, language: &str) -> bool {
+    // Rust built-ins
+    static RUST_BUILTINS: &[&str] = &[
+        "Ok",
+        "Err",
+        "Some",
+        "None",
+        "Result",
+        "Option",
+        "String",
+        "Vec",
+        "Box",
+        "Rc",
+        "Arc",
+        "RefCell",
+        "Cell",
+        "Mutex",
+        "RwLock",
+        "HashMap",
+        "HashSet",
+        "BTreeMap",
+        "BTreeSet",
+        "println",
+        "print",
+        "eprintln",
+        "eprint",
+        "format",
+        "panic",
+        "assert",
+        "assert_eq",
+        "assert_ne",
+        "debug_assert",
+        "unreachable",
+        "todo",
+        "unimplemented",
+        "dbg",
+        "vec",
+        "write",
+        "writeln",
+        "include_str",
+        "include_bytes",
+        "env",
+        "concat",
+        "stringify",
+        "cfg",
+        "matches",
+        "Clone",
+        "Copy",
+        "Default",
+        "Debug",
+        "Display",
+        "PartialEq",
+        "Eq",
+        "PartialOrd",
+        "Ord",
+        "Hash",
+        "Send",
+        "Sync",
+        "Sized",
+        "Drop",
+        "From",
+        "Into",
+        "TryFrom",
+        "TryInto",
+        "AsRef",
+        "AsMut",
+        "Deref",
+        "DerefMut",
+        "Iterator",
+        "IntoIterator",
+        "Extend",
+        "FromIterator",
+        "Read",
+        "Write",
+        "Seek",
+        "BufRead",
+        "Error",
+        "Display",
+    ];
+
+    // TypeScript/JavaScript built-ins
+    static JS_BUILTINS: &[&str] = &[
+        "console",
+        "log",
+        "error",
+        "warn",
+        "info",
+        "debug",
+        "Promise",
+        "async",
+        "await",
+        "setTimeout",
+        "setInterval",
+        "clearTimeout",
+        "clearInterval",
+        "Array",
+        "Object",
+        "String",
+        "Number",
+        "Boolean",
+        "Symbol",
+        "Map",
+        "Set",
+        "WeakMap",
+        "WeakSet",
+        "JSON",
+        "Math",
+        "Date",
+        "RegExp",
+        "Error",
+        "TypeError",
+        "RangeError",
+        "SyntaxError",
+        "parseInt",
+        "parseFloat",
+        "isNaN",
+        "isFinite",
+        "encodeURI",
+        "decodeURI",
+        "fetch",
+        "require",
+        "module",
+        "exports",
+        "process",
+    ];
+
+    // Python built-ins
+    static PYTHON_BUILTINS: &[&str] = &[
+        "print",
+        "len",
+        "range",
+        "str",
+        "int",
+        "float",
+        "bool",
+        "list",
+        "dict",
+        "set",
+        "tuple",
+        "open",
+        "input",
+        "type",
+        "isinstance",
+        "hasattr",
+        "getattr",
+        "setattr",
+        "delattr",
+        "sum",
+        "min",
+        "max",
+        "abs",
+        "round",
+        "sorted",
+        "reversed",
+        "enumerate",
+        "zip",
+        "map",
+        "filter",
+        "any",
+        "all",
+        "next",
+        "iter",
+        "super",
+        "property",
+        "classmethod",
+        "staticmethod",
+        "Exception",
+        "ValueError",
+        "TypeError",
+        "KeyError",
+        "IndexError",
+        "AttributeError",
+    ];
+
+    // Go built-ins
+    static GO_BUILTINS: &[&str] = &[
+        "fmt", "Println", "Printf", "Sprintf", "Errorf", "Print", "make", "new", "len", "cap",
+        "append", "copy", "delete", "close", "panic", "recover", "error", "nil",
+    ];
+
+    match language {
+        "rust" => RUST_BUILTINS.contains(&name),
+        "typescript" | "ts" | "javascript" | "js" => JS_BUILTINS.contains(&name),
+        "python" | "py" => PYTHON_BUILTINS.contains(&name),
+        "go" => GO_BUILTINS.contains(&name),
+        _ => false,
+    }
+}
+
 #[cfg(not(target_arch = "wasm32"))]
 pub struct CodeParser {
     parser: Parser,
@@ -96,6 +288,10 @@ impl CodeParser {
                         } else if capture_name == "mod_name" {
                             graph.add_weighted_dependency(file_path, text, "imports", 0.3);
                         } else if capture_name == "call" {
+                            // Skip language built-ins that create noise in cycle detection
+                            if is_builtin_symbol(text, &self.language) {
+                                continue;
+                            }
                             let mut strength = 0.6;
                             let mut parent = capture.node.parent();
                             while let Some(p) = parent {
@@ -167,6 +363,10 @@ impl CodeParser {
                             });
                             graph.add_weighted_dependency(&id, file_path, "defined_in", 1.0);
                         } else if capture_name == "call" {
+                            // Skip language built-ins that create noise in cycle detection
+                            if is_builtin_symbol(text, &self.language) {
+                                continue;
+                            }
                             let mut strength = 0.6;
                             let mut parent = capture.node.parent();
                             while let Some(p) = parent {
@@ -225,6 +425,10 @@ impl CodeParser {
                             });
                             graph.add_weighted_dependency(&id, file_path, "defined_in", 1.0);
                         } else if capture_name == "call" {
+                            // Skip language built-ins that create noise in cycle detection
+                            if is_builtin_symbol(text, &self.language) {
+                                continue;
+                            }
                             let mut strength = 0.6;
                             let mut parent = capture.node.parent();
                             while let Some(p) = parent {
@@ -284,6 +488,10 @@ impl CodeParser {
                             });
                             graph.add_weighted_dependency(&id, file_path, "defined_in", 1.0);
                         } else if capture_name == "call" {
+                            // Skip language built-ins that create noise in cycle detection
+                            if is_builtin_symbol(text, &self.language) {
+                                continue;
+                            }
                             let mut strength = 0.6;
                             let mut parent = capture.node.parent();
                             while let Some(p) = parent {
@@ -338,6 +546,10 @@ impl CodeParser {
                             });
                             graph.add_weighted_dependency(&id, file_path, "defined_in", 1.0);
                         } else if capture_name == "call" {
+                            // Skip language built-ins that create noise in cycle detection
+                            if is_builtin_symbol(text, &self.language) {
+                                continue;
+                            }
                             let mut strength = 0.6;
                             let mut parent = capture.node.parent();
                             while let Some(p) = parent {

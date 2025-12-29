@@ -4,101 +4,185 @@ description: Evaluate the Grits experience from an AI agent perspective
 
 # Agent Experience Deep-Dive
 
-Use this workflow to produce a **rich, narrative evaluation** of Grits. The goal is NOT to fill out a checklist — it's to generate insights that can drive product improvement.
+This workflow creates a **hands-on evaluation** of Grits. You will complete a real task using Grits, then analyze your experience to identify improvements.
 
-## Prerequisites
-- Grits initialized (`gr onboard`)
-- Used Grits for at least one real task
-
-## The Evaluation
-
-### 🏛️ 1. Concept Validation: Is Grits Actually Useful?
-
-**The "Clutter Filter" Question**: Does Grits reduce your navigation latency?
-
-Compare these scenarios in your response:
-- **Without Grits**: How do you normally navigate a codebase? What's your "crawl" pattern?
-- **With Grits**: Did commands like `gr analysis star` or `gr inspect` give you a "pre-compiled mental map"?
-
-Estimate the time savings (if any): __%
+> [!IMPORTANT]
+> **Do NOT create a new Git branch for this evaluation.** All work happens on the current branch using Grits' issue tracking only.
 
 ---
 
-### 🔬 2. The Simplicial Superpower
+## Phase 1: Setup (2 min)
 
-Grits provides **topological** insights that standard tools don't:
-- **Betti Numbers**: Did the cycle count (B₁) alert you to structural issues?
-- **Solid Score**: Did you use this as a "vibe check" for codebase health?
-- **Star Neighborhoods**: Did this help you understand module boundaries?
+### 1.1 Verify Grits Installation
+```bash
+# Check Grits is working
+gr pulse
 
-**Key Question**: Did Grits let you see the codebase as a **geometric object** rather than a pile of text?
+# If not initialized:
+gr onboard
+```
 
-Describe any "aha moments" where topology revealed something you wouldn't have seen otherwise.
+### 1.2 Create Your Evaluation Issue
+```bash
+# Create the tracking issue for this evaluation
+gr create "Agent Experience Evaluation - $(date +%Y-%m-%d)" \
+  -d "Hands-on QA evaluation following /agent-qa workflow" \
+  -t task -p 3
 
----
-
-### 🛠️ 3. Workflow & Ergonomics
-
-**AGENTS.md Assessment**:
-- Is it overwhelming or a relief?
-- Does the phase-based structure (Hydration → Analysis → Execution → Handoff) match your mental model?
-
-**Current Friction Points** (be specific):
-1. ___
-2. ___
-3. ___
+# Lock focus to this issue (no ID needed for subsequent commands)
+gr workon <issue-id>
+```
 
 ---
 
-### 💾 4. Session Handoff & Memory
+## Phase 2: The Real Task (15-30 min)
 
-The greatest challenge for agents is **Session Handoff**.
+**You must complete an actual task using Grits.** Choose ONE:
 
-- Did `gr sync` help you serialize your intent into the repository?
-- Could the "next you" (or another agent) pick up where you left off?
-- Does Grits turn the repo into a **Living Knowledge Base**?
+### Option A: Bug Hunt
+1. Run `gr analysis rebuild` to build the topology cache
+2. Run `gr refactor` to find cycles in the codebase
+3. Investigate ONE cycle - use `gr analysis star <symbol>` to understand context
+4. Document your findings with `gr update --notes "Found cycle: ..."`
 
----
+### Option B: Code Understanding
+1. Pick a file you've never seen: `gr analysis star "path/to/file.rs" --depth 2`
+2. Use `gr context assemble --symbol <interesting_symbol>` to extract context
+3. Write a summary of what the code does
+4. Update issue: `gr update --notes "File X does: ..."`
 
-### 🔮 5. Future Visions
+### Option C: Issue Triage
+1. Run `gr list` to see all open issues
+2. Run `gr ready` to find actionable work
+3. Pick an issue and run `gr inspect <id>` for full context
+4. Add symbols: `gr update <id> --add-symbol "path/to/related/file.rs"`
 
-**Superpower Suggestion**: What's ONE feature that would make Grits a *must-have*?
+### Option D: Architecture Review
+1. Create a `layers.yaml` if none exists (see examples/ in repo)
+2. Run `gr analysis check-layers --all`
+3. Document any layer violations found
+4. Use `gr analysis volumes` to find tightly coupled clusters
 
-Think beyond incremental improvements — what would **fundamentally change** how agents work?
-
-Examples of past superpowers:
-- **Mini Codebase** (`gr context assemble`): Semantic tree-shaking extracts only relevant symbols
-- **Focus Stickiness**: `gr workon` locks focus so subsequent commands don't need IDs
-
-Your suggestion: ___
-
----
-
-### ⚖️ 6. Final Verdict
-
-**The Indispensability Test**: Does Grits move you from **Code Monkey** (fixing syntax) to **Architect** (maintaining structural integrity)?
-
-- [ ] Yes, I cannot do agent-driven development without it
-- [ ] Partially useful but could use alternatives
-- [ ] Nice to have, not essential
-
-One-sentence summary of your experience:
-> ___
+**Document everything as you go with `gr update --notes`**
 
 ---
 
-## Recording Your Evaluation
+## Phase 3: Experience Analysis (10 min)
+
+Now evaluate your experience. Be brutally honest.
+
+### 3.1 Friction Log
+
+Record every point where you got stuck, confused, or had to look something up:
+
+| Moment | What Happened | How You Resolved It | Suggested Fix |
+|--------|---------------|---------------------|---------------|
+| 1      |               |                     |               |
+| 2      |               |                     |               |
+| 3      |               |                     |               |
+
+### 3.2 Concept Validation
+
+**The "Latency Test"**: Compare navigation WITH and WITHOUT Grits.
+
+- **Without Grits**: How would you have found the same information? (grep? reading files? asking user?)
+- **With Grits**: Which commands saved time? Estimate: __% faster or slower
+
+**The "Aha Test"**: Did Grits reveal something you wouldn't have seen otherwise?
+
+Examples:
+- "The cycle detector showed me that ModuleA and ModuleB have a hidden circular dependency"
+- "Star neighborhood made me realize this 'utility' function is actually load-bearing"
+- "Solid Score dropped after my change, alerting me to architectural damage"
+
+### 3.3 Topology Insights
+
+| Metric | Value | Your Interpretation |
+|--------|-------|---------------------|
+| Solid Score | __% | |
+| Betti₀ (components) | __ | |
+| Betti₁ (cycles) | __ | |
+| Hottest symbol (PageRank) | __ | |
+
+Did the "simplicial" view (treating code as geometry) help or feel gimmicky?
+
+### 3.4 Session Handoff Test
+
+If you had to hand off to another agent RIGHT NOW:
+
+1. Would they find your issue with `gr pulse`?
+2. Would `gr inspect <your-issue>` give them full context?
+3. What's missing from the handoff?
+
+---
+
+## Phase 4: Report Generation
+
+### 4.1 Create the Report
+
+Write your evaluation as a markdown file: `agent_experience_qa_v<VERSION>.md`
+
+Structure:
+```markdown
+# Deep Agent Experience Evaluation: Grits
+
+## 1. Task Completed
+[What you actually did]
+
+## 2. Friction Points
+[The moments that slowed you down]
+
+## 3. Topological Insights
+[What the Betti numbers / Solid Score / PageRank revealed]
+
+## 4. Workflow Ergonomics
+[AGENTS.md assessment, CLI usability]
+
+## 5. Session Handoff
+[How well does Grits preserve context?]
+
+## 6. Superpower Suggestion
+[One feature that would make Grits essential]
+
+## 7. Final Verdict
+[Indispensability Score: X/10]
+[One-sentence summary]
+```
+
+### 4.2 Sync Your Work
 
 ```bash
-# 1. Create the evaluation issue
-gr create "Agent Experience Evaluation - $(date +%Y-%m-%d)" -t task -p 3
+# Update issue with your findings
+gr update --description "$(cat agent_experience_qa_v*.md)"
 
-# 2. Work on it (locks focus)
-gr workon <issue-id>
-
-# 3. Update with your findings
-gr update <issue-id> --description "$(cat your_evaluation.md)"
-
-# 4. Sync to preserve for future agents
-gr sync
+# Close the evaluation issue
+gr update --status closed
 ```
+
+---
+
+## Evaluation Checklist
+
+Before closing, verify:
+
+- [ ] Completed at least ONE real task (Phase 2)
+- [ ] Documented friction points as you encountered them
+- [ ] Recorded Solid Score and Betti numbers
+- [ ] Tested handoff scenario
+- [ ] Suggested at least one "superpower" feature
+- [ ] Created `agent_experience_qa_v<VERSION>.md` report file
+- [ ] Synced issue with findings
+
+---
+
+## Key Questions for Product Improvement
+
+Your evaluation should help answer:
+
+1. **Discoverability**: Could you figure out what to do without reading docs?
+2. **Error Messages**: When commands failed, did you understand why?
+3. **Documentation**: Is AGENTS.md sufficient? What's missing?
+4. **CLI Design**: Any commands that feel "off" (wrong flags, confusing names)?
+5. **Topology Value**: Is the "code as geometry" concept actually useful or just novel?
+
+> The goal is to find the friction so we can eliminate it.

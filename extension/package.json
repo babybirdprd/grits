@@ -2,7 +2,7 @@
   "name": "grits-kanban",
   "displayName": "Grits Issue Tracker",
   "description": "Visual Kanban board and issue management for Grits (.jsonl) files",
-  "version": "2.4.1",
+  "version": "2.4.2",
   "repository": {
     "type": "git",
     "url": "https://github.com/babybirdprd/grits"
@@ -32,18 +32,11 @@
         {
           "id": "grits.welcome",
           "name": "Grits Studio",
-          "contextualTitle": "Grits Studio",
+          "type": "webview",
           "icon": "media/grits-icon.svg"
         }
       ]
     },
-    "viewsWelcome": [
-      {
-        "view": "grits.welcome",
-        "contents": "Welcome to Grits Studio!\n\n[Open Command Center](command:grits.openDashboard)\n\nThe command center gives you full visibility into agent work, code topology, and project health.",
-        "when": "true"
-      }
-    ],
     "customEditors": [
       {
         "viewType": "grits.issueTracker",

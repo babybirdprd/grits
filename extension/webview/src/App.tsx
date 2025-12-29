@@ -313,7 +313,6 @@ export function App() {
 
                 <div className="mt-auto mb-4 border-t border-vscode-border pt-4">
                     <NavItem id="agenda" label="Focus" icon="🎯" badge={blockedCount} />
-                    {/* @ts-ignore */}
                     <NavItem id="settings" label="Settings" icon="⚙" />
                 </div>
             </nav>
@@ -457,7 +456,6 @@ export function App() {
                                 </aside>
                             </div>
                         )}
-                        {/* @ts-ignore */}
                         {view === 'settings' && (
                             <div className="p-10 flex flex-col items-center justify-center h-full text-center">
                                 <div className="text-4xl mb-4">⚙️</div>

@@ -278,6 +278,24 @@ export class GritsEditorProvider implements vscode.CustomTextEditorProvider {
         webviewPanel.onDidDispose(() => {
             changeDocumentSubscription.dispose();
         });
+
+        // Also load topology.json if it exists (for topology view)
+        this.loadTopologyData(webviewPanel.webview);
+    }
+
+    private async loadTopologyData(webview: vscode.Webview) {
+        const topoFiles = await vscode.workspace.findFiles('**/.grits/topology.json', null, 1);
+        if (topoFiles.length > 0) {
+            try {
+                const topoDoc = await vscode.workspace.openTextDocument(topoFiles[0]);
+                webview.postMessage({
+                    type: 'topology',
+                    data: topoDoc.getText(),
+                });
+            } catch (e) {
+                console.log('No topology cache found');
+            }
+        }
     }
 
     private postMessage(webview: vscode.Webview, type: string, data: object) {
@@ -327,37 +345,104 @@ export class GritsEditorProvider implements vscode.CustomTextEditorProvider {
     }
 }
 
+
 /**
- * Simple Tree Data Provider for the Grits sidebar.
- * Just provides a link to open the dashboard.
+ * Sidebar Webview View Provider
+ * Shows a simple welcome view with a button to open the full dashboard
  */
-class GritsTreeItem extends vscode.TreeItem {
-    constructor(
-        public readonly label: string,
-        public readonly command?: vscode.Command
-    ) {
-        super(label, vscode.TreeItemCollapsibleState.None);
+class GritsSidebarProvider implements vscode.WebviewViewProvider {
+    public static readonly viewType = 'grits.welcome';
+
+    constructor(private readonly _context: vscode.ExtensionContext) { }
+
+    public resolveWebviewView(
+        webviewView: vscode.WebviewView,
+        _context: vscode.WebviewViewResolveContext,
+        _token: vscode.CancellationToken
+    ): void {
+        webviewView.webview.options = {
+            enableScripts: true,
+        };
+
+        webviewView.webview.html = this._getHtml(webviewView.webview);
+
+        webviewView.webview.onDidReceiveMessage((message) => {
+            if (message.command === 'openDashboard') {
+                vscode.commands.executeCommand('grits.openDashboard');
+            }
+        });
     }
-}
 
-class GritsTreeDataProvider implements vscode.TreeDataProvider<GritsTreeItem> {
-    private _onDidChangeTreeData: vscode.EventEmitter<GritsTreeItem | undefined | null | void> = new vscode.EventEmitter<GritsTreeItem | undefined | null | void>();
-    readonly onDidChangeTreeData: vscode.Event<GritsTreeItem | undefined | null | void> = this._onDidChangeTreeData.event;
-
-    getTreeItem(element: GritsTreeItem): vscode.TreeItem {
-        return element;
-    }
-
-    getChildren(element?: GritsTreeItem): Thenable<GritsTreeItem[]> {
-        if (element) {
-            return Promise.resolve([]);
+    private _getHtml(webview: vscode.Webview): string {
+        return `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: var(--vscode-font-family);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 200px;
+            text-align: center;
         }
-        return Promise.resolve([
-            new GritsTreeItem('Open Dashboard', {
-                command: 'grits.openDashboard',
-                title: 'Open Dashboard'
-            })
-        ]);
+        .logo {
+            width: 64px;
+            height: 64px;
+            background: var(--vscode-focusBorder);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            font-weight: bold;
+            color: white;
+            margin-bottom: 16px;
+        }
+        h2 {
+            margin: 0 0 8px 0;
+            font-size: 16px;
+            color: var(--vscode-foreground);
+        }
+        p {
+            margin: 0 0 20px 0;
+            font-size: 12px;
+            color: var(--vscode-descriptionForeground);
+            line-height: 1.4;
+        }
+        button {
+            background: var(--vscode-button-background);
+            color: var(--vscode-button-foreground);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+        }
+        button:hover {
+            background: var(--vscode-button-hoverBackground);
+        }
+    </style>
+</head>
+<body>
+    <div class="logo">G</div>
+    <h2>Grits Studio</h2>
+    <p>Agent-aware issue tracking with code topology intelligence</p>
+    <button onclick="openDashboard()">Open Dashboard</button>
+    <script>
+        const vscode = acquireVsCodeApi();
+        function openDashboard() {
+            vscode.postMessage({ command: 'openDashboard' });
+        }
+    </script>
+</body>
+</html>`;
     }
 }
 
@@ -368,10 +453,10 @@ export function activate(context: vscode.ExtensionContext) {
     // Register custom editor provider (for .jsonl files)
     context.subscriptions.push(GritsEditorProvider.register(context));
 
-    // Register tree data provider for sidebar
-    const treeDataProvider = new GritsTreeDataProvider();
+    // Register sidebar webview provider
+    const sidebarProvider = new GritsSidebarProvider(context);
     context.subscriptions.push(
-        vscode.window.registerTreeDataProvider('grits.welcome', treeDataProvider)
+        vscode.window.registerWebviewViewProvider(GritsSidebarProvider.viewType, sidebarProvider)
     );
 
     // Register command to open the FULL dashboard panel
