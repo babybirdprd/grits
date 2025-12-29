@@ -2,7 +2,6 @@ import { useRef, useMemo, useState } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, Line, Html } from '@react-three/drei';
 import * as THREE from 'three';
-import './TopologyScene.css';
 
 // Types for topology data
 interface TopologyNode {
@@ -88,10 +87,12 @@ function Node3D({
             {/* Label on hover */}
             {(hovered || isSelected) && (
                 <Html distanceFactor={10}>
-                    <div className="node-tooltip">
-                        <strong>{node.name}</strong>
-                        <span className="node-kind">{node.kind}</span>
-                        {node.package && <span className="node-pkg">{node.package}</span>}
+                    <div className="bg-vscode-sidebar/90 backdrop-blur-md border border-vscode-border p-2 rounded shadow-2xl pointer-events-none whitespace-nowrap animate-in fade-in zoom-in-95 duration-150">
+                        <strong className="block text-sm">{node.name}</strong>
+                        <div className="flex gap-2 items-center mt-1">
+                            <span className="text-[10px] font-bold uppercase tracking-wider opacity-60 bg-vscode-bg px-1 rounded">{node.kind}</span>
+                            {node.package && <span className="text-[10px] opacity-40 italic">{node.package}</span>}
+                        </div>
                     </div>
                 </Html>
             )}
@@ -157,7 +158,6 @@ function useLayout(data: TopologyData | null) {
         const count = nodeIds.length;
 
         // Simple spherical layout for now
-        // TODO: Implement proper force-directed layout
         nodeIds.forEach((id, i) => {
             const phi = Math.acos(-1 + (2 * i) / count);
             const theta = Math.sqrt(count * Math.PI) * phi;
@@ -189,12 +189,7 @@ function SceneContent({
     if (!data) {
         return (
             <Html center>
-                <div style={{
-                    color: '#666666',
-                    fontSize: '14px',
-                    textAlign: 'center',
-                    padding: '20px'
-                }}>
+                <div className="text-vscode-fg/40 text-sm text-center p-5 bg-vscode-sidebar/20 backdrop-blur rounded-xl border border-vscode-border/50">
                     No topology data.<br />
                     Run 'gr analysis rebuild' first.
                 </div>
@@ -288,12 +283,12 @@ ${files.slice(1).map(f => `- ${f}`).join('\n')}
     };
 
     return (
-        <div className="topology-scene">
+        <div className="relative w-full h-full overflow-hidden bg-vscode-bg select-none">
             {/* Vitals overlay */}
-            <div className="vitals-overlay">
-                <div className="solid-score">
-                    <span className="score-label">Solid Score</span>
-                    <span className="score-value" style={{
+            <div className="absolute top-6 left-6 z-10 p-4 bg-vscode-sidebar/40 backdrop-blur-xl border border-white/5 rounded-2xl shadow-2xl">
+                <div className="flex flex-col gap-1">
+                    <span className="text-[10px] font-bold uppercase tracking-[0.2em] opacity-40">Solid Score</span>
+                    <span className="text-3xl font-black tracking-tighter" style={{
                         color: (solidScore || 0) > 0.7 ? '#44ff88' :
                             (solidScore || 0) > 0.4 ? '#ffaa44' : '#ff4444'
                     }}>
@@ -304,46 +299,55 @@ ${files.slice(1).map(f => `- ${f}`).join('\n')}
 
             {/* Node Inspector Panel */}
             {selectedNodeData && (
-                <div className="node-inspector">
-                    <div className="inspector-header">
-                        <h3>Node Inspector</h3>
-                        <button className="close-inspector" onClick={() => setSelectedNode(null)}>×</button>
+                <div className="absolute top-6 right-6 z-20 w-80 bg-vscode-sidebar/80 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-[0_32px_64px_-12px_rgba(0,0,0,0.5)] animate-in slide-in-from-right-8 duration-300">
+                    <div className="p-4 border-b border-white/5 flex justify-between items-center">
+                        <h3 className="text-sm font-bold opacity-80 uppercase tracking-widest">Node Inspector</h3>
+                        <button className="h-6 w-6 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors" onClick={() => setSelectedNode(null)}>×</button>
                     </div>
-                    <div className="inspector-content">
-                        <div className="inspector-field">
-                            <span className="field-label">Symbol</span>
-                            <span className="field-value">{selectedNodeData.name}</span>
+                    <div className="p-5 flex flex-col gap-6">
+                        <div className="flex flex-col gap-1">
+                            <span className="text-[10px] uppercase font-bold tracking-wider opacity-30">Symbol</span>
+                            <span className="text-lg font-bold leading-tight truncate">{selectedNodeData.name}</span>
                         </div>
-                        <div className="inspector-field">
-                            <span className="field-label">File</span>
-                            <span className="field-value file-path">{selectedNodeData.file_path?.split(/[\\/]/).pop()}</span>
+                        <div className="flex flex-col gap-1">
+                            <span className="text-[10px] uppercase font-bold tracking-wider opacity-30">File</span>
+                            <span className="text-xs font-mono opacity-60 truncate bg-black/20 p-1.5 rounded border border-white/5">{selectedNodeData.file_path?.split(/[\\/]/).pop()}</span>
                         </div>
-                        <div className="inspector-field">
-                            <span className="field-label">PageRank</span>
-                            <span className="field-value rank-badge">{((selectedNodeData.pageRank || 0) * 100).toFixed(0)}</span>
-                        </div>
-                        {selectedNodeData.inCycle && (
-                            <div className="inspector-warning">⚠️ In Cycle - Consider refactoring</div>
-                        )}
 
-                        <div className="inspector-section">
-                            <span className="section-label">⭐ Star Neighborhood</span>
-                            <ul className="neighbor-list">
+                        <div className="flex gap-4">
+                            <div className="flex-1 flex flex-col gap-1">
+                                <span className="text-[10px] uppercase font-bold tracking-wider opacity-30">PageRank</span>
+                                <span className="text-xl font-bold text-vscode-accent">{((selectedNodeData.pageRank || 0) * 100).toFixed(0)}</span>
+                            </div>
+                            {selectedNodeData.inCycle && (
+                                <div className="flex-1 flex items-center gap-2 text-xs font-bold text-red-400 bg-red-400/10 p-2 rounded-lg border border-red-400/20">
+                                    <span>⚠️</span> In Cycle
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="flex flex-col gap-2">
+                            <span className="text-[10px] uppercase font-bold tracking-wider opacity-30">⭐ Star Neighborhood</span>
+                            <ul className="flex flex-col gap-1">
                                 {starNeighborhood.map(id => (
-                                    <li key={id} onClick={() => handleNodeSelect(id)}>
+                                    <li
+                                        key={id}
+                                        onClick={() => handleNodeSelect(id)}
+                                        className="text-xs p-2 rounded-lg hover:bg-white/5 border border-transparent hover:border-white/10 cursor-pointer transition-all truncate"
+                                    >
+                                        <span className="opacity-40 mr-2">◈</span>
                                         {data?.nodes[id]?.name?.split('::').pop() || id}
                                     </li>
                                 ))}
-                                {starNeighborhood.length === 0 && <li className="empty">No connections</li>}
+                                {starNeighborhood.length === 0 && <li className="text-xs opacity-30 italic p-2">No connections</li>}
                             </ul>
                         </div>
 
-                        <div className="inspector-actions">
-                            <button className="action-btn primary" onClick={copyForAgent}>
+                        <div className="flex flex-col gap-2 pt-2">
+                            <button className="w-full py-2.5 bg-vscode-accent text-white rounded-xl text-xs font-bold shadow-lg shadow-vscode-accent/20 hover:opacity-90 transition-all active:scale-95" onClick={copyForAgent}>
                                 {copied ? '✓ Copied!' : '📋 Copy for Agent'}
                             </button>
-                            <button className="action-btn" onClick={() => {
-                                // TODO: Integrate with issue creation
+                            <button className="w-full py-2 bg-white/5 hover:bg-white/10 text-white/70 rounded-xl text-xs font-bold transition-all" onClick={() => {
                                 console.log('Create issue for:', selectedNodeData.name);
                             }}>
                                 📝 Create Issue
@@ -354,28 +358,28 @@ ${files.slice(1).map(f => `- ${f}`).join('\n')}
             )}
 
             {/* Legend */}
-            <div className="legend">
-                <div className="legend-item">
-                    <span className="dot" style={{ background: '#4a9eff' }} />
-                    <span>File</span>
+            <div className="absolute bottom-6 left-6 z-10 flex flex-col gap-3 p-4 bg-vscode-sidebar/40 backdrop-blur-xl border border-white/5 rounded-2xl">
+                <div className="flex items-center gap-3">
+                    <span className="h-2 w-2 rounded-full shadow-[0_0_8px] shadow-[#4a9eff]" style={{ background: '#4a9eff' }} />
+                    <span className="text-[10px] font-bold uppercase tracking-wider opacity-60">File</span>
                 </div>
-                <div className="legend-item">
-                    <span className="dot" style={{ background: '#44ff88' }} />
-                    <span>Function</span>
+                <div className="flex items-center gap-3">
+                    <span className="h-2 w-2 rounded-full shadow-[0_0_8px] shadow-[#44ff88]" style={{ background: '#44ff88' }} />
+                    <span className="text-[10px] font-bold uppercase tracking-wider opacity-60">Function</span>
                 </div>
-                <div className="legend-item">
-                    <span className="dot" style={{ background: '#ffaa44' }} />
-                    <span>Class/Struct</span>
+                <div className="flex items-center gap-3">
+                    <span className="h-2 w-2 rounded-full shadow-[0_0_8px] shadow-[#ffaa44]" style={{ background: '#ffaa44' }} />
+                    <span className="text-[10px] font-bold uppercase tracking-wider opacity-60">Class/Struct</span>
                 </div>
-                <div className="legend-item">
-                    <span className="dot" style={{ background: '#ff4444' }} />
-                    <span>In Cycle</span>
+                <div className="flex items-center gap-3">
+                    <span className="h-2 w-2 rounded-full shadow-[0_0_8px] shadow-[#ff4444]" style={{ background: '#ff4444' }} />
+                    <span className="text-[10px] font-bold uppercase tracking-wider opacity-60">In Cycle</span>
                 </div>
             </div>
 
             <Canvas
                 camera={{ position: [0, 0, 30], fov: 60 }}
-                style={{ background: 'linear-gradient(180deg, #1a1a2e 0%, #16213e 100%)' }}
+                gl={{ antialias: true, alpha: true }}
             >
                 <ambientLight intensity={0.5} />
                 <pointLight position={[10, 10, 10]} intensity={1} />
