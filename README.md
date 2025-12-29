@@ -121,7 +121,7 @@ gr serve-mcp
 
 ---
 
-## CLI Reference (v2.2.1)
+## CLI Reference (v2.2.2)
 
 ### Agent-Native (NEW)
 | Command | Purpose |
