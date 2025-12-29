@@ -121,6 +121,10 @@ const WasmStoreFinalization = (typeof FinalizationRegistry === 'undefined')
     ? { register: () => {}, unregister: () => {} }
     : new FinalizationRegistry(ptr => wasm.__wbg_wasmstore_free(ptr >>> 0, 1));
 
+const WasmTopologyStoreFinalization = (typeof FinalizationRegistry === 'undefined')
+    ? { register: () => {}, unregister: () => {} }
+    : new FinalizationRegistry(ptr => wasm.__wbg_wasmtopologystore_free(ptr >>> 0, 1));
+
 /**
  * FileSystem implementation that delegates to JavaScript.
  */
@@ -177,6 +181,31 @@ export class WasmStore {
     free() {
         const ptr = this.__destroy_into_raw();
         wasm.__wbg_wasmstore_free(ptr, 0);
+    }
+    /**
+     * Get vitals summary for dashboard
+     * @param {string | null} [topology_json]
+     * @returns {string}
+     */
+    get_vitals(topology_json) {
+        let deferred3_0;
+        let deferred3_1;
+        try {
+            var ptr0 = isLikeNone(topology_json) ? 0 : passStringToWasm0(topology_json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+            var len0 = WASM_VECTOR_LEN;
+            const ret = wasm.wasmstore_get_vitals(this.__wbg_ptr, ptr0, len0);
+            var ptr2 = ret[0];
+            var len2 = ret[1];
+            if (ret[3]) {
+                ptr2 = 0; len2 = 0;
+                throw takeFromExternrefTable0(ret[2]);
+            }
+            deferred3_0 = ptr2;
+            deferred3_1 = len2;
+            return getStringFromWasm0(ptr2, len2);
+        } finally {
+            wasm.__wbindgen_free(deferred3_0, deferred3_1, 1);
+        }
     }
     /**
      * @param {string} id
@@ -321,6 +350,72 @@ export class WasmStore {
             wasm.__wbindgen_free(deferred2_0, deferred2_1, 1);
         }
     }
+    /**
+     * Compute solid score from topology JSON
+     * @param {string} topology_json
+     * @returns {number}
+     */
+    compute_solid_score(topology_json) {
+        const ptr0 = passStringToWasm0(topology_json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const len0 = WASM_VECTOR_LEN;
+        const ret = wasm.wasmstore_compute_solid_score(this.__wbg_ptr, ptr0, len0);
+        if (ret[2]) {
+            throw takeFromExternrefTable0(ret[1]);
+        }
+        return ret[0];
+    }
+    /**
+     * Get topology graph data for 3D visualization
+     * Returns JSON with {nodes: {id: {name, kind, file_path, pageRank, inCycle}}, edges: [[src, dst, {relation, strength}]]}
+     * @param {string} topology_json
+     * @returns {string}
+     */
+    get_topology_for_viz(topology_json) {
+        let deferred3_0;
+        let deferred3_1;
+        try {
+            const ptr0 = passStringToWasm0(topology_json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+            const len0 = WASM_VECTOR_LEN;
+            const ret = wasm.wasmstore_get_topology_for_viz(this.__wbg_ptr, ptr0, len0);
+            var ptr2 = ret[0];
+            var len2 = ret[1];
+            if (ret[3]) {
+                ptr2 = 0; len2 = 0;
+                throw takeFromExternrefTable0(ret[2]);
+            }
+            deferred3_0 = ptr2;
+            deferred3_1 = len2;
+            return getStringFromWasm0(ptr2, len2);
+        } finally {
+            wasm.__wbindgen_free(deferred3_0, deferred3_1, 1);
+        }
+    }
+    /**
+     * Get PageRank hotspots (top N most connected symbols)
+     * @param {string} topology_json
+     * @param {number} limit
+     * @returns {string}
+     */
+    get_pagerank_hotspots(topology_json, limit) {
+        let deferred3_0;
+        let deferred3_1;
+        try {
+            const ptr0 = passStringToWasm0(topology_json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+            const len0 = WASM_VECTOR_LEN;
+            const ret = wasm.wasmstore_get_pagerank_hotspots(this.__wbg_ptr, ptr0, len0, limit);
+            var ptr2 = ret[0];
+            var len2 = ret[1];
+            if (ret[3]) {
+                ptr2 = 0; len2 = 0;
+                throw takeFromExternrefTable0(ret[2]);
+            }
+            deferred3_0 = ptr2;
+            deferred3_1 = len2;
+            return getStringFromWasm0(ptr2, len2);
+        } finally {
+            wasm.__wbindgen_free(deferred3_0, deferred3_1, 1);
+        }
+    }
     constructor() {
         const ret = wasm.wasmstore_new();
         this.__wbg_ptr = ret >>> 0;
@@ -401,6 +496,198 @@ export class WasmStore {
     }
 }
 if (Symbol.dispose) WasmStore.prototype[Symbol.dispose] = WasmStore.prototype.free;
+
+/**
+ * In-memory topology store with pre-computed PageRank and instant search.
+ * This eliminates CLI round-trips for <10ms response times.
+ */
+export class WasmTopologyStore {
+    __destroy_into_raw() {
+        const ptr = this.__wbg_ptr;
+        this.__wbg_ptr = 0;
+        WasmTopologyStoreFinalization.unregister(this);
+        return ptr;
+    }
+    free() {
+        const ptr = this.__destroy_into_raw();
+        wasm.__wbg_wasmtopologystore_free(ptr, 0);
+    }
+    /**
+     * Get edge count.
+     * @returns {number}
+     */
+    edge_count() {
+        const ret = wasm.wasmtopologystore_edge_count(this.__wbg_ptr);
+        return ret >>> 0;
+    }
+    /**
+     * Get node count.
+     * @returns {number}
+     */
+    node_count() {
+        const ret = wasm.wasmtopologystore_node_count(this.__wbg_ptr);
+        return ret >>> 0;
+    }
+    /**
+     * Get top N symbols by PageRank (cached).
+     * @param {number} limit
+     * @returns {string}
+     */
+    get_hotspots(limit) {
+        let deferred2_0;
+        let deferred2_1;
+        try {
+            const ret = wasm.wasmtopologystore_get_hotspots(this.__wbg_ptr, limit);
+            var ptr1 = ret[0];
+            var len1 = ret[1];
+            if (ret[3]) {
+                ptr1 = 0; len1 = 0;
+                throw takeFromExternrefTable0(ret[2]);
+            }
+            deferred2_0 = ptr1;
+            deferred2_1 = len1;
+            return getStringFromWasm0(ptr1, len1);
+        } finally {
+            wasm.__wbindgen_free(deferred2_0, deferred2_1, 1);
+        }
+    }
+    /**
+     * Load topology from JSON and pre-compute PageRank + Solid Score.
+     * Call this once on dashboard open for instant subsequent queries.
+     * @param {string} topology_json
+     * @returns {string}
+     */
+    load_topology(topology_json) {
+        let deferred3_0;
+        let deferred3_1;
+        try {
+            const ptr0 = passStringToWasm0(topology_json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+            const len0 = WASM_VECTOR_LEN;
+            const ret = wasm.wasmtopologystore_load_topology(this.__wbg_ptr, ptr0, len0);
+            var ptr2 = ret[0];
+            var len2 = ret[1];
+            if (ret[3]) {
+                ptr2 = 0; len2 = 0;
+                throw takeFromExternrefTable0(ret[2]);
+            }
+            deferred3_0 = ptr2;
+            deferred3_1 = len2;
+            return getStringFromWasm0(ptr2, len2);
+        } finally {
+            wasm.__wbindgen_free(deferred3_0, deferred3_1, 1);
+        }
+    }
+    /**
+     * Instant search for symbols by name (fuzzy match).
+     * Returns in <10ms from pre-loaded graph.
+     * @param {string} query
+     * @param {number} limit
+     * @returns {string}
+     */
+    search_symbols(query, limit) {
+        let deferred3_0;
+        let deferred3_1;
+        try {
+            const ptr0 = passStringToWasm0(query, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+            const len0 = WASM_VECTOR_LEN;
+            const ret = wasm.wasmtopologystore_search_symbols(this.__wbg_ptr, ptr0, len0, limit);
+            var ptr2 = ret[0];
+            var len2 = ret[1];
+            if (ret[3]) {
+                ptr2 = 0; len2 = 0;
+                throw takeFromExternrefTable0(ret[2]);
+            }
+            deferred3_0 = ptr2;
+            deferred3_1 = len2;
+            return getStringFromWasm0(ptr2, len2);
+        } finally {
+            wasm.__wbindgen_free(deferred3_0, deferred3_1, 1);
+        }
+    }
+    /**
+     * Get cached solid score (instant, no computation).
+     * @returns {number}
+     */
+    get_solid_score() {
+        const ret = wasm.wasmtopologystore_get_solid_score(this.__wbg_ptr);
+        return ret;
+    }
+    /**
+     * Get edges for visualization.
+     * @returns {string}
+     */
+    get_edges_for_viz() {
+        let deferred2_0;
+        let deferred2_1;
+        try {
+            const ret = wasm.wasmtopologystore_get_edges_for_viz(this.__wbg_ptr);
+            var ptr1 = ret[0];
+            var len1 = ret[1];
+            if (ret[3]) {
+                ptr1 = 0; len1 = 0;
+                throw takeFromExternrefTable0(ret[2]);
+            }
+            deferred2_0 = ptr1;
+            deferred2_1 = len1;
+            return getStringFromWasm0(ptr1, len1);
+        } finally {
+            wasm.__wbindgen_free(deferred2_0, deferred2_1, 1);
+        }
+    }
+    /**
+     * Get node data for 3D visualization (pre-computed layout data).
+     * @returns {string}
+     */
+    get_nodes_for_viz() {
+        let deferred2_0;
+        let deferred2_1;
+        try {
+            const ret = wasm.wasmtopologystore_get_nodes_for_viz(this.__wbg_ptr);
+            var ptr1 = ret[0];
+            var len1 = ret[1];
+            if (ret[3]) {
+                ptr1 = 0; len1 = 0;
+                throw takeFromExternrefTable0(ret[2]);
+            }
+            deferred2_0 = ptr1;
+            deferred2_1 = len1;
+            return getStringFromWasm0(ptr1, len1);
+        } finally {
+            wasm.__wbindgen_free(deferred2_0, deferred2_1, 1);
+        }
+    }
+    constructor() {
+        const ret = wasm.wasmtopologystore_new();
+        this.__wbg_ptr = ret >>> 0;
+        WasmTopologyStoreFinalization.register(this, this.__wbg_ptr, this);
+        return this;
+    }
+    /**
+     * Get cached Betti numbers as JSON.
+     * @returns {string}
+     */
+    get_betti() {
+        let deferred1_0;
+        let deferred1_1;
+        try {
+            const ret = wasm.wasmtopologystore_get_betti(this.__wbg_ptr);
+            deferred1_0 = ret[0];
+            deferred1_1 = ret[1];
+            return getStringFromWasm0(ret[0], ret[1]);
+        } finally {
+            wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
+        }
+    }
+    /**
+     * Check if topology is loaded.
+     * @returns {boolean}
+     */
+    is_loaded() {
+        const ret = wasm.wasmtopologystore_is_loaded(this.__wbg_ptr);
+        return ret !== 0;
+    }
+}
+if (Symbol.dispose) WasmTopologyStore.prototype[Symbol.dispose] = WasmTopologyStore.prototype.free;
 
 const EXPECTED_RESPONSE_TYPES = new Set(['basic', 'cors', 'default']);
 

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import init, { WasmStore } from './pkg/grits_core';
+import init, { WasmStore, WasmTopologyStore } from './pkg/grits_core';
 import { Issue, ViewType } from './types';
 import { ListView } from './components/ListView';
 import { KanbanView } from './components/KanbanView';
@@ -22,9 +22,24 @@ export function App() {
     const [wasmReady, setWasmReady] = useState(false);
     const [needsOnboarding, setNeedsOnboarding] = useState(false);
     const [topologyData, setTopologyData] = useState<any>(null);
-    const [solidScore] = useState<number>(0);
+    const [vitals, setVitals] = useState<{
+        solidScore: number;
+        betti0: number;
+        betti1: number;
+        betti2: number;
+        hotspots: any[];
+    }>({
+        solidScore: 0,
+        betti0: 0,
+        betti1: 0,
+        betti2: 0,
+        hotspots: []
+    });
     const storeRef = useRef<WasmStore | null>(null);
+    const topologyStoreRef = useRef<WasmTopologyStore | null>(null);
     const isWasmLoading = useRef(false);
+    const [symbolSearchQuery, setSymbolSearchQuery] = useState('');
+    const [symbolSearchResults, setSymbolSearchResults] = useState<any[]>([]);
 
     // Initialize WASM
     useEffect(() => {
@@ -36,6 +51,7 @@ export function App() {
         init(wasmUri).then(() => {
             console.log('Grits WASM ready');
             storeRef.current = new WasmStore();
+            topologyStoreRef.current = new WasmTopologyStore();
             setWasmReady(true);
         }).catch((err: any) => {
             console.error('Failed to initialize Grits WASM:', err);
@@ -69,12 +85,24 @@ export function App() {
             } else if (message.type === 'no-config') {
                 setNeedsOnboarding(true);
             } else if (message.type === 'topology') {
-                // Handle topology data from dashboard panel
-                try {
-                    const data = JSON.parse(message.data);
-                    setTopologyData(data.graph || data);
-                } catch (e) {
-                    console.error('Failed to parse topology:', e);
+                // Handle topology data from dashboard panel - load into WASM store
+                if (topologyStoreRef.current && message.data) {
+                    try {
+                        const stats = topologyStoreRef.current.load_topology(message.data);
+                        console.log('Topology loaded into WASM:', JSON.parse(stats));
+                        refreshVitals();
+                        const data = JSON.parse(message.data);
+                        setTopologyData(data.graph || data);
+                    } catch (e) {
+                        console.error('Failed to load topology into WASM:', e);
+                    }
+                } else {
+                    try {
+                        const data = JSON.parse(message.data);
+                        setTopologyData(data.graph || data);
+                    } catch (e) {
+                        console.error('Failed to parse topology:', e);
+                    }
                 }
             } else if (message.type === 'init') {
                 // Dashboard mode initialization
@@ -117,6 +145,54 @@ export function App() {
             console.error("Failed to refresh issues:", e);
         }
     }, [selectedIssue]);
+
+    // Instant symbol search via WASM (<10ms)
+    const searchSymbolsInstant = useCallback((query: string) => {
+        if (!topologyStoreRef.current || !topologyStoreRef.current.is_loaded()) {
+            setSymbolSearchResults([]);
+            return;
+        }
+        if (!query.trim()) {
+            setSymbolSearchResults([]);
+            return;
+        }
+        try {
+            const resultsJson = topologyStoreRef.current.search_symbols(query, 20);
+            const results = JSON.parse(resultsJson);
+            setSymbolSearchResults(results);
+        } catch (e) {
+            console.error('Symbol search failed:', e);
+            setSymbolSearchResults([]);
+        }
+    }, []);
+
+    // Handle symbol search input changes
+    const handleSymbolSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const query = e.target.value;
+        setSymbolSearchQuery(query);
+        searchSymbolsInstant(query);
+    };
+
+    const refreshVitals = useCallback(() => {
+        if (!topologyStoreRef.current || !topologyStoreRef.current.is_loaded()) return;
+        try {
+            const solidScore = topologyStoreRef.current.get_solid_score();
+            const bettiJson = topologyStoreRef.current.get_betti();
+            const betti = JSON.parse(bettiJson);
+            const hotspotsJson = topologyStoreRef.current.get_hotspots(5);
+            const hotspots = JSON.parse(hotspotsJson);
+
+            setVitals({
+                solidScore,
+                betti0: betti.b0,
+                betti1: betti.b1,
+                betti2: betti.b2,
+                hotspots
+            });
+        } catch (e) {
+            console.error('Failed to refresh vitals from WASM:', e);
+        }
+    }, []);
 
     // Handle field updates
     const handleUpdateField = useCallback(
@@ -245,17 +321,47 @@ export function App() {
                 )}
                 {view === 'topology' && (
                     <div className="topology-container">
+                        <div className="topology-overlay">
+                            <div className="symbol-search">
+                                <input
+                                    type="text"
+                                    placeholder="Instant jump to symbol... (<10ms)"
+                                    value={symbolSearchQuery}
+                                    onChange={handleSymbolSearchChange}
+                                />
+                                {symbolSearchResults.length > 0 && (
+                                    <div className="search-results">
+                                        {symbolSearchResults.map((res: any) => (
+                                            <div
+                                                key={res.id}
+                                                className="search-row"
+                                                onClick={() => {
+                                                    // TODO: Orbit controls jump to node
+                                                    console.log('Jump to:', res.id);
+                                                    setSymbolSearchResults([]);
+                                                    setSymbolSearchQuery('');
+                                                }}
+                                            >
+                                                <span className="res-name">{res.name}</span>
+                                                <span className="res-file">{res.file.split(/[\\/]/).pop()}</span>
+                                                <span className="res-rank">{(res.pagerank * 100).toFixed(0)}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
                         <TopologyScene
                             data={topologyData}
                             onNodeSelect={(id) => console.log('Selected:', id)}
-                            solidScore={solidScore}
+                            solidScore={vitals.solidScore}
                         />
                         <div className="vitals-sidebar">
                             <VitalsDashboard
-                                solidScore={solidScore}
-                                betti0={topologyData?.nodes ? Object.keys(topologyData.nodes).length : 0}
-                                betti1={0}
-                                hotspots={[]}
+                                solidScore={vitals.solidScore}
+                                betti0={vitals.betti0}
+                                betti1={vitals.betti1}
+                                hotspots={vitals.hotspots}
                                 inProgressCount={issues.filter(i => i.status === 'in_progress').length}
                             />
                         </div>
