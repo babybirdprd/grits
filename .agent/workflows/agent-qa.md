@@ -2,75 +2,103 @@
 description: Evaluate the Grits experience from an AI agent perspective
 ---
 
-# Agent Experience Q&A Workflow
+# Agent Experience Deep-Dive
 
-Use this workflow to conduct a structured evaluation of Grits from an AI agent perspective. This captures targeted feedback that directly informs product improvement.
+Use this workflow to produce a **rich, narrative evaluation** of Grits. The goal is NOT to fill out a checklist — it's to generate insights that can drive product improvement.
 
 ## Prerequisites
-- Grits must be initialized in the project (`gr onboard`)
-- You should have used Grits for at least one task before running this evaluation
+- Grits initialized (`gr onboard`)
+- Used Grits for at least one real task
 
-## Steps
+## The Evaluation
 
-1. **Create evaluation issue**
-   ```bash
-   gr create --title "Agent Experience Evaluation - [DATE]" --labels "meta,feedback"
-   ```
+### 🏛️ 1. Concept Validation: Is Grits Actually Useful?
 
-2. **Complete the Q&A Framework**
-   
-   Work through each section of the framework below, answering honestly based on your experience.
+**The "Clutter Filter" Question**: Does Grits reduce your navigation latency?
 
-### Section 1: First Impressions
-- Did you find `AGENTS.md` or equivalent documentation? (Y/N)
-- Time to first useful action: ___ minutes
-- Friction points encountered: ___
+Compare these scenarios in your response:
+- **Without Grits**: How do you normally navigate a codebase? What's your "crawl" pattern?
+- **With Grits**: Did commands like `gr analysis star` or `gr inspect` give you a "pre-compiled mental map"?
 
-### Section 2: Core Functionality (Rate 1-5)
-| Task | Rating | Friction |
-|------|--------|----------|
-| Create issue | | |
-| Update status | | |
-| Find existing issues | | |
-| Link related issues | | |
+Estimate the time savings (if any): __%
 
-Did Grits reduce files you had to open? (>50%, 20-50%, No difference, Added overhead)
+---
 
-### Section 3: VS Code Extension
-Rate sidebar usefulness: (1-5)
-Rate dashboard usefulness: (1-5)
+### 🔬 2. The Simplicial Superpower
 
-Views assessment:
-- List: Useful? Y/N
-- Kanban: Useful? Y/N  
-- Graph: Useful? Y/N
-- 3D Topology: Useful? Y/N
-- Focus: Useful? Y/N
+Grits provides **topological** insights that standard tools don't:
+- **Betti Numbers**: Did the cycle count (B₁) alert you to structural issues?
+- **Solid Score**: Did you use this as a "vibe check" for codebase health?
+- **Star Neighborhoods**: Did this help you understand module boundaries?
 
-### Section 4: Agent-Specific Workflows
-- Session handoff: Can you capture state for next agent? Y/N
-- Error-to-issue: Does `gr suggest` help? Y/N
-- Architectural analysis: Would you use in normal work? Y/N
+**Key Question**: Did Grits let you see the codebase as a **geometric object** rather than a pile of text?
 
-### Section 5: The Indispensability Test
-**Critical question**: Do you feel you CANNOT do agent-driven development without Grits?
-- [ ] Yes, essential
-- [ ] Partially useful
-- [ ] Could use alternatives
+Describe any "aha moments" where topology revealed something you wouldn't have seen otherwise.
 
-Recommendation score (0-10): ___
+---
 
-### Section 6: Improvement Suggestions
-- Top 3 pain points: ___
-- Top 3 feature requests: ___
-- What should be removed? ___
+### 🛠️ 3. Workflow & Ergonomics
 
-3. **Record findings**
-   ```bash
-   gr update <issue-id> --description "## Evaluation Results\n[Paste your completed assessment]"
-   ```
+**AGENTS.md Assessment**:
+- Is it overwhelming or a relief?
+- Does the phase-based structure (Hydration → Analysis → Execution → Handoff) match your mental model?
 
-4. **Sync to repo**
-   ```bash
-   gr sync
-   ```
+**Current Friction Points** (be specific):
+1. ___
+2. ___
+3. ___
+
+---
+
+### 💾 4. Session Handoff & Memory
+
+The greatest challenge for agents is **Session Handoff**.
+
+- Did `gr sync` help you serialize your intent into the repository?
+- Could the "next you" (or another agent) pick up where you left off?
+- Does Grits turn the repo into a **Living Knowledge Base**?
+
+---
+
+### 🔮 5. Future Visions
+
+**Superpower Suggestion**: What's ONE feature that would make Grits a *must-have*?
+
+Think beyond incremental improvements — what would **fundamentally change** how agents work?
+
+Examples of past superpowers:
+- **Mini Codebase** (`gr context assemble`): Semantic tree-shaking extracts only relevant symbols
+- **Focus Stickiness**: `gr workon` locks focus so subsequent commands don't need IDs
+
+Your suggestion: ___
+
+---
+
+### ⚖️ 6. Final Verdict
+
+**The Indispensability Test**: Does Grits move you from **Code Monkey** (fixing syntax) to **Architect** (maintaining structural integrity)?
+
+- [ ] Yes, I cannot do agent-driven development without it
+- [ ] Partially useful but could use alternatives
+- [ ] Nice to have, not essential
+
+One-sentence summary of your experience:
+> ___
+
+---
+
+## Recording Your Evaluation
+
+```bash
+# 1. Create the evaluation issue
+gr create "Agent Experience Evaluation - $(date +%Y-%m-%d)" -t task -p 3
+
+# 2. Work on it (locks focus)
+gr workon <issue-id>
+
+# 3. Update with your findings
+gr update <issue-id> --description "$(cat your_evaluation.md)"
+
+# 4. Sync to preserve for future agents
+gr sync
+```
