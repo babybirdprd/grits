@@ -176,6 +176,37 @@ enum Commands {
         #[command(subcommand)]
         command: ContextCommands,
     },
+
+    // ===== PHASE 2: Agent-Native Commands =====
+    /// Inspect an issue, file, or symbol (one-shot context for agents)
+    Inspect {
+        /// Target: issue ID, file path, or symbol
+        target: String,
+    },
+
+    /// Start working on an issue (creates branch, sets status, outputs context)
+    Workon {
+        /// Issue ID
+        id: String,
+        /// Custom branch name (default: grits/<issue_id>)
+        #[arg(long)]
+        branch: Option<String>,
+    },
+
+    /// Session hydration - get project state and suggested next task
+    Pulse {
+        /// Filter by assignee
+        #[arg(long)]
+        assignee: Option<String>,
+    },
+
+    /// Quick update with fuzzy key matching (e.g., "stat:ip pri:1 +label:bug")
+    Set {
+        /// Issue ID
+        id: String,
+        /// Changes in shorthand format
+        changes: Vec<String>,
+    },
 }
 
 #[derive(Subcommand)]
@@ -1886,6 +1917,348 @@ fn main() -> anyhow::Result<()> {
                 }
             }
         },
+
+        // ===== PHASE 2: Agent-Native Command Handlers =====
+        Commands::Inspect { target } => {
+            use grits_core::topology::{analysis::TopologicalAnalysis, cache::TopologyCache};
+
+            let cache_path = db_path.parent().unwrap().join("topology.json");
+
+            // Determine if target is an issue ID, file, or symbol
+            let mut result = serde_json::json!({});
+
+            // Try as issue ID first
+            if let Some(issue) = store.get_issue(&target)? {
+                result["issue"] = serde_json::json!({
+                    "id": issue.id,
+                    "title": issue.title,
+                    "status": issue.status,
+                    "priority": issue.priority,
+                    "type": issue.issue_type,
+                    "description": issue.description,
+                    "labels": issue.labels,
+                    "assignee": issue.assignee,
+                    "affected_symbols": issue.affected_symbols,
+                });
+
+                // Get solid volume for affected symbols
+                if cache_path.exists() && !issue.affected_symbols.is_empty() {
+                    if let Ok(cache) = TopologyCache::load(&cache_path) {
+                        let mut all_neighbors = std::collections::HashSet::new();
+                        let mut all_edges = Vec::new();
+
+                        for symbol in &issue.affected_symbols {
+                            let star = TopologicalAnalysis::get_star(&cache.graph, symbol, 1);
+                            for n in star.neighbors {
+                                all_neighbors.insert(n);
+                            }
+                            all_edges.extend(star.edges);
+                        }
+
+                        let analysis = TopologicalAnalysis::analyze(&cache.graph);
+
+                        result["solid_volume"] = serde_json::json!({
+                            "symbols": issue.affected_symbols,
+                            "neighbors": all_neighbors,
+                            "edges": all_edges,
+                            "triangles": analysis.triangles.iter()
+                                .filter(|t| issue.affected_symbols.iter().any(|s| t.nodes.contains(s)))
+                                .collect::<Vec<_>>(),
+                        });
+                    }
+                }
+
+                // Find related issues via BM25
+                let related =
+                    grits_core::strategic::analysis::search_issues(&store, &issue.title, 3)?;
+                result["related_issues"] = serde_json::json!(
+                    related.into_iter()
+                        .filter(|r| r.id != issue.id)
+                        .map(|r| serde_json::json!({"id": r.id, "title": r.title, "score": r.relevance_score}))
+                        .collect::<Vec<_>>()
+                );
+            } else if cache_path.exists() {
+                // Try as file or symbol
+                if let Ok(cache) = TopologyCache::load(&cache_path) {
+                    let target_normalized = target.replace('\\', "/");
+                    let star = TopologicalAnalysis::get_star(&cache.graph, &target_normalized, 2);
+
+                    if !star.neighbors.is_empty() {
+                        result["star_neighborhood"] = serde_json::json!({
+                            "center": star.center,
+                            "neighbors": star.neighbors,
+                            "edges": star.edges,
+                            "depth": star.depth,
+                        });
+
+                        // Get analysis for context
+                        let analysis = TopologicalAnalysis::analyze(&cache.graph);
+                        let score = analysis.solid_score();
+                        result["solid_score"] = serde_json::json!({
+                            "normalized": score.normalized,
+                            "betti_cycles": analysis.betti_1,
+                        });
+                    }
+                }
+            }
+
+            println!("{}", serde_json::to_string_pretty(&result)?);
+        }
+
+        Commands::Workon { id, branch } => {
+            use grits_core::topology::{analysis::TopologicalAnalysis, cache::TopologyCache};
+
+            if let Some(mut issue) = store.get_issue(&id)? {
+                // 1. Create git branch
+                let branch_name = branch.unwrap_or_else(|| format!("grits/{}", issue.id));
+                let grits_dir = db_path.parent().unwrap();
+                let git_root = grits_dir.parent().unwrap_or(std::path::Path::new("."));
+
+                let checkout = std::process::Command::new("git")
+                    .args(["checkout", "-b", &branch_name])
+                    .current_dir(git_root)
+                    .output();
+
+                match checkout {
+                    Ok(output) if output.status.success() => {
+                        println!("✓ Created branch: {}", branch_name);
+                    }
+                    Ok(output) => {
+                        let stderr = String::from_utf8_lossy(&output.stderr);
+                        if stderr.contains("already exists") {
+                            // Try to just checkout
+                            let _ = std::process::Command::new("git")
+                                .args(["checkout", &branch_name])
+                                .current_dir(git_root)
+                                .output();
+                            println!("✓ Switched to existing branch: {}", branch_name);
+                        } else {
+                            eprintln!("⚠️ Could not create branch: {}", stderr);
+                        }
+                    }
+                    Err(e) => eprintln!("⚠️ Git not available: {}", e),
+                }
+
+                // 2. Set status to in-progress
+                if issue.status != "in-progress" {
+                    issue.status = "in-progress".to_string();
+                    issue.updated_at = Utc::now();
+                    store.update_issue(&issue)?;
+                    println!("✓ Status set to: in-progress");
+                }
+
+                // 3. Output context (similar to inspect)
+                let cache_path = db_path.parent().unwrap().join("topology.json");
+                let mut context = serde_json::json!({
+                    "issue": {
+                        "id": issue.id,
+                        "title": issue.title,
+                        "description": issue.description,
+                        "priority": issue.priority,
+                        "labels": issue.labels,
+                        "affected_symbols": issue.affected_symbols,
+                    },
+                    "branch": branch_name,
+                });
+
+                if cache_path.exists() && !issue.affected_symbols.is_empty() {
+                    if let Ok(cache) = TopologyCache::load(&cache_path) {
+                        for symbol in &issue.affected_symbols {
+                            let star = TopologicalAnalysis::get_star(&cache.graph, symbol, 1);
+                            context["star_neighborhood"] = serde_json::json!({
+                                "center": star.center,
+                                "neighbors": star.neighbors,
+                                "edges": star.edges,
+                            });
+                        }
+                    }
+                }
+
+                println!("\n{}", serde_json::to_string_pretty(&context)?);
+            } else {
+                eprintln!("Issue not found: {}", id);
+            }
+        }
+
+        Commands::Pulse { assignee } => {
+            use grits_core::topology::{analysis::TopologicalAnalysis, cache::TopologyCache};
+
+            let cache_path = db_path.parent().unwrap().join("topology.json");
+            let grits_dir = db_path.parent().unwrap();
+            let git_root = grits_dir.parent().unwrap_or(std::path::Path::new("."));
+
+            let mut pulse = serde_json::json!({});
+
+            // 1. Solid Score
+            if cache_path.exists() {
+                if let Ok(cache) = TopologyCache::load(&cache_path) {
+                    let analysis = TopologicalAnalysis::analyze(&cache.graph);
+                    let score = analysis.solid_score();
+                    pulse["solid_score"] = serde_json::json!({
+                        "value": format!("{:.2}", score.normalized),
+                        "betti_0": analysis.betti_0,
+                        "betti_1": analysis.betti_1,
+                        "betti_2": analysis.betti_2,
+                        "triangles": analysis.triangle_count,
+                    });
+                }
+            }
+
+            // 2. In-progress issues
+            let in_progress = store.list_issues(
+                Some("in-progress"),
+                assignee.as_deref(),
+                None,
+                None,
+                None,
+                None,
+            )?;
+            pulse["in_progress"] = serde_json::json!(in_progress
+                .iter()
+                .map(
+                    |i| serde_json::json!({"id": &i.id, "title": &i.title, "priority": i.priority})
+                )
+                .collect::<Vec<_>>());
+
+            // 3. Recent git activity
+            let git_log = std::process::Command::new("git")
+                .args(["log", "--oneline", "-3"])
+                .current_dir(git_root)
+                .output();
+
+            if let Ok(output) = git_log {
+                if output.status.success() {
+                    let log_str = String::from_utf8_lossy(&output.stdout);
+                    pulse["recent_commits"] = serde_json::json!(log_str
+                        .lines()
+                        .map(|l| l.to_string())
+                        .collect::<Vec<_>>());
+                }
+            }
+
+            // 4. Suggested next task
+            let next_tasks =
+                grits_core::strategic::advisor::get_next_task(&store, None, assignee.as_deref())?;
+            if let Some(task) = next_tasks.first() {
+                pulse["suggested_next"] = serde_json::json!({
+                    "id": task.id,
+                    "title": task.title,
+                    "priority": task.priority,
+                    "reason": task.reason,
+                });
+            }
+
+            println!("{}", serde_json::to_string_pretty(&pulse)?);
+        }
+
+        Commands::Set { id, changes } => {
+            if let Some(mut issue) = store.get_issue(&id)? {
+                let mut updated = false;
+
+                for change in changes {
+                    // Parse: "key:value" or "+label:name" or "-label:name"
+                    if change.starts_with('+') {
+                        // Add label
+                        if let Some(label) = change
+                            .strip_prefix("+label:")
+                            .or_else(|| change.strip_prefix("+l:"))
+                        {
+                            if !issue.labels.contains(&label.to_string()) {
+                                issue.labels.push(label.to_string());
+                                updated = true;
+                                println!("+ Added label: {}", label);
+                            }
+                        }
+                    } else if change.starts_with('-') {
+                        // Remove label
+                        if let Some(label) = change
+                            .strip_prefix("-label:")
+                            .or_else(|| change.strip_prefix("-l:"))
+                        {
+                            if let Some(pos) = issue.labels.iter().position(|l| l == label) {
+                                issue.labels.remove(pos);
+                                updated = true;
+                                println!("- Removed label: {}", label);
+                            }
+                        }
+                    } else if let Some((key, value)) = change.split_once(':') {
+                        // Fuzzy key matching
+                        let resolved_key = match key.to_lowercase().as_str() {
+                            "stat" | "status" | "s" => "status",
+                            "pri" | "priority" | "p" => "priority",
+                            "type" | "t" => "type",
+                            "assignee" | "assign" | "a" => "assignee",
+                            "title" => "title",
+                            "desc" | "description" => "description",
+                            _ => {
+                                eprintln!("Unknown key: {}", key);
+                                continue;
+                            }
+                        };
+
+                        match resolved_key {
+                            "status" => {
+                                // Fuzzy value matching
+                                let resolved_status = match value.to_lowercase().as_str() {
+                                    "o" | "open" => "open",
+                                    "ip" | "in-progress" | "inprogress" | "progress" => {
+                                        "in-progress"
+                                    }
+                                    "b" | "blocked" => "blocked",
+                                    "c" | "closed" | "done" => "closed",
+                                    _ => value,
+                                };
+                                issue.status = resolved_status.to_string();
+                                updated = true;
+                                println!("✓ status = {}", resolved_status);
+                            }
+                            "priority" => {
+                                if let Ok(p) = value.parse::<i32>() {
+                                    issue.priority = p;
+                                    updated = true;
+                                    println!("✓ priority = {}", p);
+                                }
+                            }
+                            "type" => {
+                                issue.issue_type = value.to_string();
+                                updated = true;
+                                println!("✓ type = {}", value);
+                            }
+                            "assignee" => {
+                                issue.assignee = if value.is_empty() || value == "-" {
+                                    None
+                                } else {
+                                    Some(value.to_string())
+                                };
+                                updated = true;
+                                println!("✓ assignee = {:?}", issue.assignee);
+                            }
+                            "title" => {
+                                issue.title = value.to_string();
+                                updated = true;
+                                println!("✓ title updated");
+                            }
+                            "description" => {
+                                issue.description = value.to_string();
+                                updated = true;
+                                println!("✓ description updated");
+                            }
+                            _ => {}
+                        }
+                    }
+                }
+
+                if updated {
+                    issue.updated_at = Utc::now();
+                    store.update_issue(&issue)?;
+                    println!("\nUpdated issue {}", issue.id);
+                } else {
+                    println!("No valid changes applied.");
+                }
+            } else {
+                eprintln!("Issue not found: {}", id);
+            }
+        }
     }
 
     // AUTO-EXPORT: Push any DB changes back to the Visual Engine (.jsonl)

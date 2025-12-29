@@ -218,7 +218,7 @@ impl GitOps for WasmGit {
 // =============================================================================
 
 use crate::memory_store::MemoryStore;
-use crate::models::{Issue, Comment};
+use crate::models::{Comment, Issue};
 use crate::search::SearchIndex;
 use crate::store::Store;
 use serde_json::Value;
@@ -240,7 +240,9 @@ impl WasmStore {
 
     #[wasm_bindgen]
     pub fn search(&self, query: &str) -> Result<String, JsValue> {
-        let issues = self.inner.list_issues(None, None, None, None, None, None)
+        let issues = self
+            .inner
+            .list_issues(None, None, None, None, None, None)
             .map_err(|e| JsValue::from_str(&format!("List failed: {}", e)))?;
 
         let index = SearchIndex::new(&issues);
@@ -255,14 +257,16 @@ impl WasmStore {
     /// Load issues from JSONL content string
     #[wasm_bindgen]
     pub fn load(&mut self, content: &str) -> Result<(), JsValue> {
-        self.inner.import_from_string(content)
+        self.inner
+            .import_from_string(content)
             .map_err(|e| JsValue::from_str(&format!("Failed to load content: {}", e)))
     }
 
     /// Export issues to JSONL content string
     #[wasm_bindgen]
     pub fn export(&self) -> Result<String, JsValue> {
-        self.inner.export_to_string()
+        self.inner
+            .export_to_string()
             .map_err(|e| JsValue::from_str(&format!("Failed to export content: {}", e)))
     }
 
@@ -270,29 +274,43 @@ impl WasmStore {
     /// { "status": "open", "sort_by": "updated" }
     #[wasm_bindgen]
     pub fn list_issues(&self, filter_json: Option<String>) -> Result<String, JsValue> {
-        let (status, assignee, priority, issue_type, label, sort_by) = if let Some(json) = filter_json {
-            let v: Value = serde_json::from_str(&json)
-                .map_err(|e| JsValue::from_str(&format!("Invalid filter JSON: {}", e)))?;
-            (
-                v.get("status").and_then(|v| v.as_str()).map(|s| s.to_string()),
-                v.get("assignee").and_then(|v| v.as_str()).map(|s| s.to_string()),
-                v.get("priority").and_then(|v| v.as_i64()).map(|i| i as i32),
-                v.get("type").and_then(|v| v.as_str()).map(|s| s.to_string()),
-                v.get("label").and_then(|v| v.as_str()).map(|s| s.to_string()),
-                v.get("sort_by").and_then(|v| v.as_str()).map(|s| s.to_string()),
-            )
-        } else {
-            (None, None, None, None, None, None)
-        };
+        let (status, assignee, priority, issue_type, label, sort_by) =
+            if let Some(json) = filter_json {
+                let v: Value = serde_json::from_str(&json)
+                    .map_err(|e| JsValue::from_str(&format!("Invalid filter JSON: {}", e)))?;
+                (
+                    v.get("status")
+                        .and_then(|v| v.as_str())
+                        .map(|s| s.to_string()),
+                    v.get("assignee")
+                        .and_then(|v| v.as_str())
+                        .map(|s| s.to_string()),
+                    v.get("priority").and_then(|v| v.as_i64()).map(|i| i as i32),
+                    v.get("type")
+                        .and_then(|v| v.as_str())
+                        .map(|s| s.to_string()),
+                    v.get("label")
+                        .and_then(|v| v.as_str())
+                        .map(|s| s.to_string()),
+                    v.get("sort_by")
+                        .and_then(|v| v.as_str())
+                        .map(|s| s.to_string()),
+                )
+            } else {
+                (None, None, None, None, None, None)
+            };
 
-        let issues = self.inner.list_issues(
-            status.as_deref(),
-            assignee.as_deref(),
-            priority,
-            issue_type.as_deref(),
-            label.as_deref(),
-            sort_by.as_deref(),
-        ).map_err(|e| JsValue::from_str(&format!("List issues failed: {}", e)))?;
+        let issues = self
+            .inner
+            .list_issues(
+                status.as_deref(),
+                assignee.as_deref(),
+                priority,
+                issue_type.as_deref(),
+                label.as_deref(),
+                sort_by.as_deref(),
+            )
+            .map_err(|e| JsValue::from_str(&format!("List issues failed: {}", e)))?;
 
         serde_json::to_string(&issues)
             .map_err(|e| JsValue::from_str(&format!("Serialize error: {}", e)))
@@ -300,7 +318,9 @@ impl WasmStore {
 
     #[wasm_bindgen]
     pub fn update_issue(&self, id: &str, field: &str, value_json: &str) -> Result<(), JsValue> {
-        let mut issue = self.inner.get_issue(id)
+        let mut issue = self
+            .inner
+            .get_issue(id)
             .map_err(|e| JsValue::from_str(&format!("DB error: {}", e)))?
             .ok_or_else(|| JsValue::from_str(&format!("Issue not found: {}", id)))?;
 
@@ -309,24 +329,34 @@ impl WasmStore {
 
         match field {
             "title" => issue.title = value.as_str().unwrap_or(&issue.title).to_string(),
-            "description" => issue.description = value.as_str().unwrap_or(&issue.description).to_string(),
+            "description" => {
+                issue.description = value.as_str().unwrap_or(&issue.description).to_string()
+            }
             "status" => issue.status = value.as_str().unwrap_or(&issue.status).to_string(),
             "priority" => issue.priority = value.as_i64().unwrap_or(issue.priority as i64) as i32,
-            "issue_type" => issue.issue_type = value.as_str().unwrap_or(&issue.issue_type).to_string(),
+            "issue_type" => {
+                issue.issue_type = value.as_str().unwrap_or(&issue.issue_type).to_string()
+            }
             "assignee" => issue.assignee = value.as_str().map(|s| s.to_string()), // Null clears it
             _ => return Err(JsValue::from_str(&format!("Unknown field: {}", field))),
         }
 
         issue.updated_at = chrono::Utc::now();
 
-        self.inner.update_issue(&issue)
+        self.inner
+            .update_issue(&issue)
             .map_err(|e| JsValue::from_str(&format!("Update failed: {}", e)))?;
 
         Ok(())
     }
 
     #[wasm_bindgen]
-    pub fn bulk_update(&self, ids_json: &str, field: &str, value_json: &str) -> Result<(), JsValue> {
+    pub fn bulk_update(
+        &self,
+        ids_json: &str,
+        field: &str,
+        value_json: &str,
+    ) -> Result<(), JsValue> {
         let ids: Vec<String> = serde_json::from_str(ids_json)
             .map_err(|e| JsValue::from_str(&format!("Invalid IDs JSON: {}", e)))?;
         let value: Value = serde_json::from_str(value_json)
@@ -336,8 +366,12 @@ impl WasmStore {
             if let Ok(Some(mut issue)) = self.inner.get_issue(&id) {
                 match field {
                     "status" => issue.status = value.as_str().unwrap_or(&issue.status).to_string(),
-                    "priority" => issue.priority = value.as_i64().unwrap_or(issue.priority as i64) as i32,
-                    "issue_type" => issue.issue_type = value.as_str().unwrap_or(&issue.issue_type).to_string(),
+                    "priority" => {
+                        issue.priority = value.as_i64().unwrap_or(issue.priority as i64) as i32
+                    }
+                    "issue_type" => {
+                        issue.issue_type = value.as_str().unwrap_or(&issue.issue_type).to_string()
+                    }
                     "assignee" => issue.assignee = value.as_str().map(|s| s.to_string()),
                     _ => continue, // Skip unknown fields
                 }
@@ -350,14 +384,17 @@ impl WasmStore {
 
     #[wasm_bindgen]
     pub fn add_label(&self, id: &str, label: &str) -> Result<(), JsValue> {
-        let mut issue = self.inner.get_issue(id)
+        let mut issue = self
+            .inner
+            .get_issue(id)
             .map_err(|e| JsValue::from_str(&format!("DB error: {}", e)))?
             .ok_or_else(|| JsValue::from_str(&format!("Issue not found: {}", id)))?;
 
         if !issue.labels.contains(&label.to_string()) {
             issue.labels.push(label.to_string());
             issue.updated_at = chrono::Utc::now();
-            self.inner.update_issue(&issue)
+            self.inner
+                .update_issue(&issue)
                 .map_err(|e| JsValue::from_str(&format!("Update failed: {}", e)))?;
         }
         Ok(())
@@ -365,14 +402,17 @@ impl WasmStore {
 
     #[wasm_bindgen]
     pub fn remove_label(&self, id: &str, label: &str) -> Result<(), JsValue> {
-        let mut issue = self.inner.get_issue(id)
+        let mut issue = self
+            .inner
+            .get_issue(id)
             .map_err(|e| JsValue::from_str(&format!("DB error: {}", e)))?
             .ok_or_else(|| JsValue::from_str(&format!("Issue not found: {}", id)))?;
 
         if let Some(pos) = issue.labels.iter().position(|l| l == label) {
             issue.labels.remove(pos);
             issue.updated_at = chrono::Utc::now();
-            self.inner.update_issue(&issue)
+            self.inner
+                .update_issue(&issue)
                 .map_err(|e| JsValue::from_str(&format!("Update failed: {}", e)))?;
         }
         Ok(())
@@ -380,7 +420,9 @@ impl WasmStore {
 
     #[wasm_bindgen]
     pub fn add_comment(&self, id: &str, text: &str, author: &str) -> Result<(), JsValue> {
-        let mut issue = self.inner.get_issue(id)
+        let mut issue = self
+            .inner
+            .get_issue(id)
             .map_err(|e| JsValue::from_str(&format!("DB error: {}", e)))?
             .ok_or_else(|| JsValue::from_str(&format!("Issue not found: {}", id)))?;
 
@@ -394,7 +436,8 @@ impl WasmStore {
 
         issue.comments.push(comment);
         issue.updated_at = chrono::Utc::now();
-        self.inner.update_issue(&issue)
+        self.inner
+            .update_issue(&issue)
             .map_err(|e| JsValue::from_str(&format!("Update failed: {}", e)))?;
         Ok(())
     }
@@ -423,8 +466,10 @@ impl WasmStore {
             _ => "unknown".to_string(),
         };
 
-        let id = self.inner.generate_unique_id(&prefix, title, description, &user)
-             .map_err(|e| JsValue::from_str(&format!("ID generation failed: {}", e)))?;
+        let id = self
+            .inner
+            .generate_unique_id(&prefix, title, description, &user)
+            .map_err(|e| JsValue::from_str(&format!("ID generation failed: {}", e)))?;
 
         let now = Utc::now();
         let issue = Issue {
@@ -443,8 +488,9 @@ impl WasmStore {
             ..Default::default()
         };
 
-        self.inner.create_issue(&issue)
-             .map_err(|e| JsValue::from_str(&format!("Create failed: {}", e)))?;
+        self.inner
+            .create_issue(&issue)
+            .map_err(|e| JsValue::from_str(&format!("Create failed: {}", e)))?;
 
         Ok(id)
     }
@@ -452,8 +498,10 @@ impl WasmStore {
     #[wasm_bindgen]
     pub fn get_all_labels(&self) -> Result<String, JsValue> {
         // Collect all unique labels
-        let issues = self.inner.list_issues(None, None, None, None, None, None)
-             .map_err(|e| JsValue::from_str(&format!("List failed: {}", e)))?;
+        let issues = self
+            .inner
+            .list_issues(None, None, None, None, None, None)
+            .map_err(|e| JsValue::from_str(&format!("List failed: {}", e)))?;
 
         let mut labels = std::collections::HashSet::new();
         for issue in issues {
@@ -464,6 +512,168 @@ impl WasmStore {
         let mut list: Vec<_> = labels.into_iter().collect();
         list.sort();
         serde_json::to_string(&list)
+            .map_err(|e| JsValue::from_str(&format!("Serialize error: {}", e)))
+    }
+
+    // =========================================================================
+    // Topology Visualization Exports
+    // =========================================================================
+
+    /// Get topology graph data for 3D visualization
+    /// Returns JSON with {nodes: {id: {name, kind, file_path, pageRank, inCycle}}, edges: [[src, dst, {relation, strength}]]}
+    #[wasm_bindgen]
+    pub fn get_topology_for_viz(&self, topology_json: &str) -> Result<String, JsValue> {
+        use crate::topology::analysis::TopologicalAnalysis;
+        use crate::topology::{Symbol, SymbolGraph};
+
+        // Parse the cached topology JSON
+        let graph: SymbolGraph = serde_json::from_str(topology_json)
+            .map_err(|e| JsValue::from_str(&format!("Parse topology failed: {}", e)))?;
+
+        let analysis = TopologicalAnalysis::new(&graph);
+        let pagerank = analysis.weighted_pagerank(50);
+        let cycles = analysis.find_all_cycles();
+
+        // Build cycles set for quick lookup
+        let cycle_nodes: std::collections::HashSet<String> =
+            cycles.iter().flat_map(|c| c.iter().cloned()).collect();
+
+        // Build nodes map
+        let mut nodes = std::collections::HashMap::new();
+        for (id, sym) in &graph.symbols {
+            let rank = pagerank.get(id).copied().unwrap_or(0.0);
+            let in_cycle = cycle_nodes.contains(id);
+            nodes.insert(
+                id.clone(),
+                serde_json::json!({
+                    "id": id,
+                    "name": sym.name,
+                    "kind": sym.kind,
+                    "file_path": sym.file_path,
+                    "package": sym.package,
+                    "pageRank": rank,
+                    "inCycle": in_cycle
+                }),
+            );
+        }
+
+        // Build edges array
+        let mut edges: Vec<serde_json::Value> = Vec::new();
+        for edge in &graph.edges {
+            edges.push(serde_json::json!([
+                edge.from.clone(),
+                edge.to.clone(),
+                { "relation": edge.relation, "strength": edge.strength }
+            ]));
+        }
+
+        let result = serde_json::json!({
+            "nodes": nodes,
+            "edges": edges,
+            "stats": {
+                "nodeCount": graph.symbols.len(),
+                "edgeCount": graph.edges.len(),
+                "cycleCount": cycles.len()
+            }
+        });
+
+        serde_json::to_string(&result)
+            .map_err(|e| JsValue::from_str(&format!("Serialize error: {}", e)))
+    }
+
+    /// Compute solid score from topology JSON
+    #[wasm_bindgen]
+    pub fn compute_solid_score(&self, topology_json: &str) -> Result<f64, JsValue> {
+        use crate::topology::analysis::TopologicalAnalysis;
+        use crate::topology::SymbolGraph;
+
+        let graph: SymbolGraph = serde_json::from_str(topology_json)
+            .map_err(|e| JsValue::from_str(&format!("Parse topology failed: {}", e)))?;
+
+        let analysis = TopologicalAnalysis::new(&graph);
+        let score = analysis.solid_score();
+
+        Ok(score.score)
+    }
+
+    /// Get PageRank hotspots (top N most connected symbols)
+    #[wasm_bindgen]
+    pub fn get_pagerank_hotspots(
+        &self,
+        topology_json: &str,
+        limit: usize,
+    ) -> Result<String, JsValue> {
+        use crate::topology::analysis::TopologicalAnalysis;
+        use crate::topology::SymbolGraph;
+
+        let graph: SymbolGraph = serde_json::from_str(topology_json)
+            .map_err(|e| JsValue::from_str(&format!("Parse topology failed: {}", e)))?;
+
+        let analysis = TopologicalAnalysis::new(&graph);
+        let pagerank = analysis.weighted_pagerank(50);
+
+        let mut ranked: Vec<_> = pagerank.into_iter().collect();
+        ranked.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
+
+        let hotspots: Vec<_> = ranked
+            .into_iter()
+            .take(limit)
+            .map(|(name, score)| serde_json::json!({ "name": name, "score": score }))
+            .collect();
+
+        serde_json::to_string(&hotspots)
+            .map_err(|e| JsValue::from_str(&format!("Serialize error: {}", e)))
+    }
+
+    /// Get vitals summary for dashboard
+    #[wasm_bindgen]
+    pub fn get_vitals(&self, topology_json: Option<String>) -> Result<String, JsValue> {
+        use crate::topology::analysis::TopologicalAnalysis;
+        use crate::topology::SymbolGraph;
+
+        let issues = self
+            .inner
+            .list_issues(None, None, None, None, None, None)
+            .map_err(|e| JsValue::from_str(&format!("List failed: {}", e)))?;
+
+        let in_progress = issues.iter().filter(|i| i.status == "in_progress").count();
+
+        let (solid_score, betti0, betti1, hotspots) = if let Some(topo_json) = topology_json {
+            let graph: SymbolGraph = serde_json::from_str(&topo_json)
+                .map_err(|e| JsValue::from_str(&format!("Parse topology failed: {}", e)))?;
+
+            let analysis = TopologicalAnalysis::new(&graph);
+            let score = analysis.solid_score();
+            let pagerank = analysis.weighted_pagerank(50);
+
+            let mut ranked: Vec<_> = pagerank.into_iter().collect();
+            ranked.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
+            let top3: Vec<_> = ranked
+                .into_iter()
+                .take(3)
+                .map(|(n, s)| serde_json::json!({"name": n, "score": s}))
+                .collect();
+
+            (
+                score.score,
+                score.connected_components,
+                score.cycle_count,
+                top3,
+            )
+        } else {
+            (0.0, 0, 0, vec![])
+        };
+
+        let result = serde_json::json!({
+            "solidScore": solid_score,
+            "betti0": betti0,
+            "betti1": betti1,
+            "inProgressCount": in_progress,
+            "totalIssues": issues.len(),
+            "hotspots": hotspots
+        });
+
+        serde_json::to_string(&result)
             .map_err(|e| JsValue::from_str(&format!("Serialize error: {}", e)))
     }
 }

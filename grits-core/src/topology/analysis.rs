@@ -42,6 +42,29 @@ pub struct StarNeighborhood {
     pub depth: usize,
 }
 
+/// Edge persistence based on filtration value (CoPHo-inspired)
+/// Lower lifetime = weaker link = better candidate for refactoring
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EdgePersistence {
+    pub source: String,
+    pub target: String,
+    pub relation: String,
+    pub birth: f32,      // Filtration value when edge was added
+    pub death: f32,      // When cycle containing edge was destroyed (f32::MAX if never)
+    pub lifetime: f32,   // death - birth (lower = weaker)
+    pub cycle_id: usize, // Which cycle this edge participates in
+}
+
+/// Euler-inspired health metric for code architecture
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SolidScore {
+    pub raw_euler: i64,        // χ = V - E + F - T
+    pub normalized: f32,       // 0.0 (spaghetti) to 1.0 (crystal)
+    pub betti_components: f32, // B0 penalty (disconnected = bad)
+    pub betti_cycles: f32,     // B1 penalty (cycles = bad)
+    pub cohesion_bonus: f32,   // Feature volume density (good)
+}
+
 impl TopologicalAnalysis {
     /// Perform full simplicial complex analysis on the graph
     pub fn analyze(graph_data: &SymbolGraph) -> Self {
@@ -437,6 +460,174 @@ impl TopologicalAnalysis {
         }
 
         ranks
+    }
+
+    /// Compute edge persistence for all edges participating in cycles
+    /// Uses a filtration based on PageRank - edges connecting important nodes are added first
+    pub fn compute_edge_persistence(graph_data: &SymbolGraph) -> Vec<EdgePersistence> {
+        let mut persistence = Vec::new();
+
+        // Get PageRank to order edges by importance
+        let ranks = Self::weighted_pagerank(graph_data, 0.85, 20);
+
+        // Build edge list with filtration values
+        let mut edges_with_filtration: Vec<(String, String, String, f32)> = graph_data
+            .edges
+            .iter()
+            .map(|(from, to, edge)| {
+                // Filtration value = max rank of endpoints (higher = added earlier)
+                let from_rank = ranks.get(from).copied().unwrap_or(0.0);
+                let to_rank = ranks.get(to).copied().unwrap_or(0.0);
+                let filtration = from_rank.max(to_rank);
+                (from.clone(), to.clone(), edge.relation.clone(), filtration)
+            })
+            .collect();
+
+        // Sort by filtration (descending - high rank edges first)
+        edges_with_filtration
+            .sort_by(|a, b| b.3.partial_cmp(&a.3).unwrap_or(std::cmp::Ordering::Equal));
+
+        // Use union-find to detect when edges create cycles
+        let mut all_nodes: HashSet<String> = HashSet::new();
+        for (from, to, _, _) in &edges_with_filtration {
+            all_nodes.insert(from.clone());
+            all_nodes.insert(to.clone());
+        }
+
+        let node_list: Vec<String> = all_nodes.into_iter().collect();
+        let node_to_idx: HashMap<String, usize> = node_list
+            .iter()
+            .enumerate()
+            .map(|(i, n)| (n.clone(), i))
+            .collect();
+
+        // Simple union-find
+        let mut parent: Vec<usize> = (0..node_list.len()).collect();
+
+        fn find(parent: &mut [usize], i: usize) -> usize {
+            if parent[i] != i {
+                parent[i] = find(parent, parent[i]);
+            }
+            parent[i]
+        }
+
+        fn union(parent: &mut [usize], i: usize, j: usize) {
+            let pi = find(parent, i);
+            let pj = find(parent, j);
+            if pi != pj {
+                parent[pi] = pj;
+            }
+        }
+
+        let mut cycle_id = 0;
+
+        for (from, to, relation, filtration) in edges_with_filtration {
+            let from_idx = match node_to_idx.get(&from) {
+                Some(&i) => i,
+                None => continue,
+            };
+            let to_idx = match node_to_idx.get(&to) {
+                Some(&i) => i,
+                None => continue,
+            };
+
+            let from_parent = find(&mut parent, from_idx);
+            let to_parent = find(&mut parent, to_idx);
+
+            if from_parent == to_parent {
+                // This edge creates a cycle - it has low lifetime (born and dies at same point)
+                persistence.push(EdgePersistence {
+                    source: from,
+                    target: to,
+                    relation,
+                    birth: filtration,
+                    death: filtration, // Dies immediately
+                    lifetime: 0.0,     // Minimum lifetime = weakest link
+                    cycle_id,
+                });
+                cycle_id += 1;
+            } else {
+                // This edge connects components - it persists longer
+                union(&mut parent, from_idx, to_idx);
+                persistence.push(EdgePersistence {
+                    source: from,
+                    target: to,
+                    relation,
+                    birth: filtration,
+                    death: f32::MAX,
+                    lifetime: f32::MAX,
+                    cycle_id: usize::MAX, // Not part of a cycle initially
+                });
+            }
+        }
+
+        // Sort by lifetime (ascending) so weakest links are first
+        persistence.sort_by(|a, b| {
+            a.lifetime
+                .partial_cmp(&b.lifetime)
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
+
+        persistence
+    }
+
+    /// Suggest which edge to remove to break a specific cycle
+    /// Returns the edge with lowest lifetime in that cycle
+    pub fn suggest_refactor(graph_data: &SymbolGraph, cycle_id: usize) -> Option<EdgePersistence> {
+        let persistence = Self::compute_edge_persistence(graph_data);
+        persistence
+            .into_iter()
+            .filter(|e| e.cycle_id == cycle_id)
+            .min_by(|a, b| {
+                a.lifetime
+                    .partial_cmp(&b.lifetime)
+                    .unwrap_or(std::cmp::Ordering::Equal)
+            })
+    }
+
+    /// Compute the Solid Score - a unified health metric
+    pub fn solid_score(&self) -> SolidScore {
+        // Euler characteristic: χ = V - E + F - T
+        let raw_euler =
+            (self.node_count as i64) - (self.edge_count as i64) + (self.triangle_count as i64);
+
+        // B0 penalty: 1.0 if single component, decreases with more components
+        let betti_components = if self.betti_0 == 0 {
+            0.0
+        } else {
+            1.0 / (self.betti_0 as f32)
+        };
+
+        // B1 penalty: 1.0 if no cycles, decreases exponentially with cycles
+        let betti_cycles = (-0.5 * self.betti_1 as f32).exp();
+
+        // Cohesion bonus: average cohesion of feature volumes
+        let cohesion_bonus = if self.feature_volumes.is_empty() {
+            0.5 // Neutral if no volumes
+        } else {
+            self.feature_volumes
+                .iter()
+                .map(|v| v.cohesion_score)
+                .sum::<f32>()
+                / self.feature_volumes.len() as f32
+        };
+
+        // Weighted combination: connectivity and cycles matter most
+        let normalized = (
+            0.3 * betti_components +  // Want single connected component
+            0.5 * betti_cycles +      // Want no cycles
+            0.2 * cohesion_bonus
+            // Bonus for well-structured volumes
+        )
+            .clamp(0.0, 1.0);
+
+        SolidScore {
+            raw_euler,
+            normalized,
+            betti_components,
+            betti_cycles,
+            cohesion_bonus,
+        }
     }
 }
 

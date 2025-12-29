@@ -31,6 +31,8 @@ struct ParserCache {
     rust: Option<CodeParser>,
     typescript: Option<CodeParser>,
     javascript: Option<CodeParser>,
+    python: Option<CodeParser>,
+    go: Option<CodeParser>,
 }
 
 impl ParserCache {
@@ -39,6 +41,8 @@ impl ParserCache {
             rust: None,
             typescript: None,
             javascript: None,
+            python: None,
+            go: None,
         }
     }
 
@@ -62,6 +66,18 @@ impl ParserCache {
                 }
                 Ok(self.javascript.as_mut().unwrap())
             }
+            "python" => {
+                if self.python.is_none() {
+                    self.python = Some(CodeParser::new("python")?);
+                }
+                Ok(self.python.as_mut().unwrap())
+            }
+            "go" => {
+                if self.go.is_none() {
+                    self.go = Some(CodeParser::new("go")?);
+                }
+                Ok(self.go.as_mut().unwrap())
+            }
             _ => Err(anyhow::anyhow!("Unsupported language: {}", lang)),
         }
     }
@@ -77,7 +93,13 @@ pub struct DirectoryScanner {
 impl DirectoryScanner {
     pub fn new() -> Self {
         Self {
-            extensions: vec!["rs".to_string(), "ts".to_string(), "js".to_string()],
+            extensions: vec![
+                "rs".to_string(),
+                "ts".to_string(),
+                "js".to_string(),
+                "py".to_string(),
+                "go".to_string(),
+            ],
             max_depth: None,
             exclude_patterns: Vec::new(),
             use_default_excludes: true,
@@ -196,6 +218,8 @@ impl DirectoryScanner {
                 "rs" => "rust",
                 "ts" => "typescript",
                 "js" => "javascript",
+                "py" => "python",
+                "go" => "go",
                 _ => continue,
             };
 

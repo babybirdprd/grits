@@ -1,10 +1,204 @@
 import * as vscode from 'vscode';
+import { registerSymbolDecorations } from './symbolDecorations';
 
 /**
- * Grits Kanban Editor Provider
+ * Grits Dashboard Panel
  * 
- * Custom editor for .jsonl issue files. Loads issues into a webview
- * with React-based UI for List, Kanban, Graph, and Agenda views.
+ * Full-featured webview panel that replaces the sidebar approach.
+ * Opens in the editor area with React Three Fiber 3D topology,
+ * issue management, and vitals dashboard.
+ */
+class GritsDashboardPanel {
+    public static readonly viewType = 'grits.dashboard';
+    public static currentPanel: GritsDashboardPanel | undefined;
+
+    private readonly _panel: vscode.WebviewPanel;
+    private readonly _context: vscode.ExtensionContext;
+    private _disposables: vscode.Disposable[] = [];
+
+    private constructor(panel: vscode.WebviewPanel, context: vscode.ExtensionContext) {
+        this._panel = panel;
+        this._context = context;
+
+        // Set up webview
+        this._panel.webview.options = {
+            enableScripts: true,
+            localResourceRoots: [
+                vscode.Uri.joinPath(context.extensionUri, 'media'),
+                vscode.Uri.joinPath(context.extensionUri, 'dist'),
+                vscode.Uri.joinPath(context.extensionUri, 'webview', 'dist'),
+            ],
+        };
+
+        // Set initial content
+        this._panel.webview.html = this._getHtmlForWebview();
+
+        // Handle messages from webview
+        this._panel.webview.onDidReceiveMessage(
+            async (message) => {
+                switch (message.type) {
+                    case 'ready':
+                        await this._sendInitialData();
+                        break;
+                    case 'grCommand':
+                        // Execute gr CLI command and return result
+                        await this._executeGrCommand(message.command, message.args);
+                        break;
+                    case 'updateIssue':
+                        await this._updateIssue(message.issueId, message.changes);
+                        break;
+                }
+            },
+            undefined,
+            this._disposables
+        );
+
+        // Handle panel disposal
+        this._panel.onDidDispose(() => this.dispose(), null, this._disposables);
+    }
+
+    public static createOrShow(context: vscode.ExtensionContext) {
+        const column = vscode.window.activeTextEditor
+            ? vscode.window.activeTextEditor.viewColumn
+            : undefined;
+
+        // If panel already exists, show it
+        if (GritsDashboardPanel.currentPanel) {
+            GritsDashboardPanel.currentPanel._panel.reveal(column);
+            return;
+        }
+
+        // Create new panel
+        const panel = vscode.window.createWebviewPanel(
+            GritsDashboardPanel.viewType,
+            'Grits Dashboard',
+            column || vscode.ViewColumn.One,
+            {
+                enableScripts: true,
+                retainContextWhenHidden: true,
+            }
+        );
+
+        GritsDashboardPanel.currentPanel = new GritsDashboardPanel(panel, context);
+    }
+
+    public dispose() {
+        GritsDashboardPanel.currentPanel = undefined;
+        this._panel.dispose();
+        while (this._disposables.length) {
+            const disposable = this._disposables.pop();
+            if (disposable) {
+                disposable.dispose();
+            }
+        }
+    }
+
+    private async _sendInitialData() {
+        // Find issues.jsonl and send to webview
+        const files = await vscode.workspace.findFiles('**/.grits/issues.jsonl', null, 1);
+        if (files.length > 0) {
+            const doc = await vscode.workspace.openTextDocument(files[0]);
+            this._panel.webview.postMessage({
+                type: 'init',
+                issues: doc.getText(),
+                workspacePath: vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || '',
+            });
+        }
+
+        // Also try to load topology.json if it exists
+        const topoFiles = await vscode.workspace.findFiles('**/.grits/topology.json', null, 1);
+        if (topoFiles.length > 0) {
+            try {
+                const topoDoc = await vscode.workspace.openTextDocument(topoFiles[0]);
+                this._panel.webview.postMessage({
+                    type: 'topology',
+                    data: topoDoc.getText(),
+                });
+            } catch (e) {
+                console.log('No topology cache found');
+            }
+        }
+    }
+
+    private async _executeGrCommand(command: string, args: string[]) {
+        const { exec } = require('child_process');
+        const workspacePath = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || '.';
+
+        const fullCommand = `gr ${command} ${args.join(' ')}`;
+        exec(fullCommand, { cwd: workspacePath }, (error: Error | null, stdout: string, stderr: string) => {
+            this._panel.webview.postMessage({
+                type: 'grResult',
+                command,
+                success: !error,
+                output: stdout || stderr,
+            });
+        });
+    }
+
+    private async _updateIssue(issueId: string, changes: Record<string, string>) {
+        // Build gr set command
+        const changeArgs = Object.entries(changes).map(([k, v]) => `${k}:${v}`).join(' ');
+        await this._executeGrCommand('set', [issueId, changeArgs]);
+
+        // Refresh data
+        await this._sendInitialData();
+    }
+
+    private _getHtmlForWebview(): string {
+        const webview = this._panel.webview;
+        const nonce = this._getNonce();
+
+        const scriptUri = webview.asWebviewUri(
+            vscode.Uri.joinPath(this._context.extensionUri, 'webview', 'dist', 'assets', 'index.js')
+        );
+        const styleUri = webview.asWebviewUri(
+            vscode.Uri.joinPath(this._context.extensionUri, 'webview', 'dist', 'assets', 'index.css')
+        );
+        const wasmUri = webview.asWebviewUri(
+            vscode.Uri.joinPath(this._context.extensionUri, 'webview', 'dist', 'assets', 'grits_core_bg.wasm')
+        );
+
+        return `
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <meta http-equiv="Content-Security-Policy"
+                    content="default-src 'none';
+                             style-src ${webview.cspSource} 'unsafe-inline';
+                             script-src 'nonce-${nonce}' 'wasm-unsafe-eval';
+                             img-src ${webview.cspSource} data: https:;
+                             connect-src ${webview.cspSource};
+                             font-src ${webview.cspSource};">
+                <title>Grits Dashboard</title>
+                <link href="${styleUri}" rel="stylesheet">
+            </head>
+            <body>
+                <div id="root"></div>
+                <script nonce="${nonce}">
+                    window.vscode = acquireVsCodeApi();
+                    window.wasmUri = "${wasmUri.toString()}";
+                    window.dashboardMode = true;
+                </script>
+                <script nonce="${nonce}" type="module" src="${scriptUri}"></script>
+            </body>
+            </html>
+        `;
+    }
+
+    private _getNonce(): string {
+        let text = '';
+        const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+        for (let i = 0; i < 32; i++) {
+            text += possible.charAt(Math.floor(Math.random() * possible.length));
+        }
+        return text;
+    }
+}
+
+/**
+ * Grits Kanban Editor Provider (kept for .jsonl file editing)
  */
 export class GritsEditorProvider implements vscode.CustomTextEditorProvider {
     public static readonly viewType = 'grits.issueTracker';
@@ -32,7 +226,6 @@ export class GritsEditorProvider implements vscode.CustomTextEditorProvider {
         _token: vscode.CancellationToken
     ): Promise<void> {
         console.log('Resolving Grits Kanban editor for:', document.uri.toString());
-        // Set up webview
         webviewPanel.webview.options = {
             enableScripts: true,
             localResourceRoots: [
@@ -42,23 +235,16 @@ export class GritsEditorProvider implements vscode.CustomTextEditorProvider {
             ],
         };
 
-        // Initial content
         webviewPanel.webview.html = this.getHtmlForWebview(webviewPanel.webview);
 
-        // Send initial document content to webview
         this.postMessage(webviewPanel.webview, 'update', {
             content: document.getText(),
         });
 
-        // WORKSPACE MODE: Scan for other .grits/issues.jsonl files
-        this.scanWorkspaceAndAppend(document, webviewPanel.webview);
-
-        // Handle messages from webview
         webviewPanel.webview.onDidReceiveMessage(
             async (message) => {
                 switch (message.type) {
                     case 'save':
-                        // Apply edit from webview to document
                         const edit = new vscode.WorkspaceEdit();
                         edit.replace(
                             document.uri,
@@ -69,7 +255,6 @@ export class GritsEditorProvider implements vscode.CustomTextEditorProvider {
                         break;
 
                     case 'ready':
-                        // Webview is ready, send current content
                         this.postMessage(webviewPanel.webview, 'update', {
                             content: document.getText(),
                         });
@@ -80,7 +265,6 @@ export class GritsEditorProvider implements vscode.CustomTextEditorProvider {
             this.context.subscriptions
         );
 
-        // Handle document changes (external edits)
         const changeDocumentSubscription = vscode.workspace.onDidChangeTextDocument(
             (e) => {
                 if (e.document.uri.toString() === document.uri.toString()) {
@@ -102,14 +286,8 @@ export class GritsEditorProvider implements vscode.CustomTextEditorProvider {
 
     private getHtmlForWebview(webview: vscode.Webview): string {
         const nonce = this.getNonce();
-
-        // Get the local path to main script run in the webview, then convert it to a uri we can use in the webview.
         const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, 'webview', 'dist', 'assets', 'index.js'));
-
-        // Do the same for the stylesheet.
         const styleMainUri = webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, 'webview', 'dist', 'assets', 'index.css'));
-
-        // Get the local path to wasm file
         const wasmUri = webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, 'webview', 'dist', 'assets', 'grits_core_bg.wasm'));
 
         return `
@@ -130,7 +308,6 @@ export class GritsEditorProvider implements vscode.CustomTextEditorProvider {
             <body>
                 <div id="root"></div>
                 <script nonce="${nonce}">
-                    // Inject VS Code API and WASM URI
                     window.vscode = acquireVsCodeApi();
                     window.wasmUri = "${wasmUri.toString()}";
                 </script>
@@ -148,39 +325,10 @@ export class GritsEditorProvider implements vscode.CustomTextEditorProvider {
         }
         return text;
     }
-
-    private async scanWorkspaceAndAppend(currentDoc: vscode.TextDocument, webview: vscode.Webview) {
-        const workspaceFolders = vscode.workspace.workspaceFolders;
-        if (!workspaceFolders) return;
-
-        // Find all issues.jsonl files
-        const files = await vscode.workspace.findFiles('**/.grits/issues.jsonl');
-
-        for (const file of files) {
-            // Skip the current document to avoid duplication
-            if (file.toString() === currentDoc.uri.toString()) continue;
-
-            try {
-                const doc = await vscode.workspace.openTextDocument(file);
-                const content = doc.getText();
-                if (content.trim()) {
-                    this.postMessage(webview, 'update', { content });
-                    console.log('Appended content from:', file.toString());
-                }
-            } catch (e) {
-                console.error('Failed to load workspace file:', file, e);
-            }
-        }
-
-        if (files.length > 1) {
-            // Notify UI that we are in workspace mode (optional, for read-only hint)
-            // this.postMessage(webview, 'workspace-mode', { count: files.length });
-        }
-    }
 }
 
 /**
- * Tree Data Provider for Grits sidebar view
+ * Tree Data Provider for Grits sidebar (simplified - just opens dashboard)
  */
 class GritsTreeDataProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
     getTreeItem(element: vscode.TreeItem): vscode.TreeItem {
@@ -188,7 +336,6 @@ class GritsTreeDataProvider implements vscode.TreeDataProvider<vscode.TreeItem> 
     }
 
     async getChildren(): Promise<vscode.TreeItem[]> {
-        // Find .grits/issues.jsonl in workspace
         const files = await vscode.workspace.findFiles('**/.grits/issues.jsonl', null, 1);
 
         if (files.length === 0) {
@@ -197,14 +344,15 @@ class GritsTreeDataProvider implements vscode.TreeDataProvider<vscode.TreeItem> 
             return [noIssues];
         }
 
-        const openItem = new vscode.TreeItem('📋 Open Issues Board');
-        openItem.command = {
-            command: 'grits.openIssues',
-            title: 'Open Issues'
+        const openDashboard = new vscode.TreeItem('🚀 Open Dashboard');
+        openDashboard.command = {
+            command: 'grits.openDashboard',
+            title: 'Open Dashboard'
         };
-        openItem.description = 'Click to open Kanban view';
+        openDashboard.description = 'Full-featured command center';
+        openDashboard.tooltip = 'Opens the Grits Dashboard with 3D topology, issue management, and project health metrics';
 
-        return [openItem];
+        return [openDashboard];
     }
 }
 
@@ -212,7 +360,7 @@ class GritsTreeDataProvider implements vscode.TreeDataProvider<vscode.TreeItem> 
  * Extension activation
  */
 export function activate(context: vscode.ExtensionContext) {
-    // Register custom editor provider
+    // Register custom editor provider (for .jsonl files)
     context.subscriptions.push(GritsEditorProvider.register(context));
 
     // Register tree view for sidebar
@@ -221,7 +369,14 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.window.registerTreeDataProvider('grits.issuesView', treeDataProvider)
     );
 
-    // Register command to open kanban view
+    // Register command to open the FULL dashboard panel
+    context.subscriptions.push(
+        vscode.commands.registerCommand('grits.openDashboard', () => {
+            GritsDashboardPanel.createOrShow(context);
+        })
+    );
+
+    // Legacy command - still opens the custom editor for .jsonl
     context.subscriptions.push(
         vscode.commands.registerCommand('grits.openKanban', () => {
             const activeEditor = vscode.window.activeTextEditor;
@@ -239,26 +394,20 @@ export function activate(context: vscode.ExtensionContext) {
         })
     );
 
-    // Register command to open issues from sidebar
+    // Sidebar click opens dashboard
     context.subscriptions.push(
-        vscode.commands.registerCommand('grits.openIssues', async () => {
-            const files = await vscode.workspace.findFiles('**/.grits/issues.jsonl', null, 1);
-            if (files.length > 0) {
-                vscode.commands.executeCommand(
-                    'vscode.openWith',
-                    files[0],
-                    GritsEditorProvider.viewType
-                );
-            } else {
-                vscode.window.showInformationMessage(
-                    'No .grits folder found. Run "gr onboard" in your terminal to initialize.'
-                );
-            }
+        vscode.commands.registerCommand('grits.openIssues', () => {
+            GritsDashboardPanel.createOrShow(context);
         })
     );
 
-    console.log('Grits Kanban extension activated');
+    // Register symbol decorations for gutter icons
+    const decorationProvider = registerSymbolDecorations(context);
+    context.subscriptions.push({ dispose: () => decorationProvider.dispose() });
+
+    console.log('Grits extension activated');
 }
 
 export function deactivate() { }
+
 

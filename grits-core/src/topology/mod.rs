@@ -6,6 +6,8 @@ pub struct Symbol {
     pub id: String,
     pub name: String,
     pub file_path: String,
+    #[serde(default)]
+    pub package: Option<String>, // Workspace package name (monorepo)
     pub language: String,
     pub kind: String, // "function", "class", "struct", etc.
 }
@@ -60,3 +62,9 @@ pub mod scanner;
 
 #[cfg(not(target_arch = "wasm32"))]
 pub mod cache;
+
+#[cfg(not(target_arch = "wasm32"))]
+pub mod incremental;
+
+#[cfg(not(target_arch = "wasm32"))]
+pub mod workspace;

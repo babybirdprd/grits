@@ -21,6 +21,8 @@ impl CodeParser {
             "rust" => tree_sitter_rust::LANGUAGE.into(),
             "typescript" | "ts" => tree_sitter_typescript::LANGUAGE_TYPESCRIPT.into(),
             "javascript" | "js" => tree_sitter_javascript::LANGUAGE.into(),
+            "python" | "py" => tree_sitter_python::LANGUAGE.into(),
+            "go" => tree_sitter_go::LANGUAGE.into(),
             _ => return Err(anyhow::anyhow!("Unsupported language: {}", language)),
         };
 
@@ -49,6 +51,7 @@ impl CodeParser {
             id: file_path.to_string(),
             name: file_path.to_string(),
             file_path: file_path.to_string(),
+            package: None,
             language: self.language.clone(),
             kind: "file".to_string(),
         });
@@ -84,6 +87,7 @@ impl CodeParser {
                                 id: id.clone(),
                                 name: text.to_string(),
                                 file_path: file_path.to_string(),
+                                package: None,
                                 language: self.language.clone(),
                                 kind: capture.node.kind().to_string(),
                             });
@@ -157,6 +161,7 @@ impl CodeParser {
                                 id: id.clone(),
                                 name: text.to_string(),
                                 file_path: file_path.to_string(),
+                                package: None,
                                 language: self.language.clone(),
                                 kind: capture.node.kind().to_string(),
                             });
@@ -214,6 +219,7 @@ impl CodeParser {
                                 id: id.clone(),
                                 name: text.to_string(),
                                 file_path: file_path.to_string(),
+                                package: None,
                                 language: self.language.clone(),
                                 kind: capture.node.kind().to_string(),
                             });
@@ -236,6 +242,115 @@ impl CodeParser {
                             graph.add_weighted_dependency(file_path, text, "calls", strength);
                         } else if capture_name == "import" {
                             let clean_import = text.trim_matches(|c| c == '\'' || c == '"');
+                            graph.add_weighted_dependency(file_path, clean_import, "imports", 0.3);
+                        }
+                    }
+                }
+            }
+        }
+
+        // For Python
+        if self.language == "python" || self.language == "py" {
+            let query_str = r#"
+                (function_definition name: (identifier) @name) @func
+                (class_definition name: (identifier) @name) @class
+                (import_statement name: (dotted_name) @import) @import
+                (import_from_statement module_name: (dotted_name) @import) @import_from
+                (call function: (identifier) @call) @call
+             "#;
+            let lang: tree_sitter::Language = tree_sitter_python::LANGUAGE.into();
+            if let Ok(query) = Query::new(&lang, query_str) {
+                let mut cursor = QueryCursor::new();
+                let mut matches = cursor.matches(&query, root, content_bytes);
+                while let Some(match_) = matches.next() {
+                    for capture in match_.captures {
+                        let idx = capture.index as usize;
+                        let capture_name: &str = &query.capture_names()[idx];
+                        let range = capture.node.byte_range();
+                        if range.end > content.len() {
+                            continue;
+                        }
+                        let text = &content[range.start..range.end];
+
+                        if capture_name == "name" {
+                            let id = format!("{}::{}", file_path, text);
+                            graph.add_symbol(Symbol {
+                                id: id.clone(),
+                                name: text.to_string(),
+                                file_path: file_path.to_string(),
+                                package: None,
+                                language: self.language.clone(),
+                                kind: capture.node.kind().to_string(),
+                            });
+                            graph.add_weighted_dependency(&id, file_path, "defined_in", 1.0);
+                        } else if capture_name == "call" {
+                            let mut strength = 0.6;
+                            let mut parent = capture.node.parent();
+                            while let Some(p) = parent {
+                                let kind = p.kind();
+                                if kind == "for_statement" || kind == "while_statement" {
+                                    strength = 1.0;
+                                    break;
+                                }
+                                parent = p.parent();
+                            }
+                            graph.add_weighted_dependency(file_path, text, "calls", strength);
+                        } else if capture_name == "import" {
+                            graph.add_weighted_dependency(file_path, text, "imports", 0.3);
+                        }
+                    }
+                }
+            }
+        }
+
+        // For Go
+        if self.language == "go" {
+            let query_str = r#"
+                (function_declaration name: (identifier) @name) @func
+                (method_declaration name: (field_identifier) @name) @method
+                (type_declaration (type_spec name: (type_identifier) @name)) @type
+                (import_spec path: (interpreted_string_literal) @import) @import
+                (call_expression function: (identifier) @call) @call
+             "#;
+            let lang: tree_sitter::Language = tree_sitter_go::LANGUAGE.into();
+            if let Ok(query) = Query::new(&lang, query_str) {
+                let mut cursor = QueryCursor::new();
+                let mut matches = cursor.matches(&query, root, content_bytes);
+                while let Some(match_) = matches.next() {
+                    for capture in match_.captures {
+                        let idx = capture.index as usize;
+                        let capture_name: &str = &query.capture_names()[idx];
+                        let range = capture.node.byte_range();
+                        if range.end > content.len() {
+                            continue;
+                        }
+                        let text = &content[range.start..range.end];
+
+                        if capture_name == "name" {
+                            let id = format!("{}::{}", file_path, text);
+                            graph.add_symbol(Symbol {
+                                id: id.clone(),
+                                name: text.to_string(),
+                                file_path: file_path.to_string(),
+                                package: None,
+                                language: self.language.clone(),
+                                kind: capture.node.kind().to_string(),
+                            });
+                            graph.add_weighted_dependency(&id, file_path, "defined_in", 1.0);
+                        } else if capture_name == "call" {
+                            let mut strength = 0.6;
+                            let mut parent = capture.node.parent();
+                            while let Some(p) = parent {
+                                let kind = p.kind();
+                                if kind == "for_statement" || kind == "range_clause" {
+                                    strength = 1.0;
+                                    break;
+                                }
+                                parent = p.parent();
+                            }
+                            graph.add_weighted_dependency(file_path, text, "calls", strength);
+                        } else if capture_name == "import" {
+                            let clean_import = text.trim_matches('"');
                             graph.add_weighted_dependency(file_path, clean_import, "imports", 0.3);
                         }
                     }

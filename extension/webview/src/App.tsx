@@ -7,6 +7,8 @@ import { GraphView } from './components/GraphView';
 import { AgendaView } from './components/AgendaView';
 import { DetailPanel } from './components/DetailPanel';
 import { OnboardingView } from './components/OnboardingView';
+import { TopologyScene } from './components/TopologyScene';
+import { VitalsDashboard } from './components/VitalsDashboard';
 import './App.css';
 
 // VS Code API
@@ -19,6 +21,8 @@ export function App() {
     const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
     const [wasmReady, setWasmReady] = useState(false);
     const [needsOnboarding, setNeedsOnboarding] = useState(false);
+    const [topologyData, setTopologyData] = useState<any>(null);
+    const [solidScore] = useState<number>(0);
     const storeRef = useRef<WasmStore | null>(null);
     const isWasmLoading = useRef(false);
 
@@ -53,7 +57,7 @@ export function App() {
                             console.error('WASM load failed:', err);
                         }
                     } else {
-                         console.warn("WASM not ready for update, waiting...");
+                        console.warn("WASM not ready for update, waiting...");
                     }
                 } else {
                     // Empty content might mean empty file or no file
@@ -64,6 +68,20 @@ export function App() {
                 }
             } else if (message.type === 'no-config') {
                 setNeedsOnboarding(true);
+            } else if (message.type === 'topology') {
+                // Handle topology data from dashboard panel
+                try {
+                    const data = JSON.parse(message.data);
+                    setTopologyData(data.graph || data);
+                } catch (e) {
+                    console.error('Failed to parse topology:', e);
+                }
+            } else if (message.type === 'init') {
+                // Dashboard mode initialization
+                if (wasmReady && storeRef.current && message.issues) {
+                    storeRef.current.load(message.issues);
+                    refreshIssues();
+                }
             }
         };
 
@@ -92,8 +110,8 @@ export function App() {
 
             // If an issue is selected, refresh its data too
             if (selectedIssue) {
-                 const updated = list.find((i: Issue) => i.id === selectedIssue.id);
-                 if (updated) setSelectedIssue(updated);
+                const updated = list.find((i: Issue) => i.id === selectedIssue.id);
+                if (updated) setSelectedIssue(updated);
             }
         } catch (e) {
             console.error("Failed to refresh issues:", e);
@@ -194,6 +212,7 @@ export function App() {
                     <ViewTab id="list" label="List" icon="📄" />
                     <ViewTab id="kanban" label="Kanban" icon="📊" />
                     <ViewTab id="graph" label="Graph" icon="🔗" />
+                    <ViewTab id="topology" label="3D" icon="🌐" />
                     <ViewTab id="agenda" label="Focus" icon="🎯" />
                 </nav>
             </header>
@@ -223,6 +242,24 @@ export function App() {
                         onUpdateField={handleUpdateField}
                         onSelectIssue={setSelectedIssue}
                     />
+                )}
+                {view === 'topology' && (
+                    <div className="topology-container">
+                        <TopologyScene
+                            data={topologyData}
+                            onNodeSelect={(id) => console.log('Selected:', id)}
+                            solidScore={solidScore}
+                        />
+                        <div className="vitals-sidebar">
+                            <VitalsDashboard
+                                solidScore={solidScore}
+                                betti0={topologyData?.nodes ? Object.keys(topologyData.nodes).length : 0}
+                                betti1={0}
+                                hotspots={[]}
+                                inProgressCount={issues.filter(i => i.status === 'in_progress').length}
+                            />
+                        </div>
+                    </div>
                 )}
             </main>
 

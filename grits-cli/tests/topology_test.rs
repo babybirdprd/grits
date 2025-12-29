@@ -21,6 +21,7 @@ fn test_topology_analysis() {
         file_path: "f1".to_string(),
         language: "rust".to_string(),
         kind: "fn".to_string(),
+        package: None,
     });
     graph.add_symbol(grits_core::topology::Symbol {
         id: "B".to_string(),
@@ -28,6 +29,7 @@ fn test_topology_analysis() {
         file_path: "f1".to_string(),
         language: "rust".to_string(),
         kind: "fn".to_string(),
+        package: None,
     });
     graph.add_symbol(grits_core::topology::Symbol {
         id: "C".to_string(),
@@ -35,6 +37,7 @@ fn test_topology_analysis() {
         file_path: "f1".to_string(),
         language: "rust".to_string(),
         kind: "fn".to_string(),
+        package: None,
     });
     graph.add_symbol(grits_core::topology::Symbol {
         id: "D".to_string(),
@@ -42,6 +45,7 @@ fn test_topology_analysis() {
         file_path: "f1".to_string(),
         language: "rust".to_string(),
         kind: "fn".to_string(),
+        package: None,
     });
 
     let analysis = TopologicalAnalysis::analyze(&graph);
@@ -66,6 +70,7 @@ fn test_betti_2_octahedron() {
             file_path: "f".to_string(),
             language: "r".to_string(),
             kind: "k".to_string(),
+            package: None,
         });
     }
 

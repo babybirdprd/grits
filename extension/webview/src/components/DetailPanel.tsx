@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Issue, Comment } from '../types';
 import { LabelPicker } from './LabelPicker';
 import './DetailPanel.css';
@@ -23,6 +23,45 @@ export const DetailPanel: React.FC<DetailPanelProps> = ({
     onRemoveLabel,
 }) => {
     const [commentText, setCommentText] = useState('');
+    const [isEditingTitle, setIsEditingTitle] = useState(false);
+    const [titleValue, setTitleValue] = useState(issue.title);
+    const titleInputRef = useRef<HTMLInputElement>(null);
+
+    // Keyboard shortcuts
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                if (isEditingTitle) {
+                    setIsEditingTitle(false);
+                    setTitleValue(issue.title);
+                } else {
+                    onClose();
+                }
+            }
+        };
+        document.addEventListener('keydown', handleKeyDown);
+        return () => document.removeEventListener('keydown', handleKeyDown);
+    }, [onClose, isEditingTitle, issue.title]);
+
+    // Sync title when issue changes
+    useEffect(() => {
+        setTitleValue(issue.title);
+    }, [issue.title]);
+
+    // Focus title input when editing
+    useEffect(() => {
+        if (isEditingTitle && titleInputRef.current) {
+            titleInputRef.current.focus();
+            titleInputRef.current.select();
+        }
+    }, [isEditingTitle]);
+
+    const handleTitleSubmit = () => {
+        if (titleValue.trim() && titleValue !== issue.title) {
+            onUpdateField(issue.id, 'title', titleValue.trim());
+        }
+        setIsEditingTitle(false);
+    };
 
     const handleCommentSubmit = () => {
         if (commentText.trim()) {
@@ -34,8 +73,27 @@ export const DetailPanel: React.FC<DetailPanelProps> = ({
     return (
         <aside className="detail-panel">
             <div className="detail-header">
-                <h2>{issue.title}</h2>
-                <button className="close-btn" onClick={onClose}>✕</button>
+                {isEditingTitle ? (
+                    <input
+                        ref={titleInputRef}
+                        className="title-input"
+                        value={titleValue}
+                        onChange={(e) => setTitleValue(e.target.value)}
+                        onBlur={handleTitleSubmit}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter') handleTitleSubmit();
+                        }}
+                    />
+                ) : (
+                    <h2
+                        className="editable-title"
+                        onClick={() => setIsEditingTitle(true)}
+                        title="Click to edit"
+                    >
+                        {issue.title}
+                    </h2>
+                )}
+                <button className="close-btn" onClick={onClose} title="Close (Esc)">✕</button>
             </div>
             <div className="detail-body">
                 <div className="detail-field">
