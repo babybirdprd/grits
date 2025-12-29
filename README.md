@@ -1,10 +1,10 @@
 # Grits
 
 A Git-native, local-first issue tracker with a **Twin Engine** architecture:        
-- 🤖 **Agent Engine**: MCP server for AI integration (Antigravity, Claude, etc.)
-- 👀 **Visual Engine**: VS Code extension with WASM-powered UI
+- 🤖 **Agent Engine**: MCP server + agent-native CLI (inspect, workon, pulse, refactor)
+- 👀 **Visual Engine**: VS Code extension with 3D topology visualization
 
-**Status**: Production Ready (v2.0.0)
+**Status**: v2.0.0 — "Solid Graph Command Center"
 
 ## Quick Start
 
@@ -13,36 +13,14 @@ A Git-native, local-first issue tracker with a **Twin Engine** architecture:
 - Git
 - Node.js 18+ (for VS Code extension)
 
-### Option 1: Cargo (Recommended for Rust users)
-
-If you have Rust installed, this is the easiest way. It automatically adds `gr` to your PATH:
+### Install CLI
 
 ```bash
+# Via Cargo (recommended)
 cargo install grits-cli
-```
 
-### Option 2: Download Binary
-
-**Windows (PowerShell One-Liner):**
-```powershell
-iwr https://github.com/babybirdprd/grits/releases/latest/download/gr-x86_64-pc-windows-msvc.exe -OutFile gr.exe; mv gr.exe $HOME/.cargo/bin/gr.exe
-```
-
-**Manual Download:**
-1. Download from [GitHub Releases](https://github.com/babybirdprd/grits/releases).
-2. Rename to `gr` (or `gr.exe`).
-3. Move to a folder in your PATH.
-
-### Option 3: Build from Source
-
-If you want to contribute or use the latest main branch:
-
-```bash
-git clone https://github.com/babybirdprd/grits.git
-cd grits
-pnpm install
-pnpm run build
-cargo install --path grits-cli
+# Or download binary from Releases
+# https://github.com/babybirdprd/grits/releases
 ```
 
 ### Initialize a Project
@@ -51,148 +29,158 @@ cd your-project
 gr onboard
 ```
 
-### CLI Usage
+## v2.0 Highlights
+
+### 🚀 Agent-Native Commands
+
 ```bash
-gr create "Fix login bug" -t bug -p 1         # Create issue
-gr list --status open                          # List open issues
-gr update abc123 --status in-progress          # Update status
-gr close abc123                                # Close issue
-gr sync                                        # Sync with Git
+# Session hydration - get project context instantly
+gr pulse
+
+# One-shot context for any target
+gr inspect gr-abc123   # Issue
+gr inspect src/main.rs # File
+
+# Start working (creates branch + sets status + outputs context)
+gr workon gr-abc123
+
+# Fuzzy shorthand updates  
+gr set gr-abc pri:1 stat:ip +l:urgent
+
+# Auto-fix dependency cycles
+gr refactor --apply --cycle 0
 ```
+
+### 🔬 Solid Graph Topology
+
+```bash
+# Build topology cache (Tree-sitter: Rust, TS, JS, Python, Go)
+gr analysis rebuild
+
+# Compute Solid Score (architectural health metric)
+gr stats --topology
+
+# Detect and auto-fix cycles
+gr refactor                    # Show cycles + suggestions
+gr refactor --apply --cycle 0  # Apply fix
+gr refactor --undo --target f  # Restore from backup
+```
+
+| Feature | Description |
+|---------|-------------|
+| **Betti Numbers** | B₀=components, B₁=cycles, B₂=voids |
+| **Solid Score** | Unified health metric (0-100%) |
+| **Edge Persistence** | Identify weakest links in cycles |
+| **Star Neighborhoods** | Context loading for AI editing |
+| **Monorepo Support** | Cargo, pnpm, turbo, go.work detection |
+
+### 📺 VS Code Dashboard
+
+The extension opens as a **full Webview Panel** with:
+
+- **3D Topology View**: React Three Fiber visualization with orbit controls
+- **Vitals Dashboard**: Solid Score gauge, Spaghetti Meter, PageRank hotspots
+- **List/Kanban/Graph**: Standard issue management
+- **Gutter Decorations**: Issue indicators in editor margins
+
+---
 
 ## Twin Engine Architecture
 
-Grits uses a "Unified State" approach where the Human UI and the AI Agent always stay in sync.
-
 ### 🔗 Tethered Sync
-Whenever the AI Agent (via MCP) or the Human (via UI) modifies an issue, Grits automatically:
-1. **Auto-Imports** changes from the `.grits/issues.jsonl` file into the database.
-2. **Auto-Exports** database updates back to the file.
-This means you can move a card in the Kanban board and the Agent sees it immediately, and vice-versa.
+- **SQLite** (`.grits/grits.db`) — Fast local queries
+- **JSONL** (`.grits/issues.jsonl`) — Git-versioned, human-readable
+- All commands auto-sync between engines
 
 ### 🤖 Agent Engine (MCP Server)
 
-Run the MCP server for AI agent integration:
 ```bash
 gr serve-mcp
 ```
 
-> ⚠️ **Note**: The MCP server is currently untested. Full verification coming in a future release.
-
-**Available Tools:**
-| Category | Tools |
-|----------|-------|
-| **CRUD** | `list_issues`, `create_issue`, `update_issue`, `close_issue`, `get_issue` |
-| **Contextual** | `find_related_issues`, `suggest_issue_for_error`, `infer_issue_from_diff` |
-| **Bulk** | `bulk_triage`, `detect_duplicates`, `cleanup_stale` |
-| **Workflow** | `get_next_task`, `link_commit_to_issues`, `generate_issue_from_todo` |
-| **Smart Queries** | `search_issues`, `get_issue_graph`, `summarize_sprint` |
-
-**Antigravity Configuration** (`.vscode/mcp.json`):
+**Antigravity Config** (`.vscode/mcp.json`):
 ```json
 {
     "servers": {
         "grits": {
             "command": "gr",
             "args": ["serve-mcp"],
-            "env": {
-                "GRITS_PROJECT_ROOT": "${workspaceFolder}"
-            }
+            "env": { "GRITS_PROJECT_ROOT": "${workspaceFolder}" }
         }
     }
 }
 ```
 
-> **Note**: The `GRITS_PROJECT_ROOT` environment variable tells the MCP server which project to use, ensuring issues are stored in the correct location.
+**16 MCP Tools:**
+| Category | Tools |
+|----------|-------|
+| CRUD | `list_issues`, `create_issue`, `update_issue`, `close_issue`, `get_issue` |
+| Search | `search_issues`, `find_related_issues`, `detect_duplicates` |
+| Strategic | `get_next_task`, `summarize_sprint`, `cleanup_stale` |
+| Context | `suggest_issue_for_error`, `infer_issue_from_diff` |
 
-### 👀 Visual Engine (VS Code Extension)
+---
 
-The extension provides a rich UI for `.jsonl` issue files:
+## CLI Reference (v2.1.0)
 
-- **List View**: Virtualized spreadsheet with inline editing
-- **Kanban View**: Drag-and-drop board by status
-- **Graph View**: Dependency visualization
-- **Focus View**: High-priority items only
+### Agent-Native (NEW)
+| Command | Purpose |
+|---------|---------|
+| `gr pulse` | Session hydration |
+| `gr inspect <target>` | One-shot context |
+| `gr workon <id>` | Start work (branch + status) |
+| `gr set <id> <changes>` | Fuzzy updates |
+| `gr refactor` | Auto-fix cycles |
 
-| List View | Kanban View |
-|-----------|-------------|
-| ![List](assets/screenshot-list.png) | ![Kanban](assets/screenshot-kanban.png) |
+### Core
+| Command | Purpose |
+|---------|---------|
+| `gr create` | Create issue |
+| `gr update` | Update issue |
+| `gr list` | List issues |
+| `gr ready` | Actionable issues |
+| `gr sync` | Git sync |
 
-| Graph View | Focus View |
-|------------|------------|
-| ![Graph](assets/screenshot-graph.png) | ![Focus](assets/screenshot-focus.png) |
+### Analysis
+| Command | Purpose |
+|---------|---------|
+| `gr analysis rebuild` | Build topology cache |
+| `gr analysis star <sym>` | Star neighborhood |
+| `gr analysis volumes <file>` | Feature clusters |
+| `gr analysis check-layers` | Architectural invariants |
+| `gr analysis search <query>` | BM25 search |
 
-**Install Extension:**
-
-Download `grits-kanban-*.vsix` from [Releases](https://github.com/babybirdprd/grits/releases) and:
-```bash
-code --install-extension grits-kanban-0.1.0.vsix
-```
-
-Or build from source:
-```bash
-# From the root directory
-pnpm run build
-
-# Then press F5 in VS Code in this workspace
-```
-
-## 🔬 Solid Graph Topology
-
-Grits includes **simplicial complex analysis** for code architecture, allowing you to treat code as a "solid" multidimensional structure:
-
-```bash
-# 1. Build project-wide topology cache
-gr analysis rebuild
-
-# 2. Detect circular dependencies using Betti numbers
-gr analysis validate-topology src/lib.rs
-
-# 3. Detect architectural drift (new cycles, removed edges)
-gr analysis diff
-
-# 4. Export for visualization (Graphviz/JSON)
-gr analysis export topology.dot
-```
-
-| Feature | Description |
-|---------|-------------|
-| **Project Scanning** | Recursively build a unified graph of your codebase |
-| **Betti_0/1/2** | Detect components, circular cycles, and 2D voids |
-| **Feature Volumes** | Find tightly coupled code clusters ($2$-simplexes) |
-| **Star Neighborhoods** | Load precise context for AI editing sessions |
-| **Persistence** | Cache topology in `.grits/topology.json` for fast diffs |
-| **Issue Linking** | Bind symbols to issues to capture topological context |
-
-> Based on the ["Solid Graph" philosophy](https://arxiv.org/html/2512.19736v1) from algebraic topology.
+---
 
 ## Project Structure
 
 ```
 grits/
-├── grits-core/         # Core library (WASM-compatible)
-│   └── src/wasm.rs     # WASM bridge for UI
-├── grits-cli/          # CLI + MCP server
-│   └── src/mcp.rs      # MCP tool implementations
-├── extension/          # VS Code extension
-│   ├── src/            # Extension host code
-│   └── webview/        # React UI
-├── .vscode/mcp.json    # MCP server config
-└── .agent/workflows/   # Agent workflow rules
+├── grits-core/           # Core library (WASM-compatible)
+│   └── src/topology/     # Solid Graph analysis
+│       ├── analysis.rs   # Betti numbers, PageRank, persistence
+│       ├── refactor.rs   # Auto-fix cycle mutations
+│       └── workspace.rs  # Monorepo detection
+├── grits-cli/            # CLI + MCP server
+├── extension/            # VS Code extension
+│   └── webview/          # React + Three.js dashboard
+└── .agent/workflows/     # Agent workflow rules
 ```
+
+---
 
 ## Documentation
 
-- [Architecture](docs/architecture.md): Twin Engine design
-- [CLI Usage](docs/cli_usage.md): Full command reference
-- [WASM Status](docs/wasm_compatibility.md): WebAssembly support
-- [Development](docs/development.md): Build & test guide
+- [AGENTS.md](AGENTS.md): Comprehensive agent guide
+- [docs/cli_usage.md](docs/cli_usage.md): Full command reference
+- [docs/architecture.md](docs/architecture.md): Twin Engine design
 
 ## Credits
 
-Grits is inspired by [Beads](https://github.com/steveyegge/beads) by Steve Yegge — 
-"A memory upgrade for your coding agent." Thank you for pioneering the Git-native 
-issue tracking concept for AI agents!
+Inspired by [Beads](https://github.com/steveyegge/beads) by Steve Yegge — 
+"A memory upgrade for your coding agent."
+
+Based on the ["Solid Graph" philosophy](https://arxiv.org/html/2512.19736v1) from algebraic topology.
 
 ## License
 

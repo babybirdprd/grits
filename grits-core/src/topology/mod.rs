@@ -68,3 +68,6 @@ pub mod incremental;
 
 #[cfg(not(target_arch = "wasm32"))]
 pub mod workspace;
+
+#[cfg(not(target_arch = "wasm32"))]
+pub mod refactor;

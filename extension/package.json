@@ -2,7 +2,7 @@
   "name": "grits-kanban",
   "displayName": "Grits Issue Tracker",
   "description": "Visual Kanban board and issue management for Grits (.jsonl) files",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "publisher": "grits",
   "engines": {
     "vscode": "^1.80.0"

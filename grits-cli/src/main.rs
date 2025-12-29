@@ -207,6 +207,29 @@ enum Commands {
         /// Changes in shorthand format
         changes: Vec<String>,
     },
+
+    /// Auto-apply refactoring to break dependency cycles
+    Refactor {
+        /// Target file or symbol to analyze
+        #[arg(long)]
+        target: Option<String>,
+
+        /// Apply the suggested refactoring (comment out weakest edge)
+        #[arg(long)]
+        apply: bool,
+
+        /// Preview changes without modifying files
+        #[arg(long)]
+        dry_run: bool,
+
+        /// Specific cycle index to fix (from gr inspect output)
+        #[arg(long)]
+        cycle: Option<usize>,
+
+        /// Undo the last refactoring (restore from backup)
+        #[arg(long)]
+        undo: bool,
+    },
 }
 
 #[derive(Subcommand)]
@@ -2258,6 +2281,160 @@ fn main() -> anyhow::Result<()> {
             } else {
                 eprintln!("Issue not found: {}", id);
             }
+        }
+
+        Commands::Refactor {
+            target,
+            apply,
+            dry_run,
+            cycle,
+            undo,
+        } => {
+            use grits_core::topology::{
+                analysis::TopologicalAnalysis,
+                cache::TopologyCache,
+                refactor::{get_backup_dir, undo_refactor, RefactorAction},
+            };
+
+            let grits_dir = jsonl_path.parent().unwrap_or(std::path::Path::new("."));
+            let topology_path = grits_dir.join("topology.json");
+            let backup_dir = get_backup_dir(grits_dir);
+
+            // Handle undo
+            if undo {
+                if let Some(file) = target.as_ref() {
+                    match undo_refactor(file, &backup_dir) {
+                        Ok(()) => println!("✓ Restored {} from backup", file),
+                        Err(e) => eprintln!("Failed to undo: {}", e),
+                    }
+                } else {
+                    eprintln!("--undo requires --target <file>");
+                }
+                return Ok(());
+            }
+
+            // Load topology
+            if !topology_path.exists() {
+                eprintln!("No topology cache found. Run 'gr analysis rebuild' first.");
+                return Ok(());
+            }
+
+            let cache = TopologyCache::load(&topology_path)?;
+            let analysis = TopologicalAnalysis::analyze(&cache.graph);
+
+            // Get edge persistence to find cycles
+            let edge_persistence = TopologicalAnalysis::compute_edge_persistence(&cache.graph);
+
+            // Group by cycle_id to find unique cycles
+            let mut cycle_ids: Vec<usize> = edge_persistence.iter().map(|e| e.cycle_id).collect();
+            cycle_ids.sort();
+            cycle_ids.dedup();
+
+            if analysis.betti_1 == 0 || cycle_ids.is_empty() {
+                println!(
+                    "{}",
+                    serde_json::json!({
+                        "cycles_detected": 0,
+                        "message": "No dependency cycles found. Architecture is clean!"
+                    })
+                );
+                return Ok(());
+            }
+
+            // Select which cycle to fix
+            let cycle_idx = cycle.unwrap_or(0);
+            if cycle_idx >= cycle_ids.len() {
+                eprintln!(
+                    "Cycle index {} out of range (found {} cycles)",
+                    cycle_idx,
+                    cycle_ids.len()
+                );
+                return Ok(());
+            }
+
+            let selected_cycle_id = cycle_ids[cycle_idx];
+
+            // Get suggested refactor for this cycle
+            let suggestion = TopologicalAnalysis::suggest_refactor(&cache.graph, selected_cycle_id);
+
+            // Get edges in this cycle for display
+            let cycle_edges: Vec<_> = edge_persistence
+                .iter()
+                .filter(|e| e.cycle_id == selected_cycle_id)
+                .map(|e| format!("{} -> {}", e.source, e.target))
+                .collect();
+
+            let mut result = serde_json::json!({
+                "cycles_detected": cycle_ids.len(),
+                "betti_1": analysis.betti_1,
+                "selected_cycle": cycle_idx,
+                "cycle_edges": cycle_edges,
+            });
+
+            if let Some(edge) = suggestion {
+                // Find the source file and line for this edge
+                let source_symbol = cache.graph.nodes.get(&edge.source);
+                let (file_path, line) = if let Some(sym) = source_symbol {
+                    (sym.file_path.clone(), 1) // TODO: Get actual line from AST
+                } else {
+                    (
+                        edge.source
+                            .split("::")
+                            .next()
+                            .unwrap_or("unknown")
+                            .to_string(),
+                        1,
+                    )
+                };
+
+                // Create the refactor action
+                let action = RefactorAction::comment_out(
+                    &file_path,
+                    line,
+                    line,
+                    &format!("// Import/call: {} -> {}", edge.source, edge.target),
+                    &edge.source,
+                    &edge.target,
+                );
+
+                result["suggested_refactor"] = serde_json::json!({
+                    "edge": { "from": edge.source, "to": edge.target },
+                    "file": file_path,
+                    "line": line,
+                    "action": "comment_out",
+                    "confidence": 1.0 - edge.lifetime.min(1.0),
+                    "reasoning": format!("Edge has persistence {:.2} (lower = weaker link)", edge.lifetime),
+                });
+
+                if apply || dry_run {
+                    let diff = action.preview_diff();
+                    result["preview"] = serde_json::json!(diff);
+
+                    if apply && !dry_run {
+                        match action.apply(Some(&backup_dir)) {
+                            Ok(()) => {
+                                result["applied"] = serde_json::json!(true);
+                                result["backup_location"] =
+                                    serde_json::json!(backup_dir.display().to_string());
+
+                                // Auto-stage with git
+                                let _ = std::process::Command::new("git")
+                                    .args(["add", &file_path])
+                                    .output();
+                            }
+                            Err(e) => {
+                                result["applied"] = serde_json::json!(false);
+                                result["error"] = serde_json::json!(e.to_string());
+                            }
+                        }
+                    }
+                }
+            } else {
+                result["suggested_refactor"] = serde_json::json!(null);
+                result["message"] = serde_json::json!("No weak edge found in cycle");
+            }
+
+            println!("{}", serde_json::to_string_pretty(&result)?);
         }
     }
 
