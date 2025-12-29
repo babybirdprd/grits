@@ -2,9 +2,9 @@
 
 A Git-native, local-first issue tracker with a **Twin Engine** architecture:        
 - 🤖 **Agent Engine**: MCP server + agent-native CLI (inspect, workon, pulse, refactor)
-- 👀 **Visual Engine**: VS Code extension with 3D topology visualization
+- 👀 **Grits Studio**: VS Code extension with 3D topology visualization + command center UI
 
-**Status**: v2.0.0 — "Solid Graph Command Center"
+**Status**: v2.3.0 — "Mini Codebase"
 
 ## Quick Start
 
@@ -66,22 +66,34 @@ gr refactor --apply --cycle 0  # Apply fix
 gr refactor --undo --target f  # Restore from backup
 ```
 
-| Feature | Description |
-|---------|-------------|
 | **Betti Numbers** | B₀=components, B₁=cycles, B₂=voids |
 | **Solid Score** | Unified health metric (0-100%) |
 | **Edge Persistence** | Identify weakest links in cycles |
 | **Star Neighborhoods** | Context loading for AI editing |
+| **Mini Codebase** | Semantic tree-shaking for agents |
 | **Monorepo Support** | Cargo, pnpm, turbo, go.work detection |
 
-### 📺 VS Code Dashboard
+### 🧠 Mini Codebase (NEW)
 
-The extension opens as a **full Webview Panel** with:
+```bash
+# Assemble focused context from topology
+gr context assemble --issue gr-abc123
 
-- **3D Topology View**: React Three Fiber visualization with orbit controls
-- **Vitals Dashboard**: Solid Score gauge, Spaghetti Meter, PageRank hotspots
+# Specify symbols directly
+gr context assemble --symbols "store.rs::Store" --depth 2 --format json
+```
+
+**Why?** Instead of loading entire files, extract only the topologically-relevant symbols. A 2,000-line file becomes 50 focused lines.
+
+### 📺 Grits Studio (VS Code)
+
+The extension opens as a **command center** with:
+
+- **Left Sidebar**: Icon-based navigation (Linear/Jira style)
+- **Top Header**: Live stats (In Progress, Blocked, Solid Score)
+- **3D Topology View**: React Three Fiber + Node Inspector with "Copy for Agent" button
+- **Focus View**: Blocked items prominently displayed with quick actions
 - **List/Kanban/Graph**: Standard issue management
-- **Gutter Decorations**: Issue indicators in editor margins
 
 ---
 
@@ -121,7 +133,7 @@ gr serve-mcp
 
 ---
 
-## CLI Reference (v2.2.5)
+## CLI Reference (v2.3.0)
 
 ### Agent-Native (NEW)
 | Command | Purpose |
@@ -149,6 +161,13 @@ gr serve-mcp
 | `gr analysis volumes <file>` | Feature clusters |
 | `gr analysis check-layers` | Architectural invariants |
 | `gr analysis search <query>` | BM25 search |
+
+### Context (NEW v2.3)
+| Command | Purpose |
+|---------|---------|
+| `gr context assemble` | Mini codebase for agents |
+| `gr context error` | Find issues by error message |
+| `gr context diff` | Infer issue from git diff |
 
 ---
 

@@ -202,8 +202,8 @@ enum Commands {
 
     /// Quick update with fuzzy key matching (e.g., "stat:ip pri:1 +label:bug")
     Set {
-        /// Issue ID
-        id: String,
+        /// Issue ID (optional if focus is set via 'gr workon')
+        id: Option<String>,
         /// Changes in shorthand format
         changes: Vec<String>,
     },
@@ -380,6 +380,24 @@ enum ContextCommands {
         file: String,
         #[arg(long)]
         line: Option<i32>,
+    },
+    /// Assemble a mini codebase for an issue (semantic tree-shaking for agents)
+    Assemble {
+        /// Issue ID to assemble context for
+        #[arg(long)]
+        issue: Option<String>,
+        /// Seed symbols to expand from (comma-separated)
+        #[arg(long, value_delimiter = ',')]
+        symbols: Option<Vec<String>>,
+        /// Output format: json, markdown
+        #[arg(long, default_value = "markdown")]
+        format: String,
+        /// Neighborhood depth (default: 2)
+        #[arg(long, default_value_t = 2)]
+        depth: usize,
+        /// Minimum PageRank threshold for inclusion (0.0-1.0)
+        #[arg(long, default_value_t = 0.0)]
+        threshold: f32,
     },
 }
 
@@ -1939,6 +1957,66 @@ fn main() -> anyhow::Result<()> {
                     }
                 }
             }
+            ContextCommands::Assemble {
+                issue,
+                symbols,
+                format,
+                depth,
+                threshold,
+            } => {
+                use grits_core::context::MiniCodebase;
+                use grits_core::topology::cache::TopologyCache;
+
+                let cache_path = db_path.parent().unwrap().join("topology.json");
+
+                // Ensure we have a topology cache
+                if !cache_path.exists() {
+                    eprintln!("Topology cache not found. Run 'gr analysis rebuild' first.");
+                    std::process::exit(1);
+                }
+
+                let cache = TopologyCache::load(&cache_path)?;
+
+                // Collect seed symbols from issue or direct symbols argument
+                let mut seed_symbols: Vec<String> = symbols.unwrap_or_default();
+                let issue_id = if let Some(id) = issue {
+                    // Get issue and add its affected symbols
+                    if let Some(iss) = store.get_issue(&id)? {
+                        for sym in &iss.affected_symbols {
+                            if !seed_symbols.contains(sym) {
+                                seed_symbols.push(sym.clone());
+                            }
+                        }
+                        Some(iss.id)
+                    } else {
+                        eprintln!("Issue not found: {}", id);
+                        std::process::exit(1);
+                    }
+                } else {
+                    None
+                };
+
+                if seed_symbols.is_empty() {
+                    eprintln!(
+                        "No seed symbols. Provide --symbols or --issue with affected_symbols."
+                    );
+                    std::process::exit(1);
+                }
+
+                // Assemble the mini codebase
+                let mini =
+                    MiniCodebase::assemble(&cache.graph, seed_symbols, depth, threshold, issue_id);
+
+                // Output in requested format
+                match format.as_str() {
+                    "json" => {
+                        println!("{}", serde_json::to_string_pretty(&mini)?);
+                    }
+                    _ => {
+                        println!("{}", mini.to_markdown());
+                    }
+                }
+            }
         },
 
         // ===== PHASE 2: Agent-Native Command Handlers =====
@@ -2032,35 +2110,44 @@ fn main() -> anyhow::Result<()> {
             use grits_core::topology::{analysis::TopologicalAnalysis, cache::TopologyCache};
 
             if let Some(mut issue) = store.get_issue(&id)? {
-                // 1. Create git branch
-                let branch_name = branch.unwrap_or_else(|| format!("grits/{}", issue.id));
                 let grits_dir = db_path.parent().unwrap();
                 let git_root = grits_dir.parent().unwrap_or(std::path::Path::new("."));
 
-                let checkout = std::process::Command::new("git")
-                    .args(["checkout", "-b", &branch_name])
-                    .current_dir(git_root)
-                    .output();
+                // 1. Only create/switch branch if --branch is explicitly provided
+                let branch_name = if let Some(b) = branch {
+                    let name = if b.is_empty() {
+                        format!("grits/{}", issue.id)
+                    } else {
+                        b
+                    };
 
-                match checkout {
-                    Ok(output) if output.status.success() => {
-                        println!("✓ Created branch: {}", branch_name);
-                    }
-                    Ok(output) => {
-                        let stderr = String::from_utf8_lossy(&output.stderr);
-                        if stderr.contains("already exists") {
-                            // Try to just checkout
-                            let _ = std::process::Command::new("git")
-                                .args(["checkout", &branch_name])
-                                .current_dir(git_root)
-                                .output();
-                            println!("✓ Switched to existing branch: {}", branch_name);
-                        } else {
-                            eprintln!("⚠️ Could not create branch: {}", stderr);
+                    let checkout = std::process::Command::new("git")
+                        .args(["checkout", "-b", &name])
+                        .current_dir(git_root)
+                        .output();
+
+                    match checkout {
+                        Ok(output) if output.status.success() => {
+                            println!("✓ Created branch: {}", name);
                         }
+                        Ok(output) => {
+                            let stderr = String::from_utf8_lossy(&output.stderr);
+                            if stderr.contains("already exists") {
+                                let _ = std::process::Command::new("git")
+                                    .args(["checkout", &name])
+                                    .current_dir(git_root)
+                                    .output();
+                                println!("✓ Switched to existing branch: {}", name);
+                            } else {
+                                eprintln!("⚠️ Could not create branch: {}", stderr);
+                            }
+                        }
+                        Err(e) => eprintln!("⚠️ Git not available: {}", e),
                     }
-                    Err(e) => eprintln!("⚠️ Git not available: {}", e),
-                }
+                    Some(name)
+                } else {
+                    None
+                };
 
                 // 2. Set status to in-progress
                 if issue.status != "in-progress" {
@@ -2070,7 +2157,12 @@ fn main() -> anyhow::Result<()> {
                     println!("✓ Status set to: in-progress");
                 }
 
-                // 3. Output context (similar to inspect)
+                // 3. Save focus ID to .grits/focus for "sticky focus"
+                let focus_path = grits_dir.join("focus");
+                std::fs::write(&focus_path, &issue.id)?;
+                println!("✓ Focus set to: {} (use 'gr set' without ID)", issue.id);
+
+                // 4. Output context (similar to inspect)
                 let cache_path = db_path.parent().unwrap().join("topology.json");
                 let mut context = serde_json::json!({
                     "issue": {
@@ -2081,8 +2173,12 @@ fn main() -> anyhow::Result<()> {
                         "labels": issue.labels,
                         "affected_symbols": issue.affected_symbols,
                     },
-                    "branch": branch_name,
+                    "focus": issue.id.clone(),
                 });
+
+                if let Some(b) = branch_name {
+                    context["branch"] = serde_json::json!(b);
+                }
 
                 if cache_path.exists() && !issue.affected_symbols.is_empty() {
                     if let Ok(cache) = TopologyCache::load(&cache_path) {
@@ -2175,7 +2271,25 @@ fn main() -> anyhow::Result<()> {
         }
 
         Commands::Set { id, changes } => {
-            if let Some(mut issue) = store.get_issue(&id)? {
+            // Get issue ID from argument or focus file
+            let grits_dir = db_path.parent().unwrap();
+            let focus_path = grits_dir.join("focus");
+
+            let resolved_id = match id {
+                Some(i) => i,
+                None => {
+                    if focus_path.exists() {
+                        std::fs::read_to_string(&focus_path)?.trim().to_string()
+                    } else {
+                        eprintln!(
+                            "No issue ID provided. Use 'gr workon <ID>' first or provide ID."
+                        );
+                        std::process::exit(1);
+                    }
+                }
+            };
+
+            if let Some(mut issue) = store.get_issue(&resolved_id)? {
                 let mut updated = false;
 
                 for change in changes {
@@ -2279,7 +2393,7 @@ fn main() -> anyhow::Result<()> {
                     println!("No valid changes applied.");
                 }
             } else {
-                eprintln!("Issue not found: {}", id);
+                eprintln!("Issue not found: {}", resolved_id);
             }
         }
 

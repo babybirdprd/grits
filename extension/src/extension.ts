@@ -327,34 +327,7 @@ export class GritsEditorProvider implements vscode.CustomTextEditorProvider {
     }
 }
 
-/**
- * Tree Data Provider for Grits sidebar (simplified - just opens dashboard)
- */
-class GritsTreeDataProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
-    getTreeItem(element: vscode.TreeItem): vscode.TreeItem {
-        return element;
-    }
-
-    async getChildren(): Promise<vscode.TreeItem[]> {
-        const files = await vscode.workspace.findFiles('**/.grits/issues.jsonl', null, 1);
-
-        if (files.length === 0) {
-            const noIssues = new vscode.TreeItem('No .grits folder found');
-            noIssues.description = 'Run "gr onboard" to initialize';
-            return [noIssues];
-        }
-
-        const openDashboard = new vscode.TreeItem('🚀 Open Dashboard');
-        openDashboard.command = {
-            command: 'grits.openDashboard',
-            title: 'Open Dashboard'
-        };
-        openDashboard.description = 'Full-featured command center';
-        openDashboard.tooltip = 'Opens the Grits Dashboard with 3D topology, issue management, and project health metrics';
-
-        return [openDashboard];
-    }
-}
+// GritsTreeDataProvider removed - using viewsWelcome instead for zero-friction activation
 
 /**
  * Extension activation
@@ -363,11 +336,7 @@ export function activate(context: vscode.ExtensionContext) {
     // Register custom editor provider (for .jsonl files)
     context.subscriptions.push(GritsEditorProvider.register(context));
 
-    // Register tree view for sidebar
-    const treeDataProvider = new GritsTreeDataProvider();
-    context.subscriptions.push(
-        vscode.window.registerTreeDataProvider('grits.issuesView', treeDataProvider)
-    );
+    // viewsWelcome handles sidebar - no tree provider needed
 
     // Register command to open the FULL dashboard panel
     context.subscriptions.push(

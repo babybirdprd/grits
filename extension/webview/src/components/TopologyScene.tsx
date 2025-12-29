@@ -243,10 +243,48 @@ function SceneContent({
 // Main exported component
 export function TopologyScene({ data, onNodeSelect, solidScore }: TopologySceneProps) {
     const [selectedNode, setSelectedNode] = useState<string | null>(null);
+    const [copied, setCopied] = useState(false);
 
     const handleNodeSelect = (id: string) => {
         setSelectedNode(id);
         onNodeSelect?.(id);
+    };
+
+    // Get selected node data and its neighborhood
+    const selectedNodeData = selectedNode && data?.nodes[selectedNode];
+    const starNeighborhood = selectedNode && data?.edges
+        ? data.edges
+            .filter(([src, tgt]) => src === selectedNode || tgt === selectedNode)
+            .map(([src, tgt]) => src === selectedNode ? tgt : src)
+            .filter((id, idx, arr) => arr.indexOf(id) === idx)
+            .slice(0, 5)
+        : [];
+
+    // Copy star neighborhood for agent context
+    const copyForAgent = () => {
+        if (!selectedNodeData || !data) return;
+
+        const files = [
+            selectedNodeData.file_path,
+            ...starNeighborhood.map(id => data.nodes[id]?.file_path).filter(Boolean)
+        ].filter((v, i, a) => a.indexOf(v) === i); // unique
+
+        const contextText = `## Context: ${selectedNodeData.name}
+
+### Central File
+- ${selectedNodeData.file_path}
+
+### Star Neighborhood (related files)
+${files.slice(1).map(f => `- ${f}`).join('\n')}
+
+### Topology Info
+- PageRank: ${(selectedNodeData.pageRank || 0).toFixed(3)}
+- In Cycle: ${selectedNodeData.inCycle ? 'Yes ⚠️' : 'No'}
+- Kind: ${selectedNodeData.kind}`;
+
+        navigator.clipboard.writeText(contextText);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
     };
 
     return (
@@ -263,6 +301,57 @@ export function TopologyScene({ data, onNodeSelect, solidScore }: TopologySceneP
                     </span>
                 </div>
             </div>
+
+            {/* Node Inspector Panel */}
+            {selectedNodeData && (
+                <div className="node-inspector">
+                    <div className="inspector-header">
+                        <h3>Node Inspector</h3>
+                        <button className="close-inspector" onClick={() => setSelectedNode(null)}>×</button>
+                    </div>
+                    <div className="inspector-content">
+                        <div className="inspector-field">
+                            <span className="field-label">Symbol</span>
+                            <span className="field-value">{selectedNodeData.name}</span>
+                        </div>
+                        <div className="inspector-field">
+                            <span className="field-label">File</span>
+                            <span className="field-value file-path">{selectedNodeData.file_path?.split(/[\\/]/).pop()}</span>
+                        </div>
+                        <div className="inspector-field">
+                            <span className="field-label">PageRank</span>
+                            <span className="field-value rank-badge">{((selectedNodeData.pageRank || 0) * 100).toFixed(0)}</span>
+                        </div>
+                        {selectedNodeData.inCycle && (
+                            <div className="inspector-warning">⚠️ In Cycle - Consider refactoring</div>
+                        )}
+
+                        <div className="inspector-section">
+                            <span className="section-label">⭐ Star Neighborhood</span>
+                            <ul className="neighbor-list">
+                                {starNeighborhood.map(id => (
+                                    <li key={id} onClick={() => handleNodeSelect(id)}>
+                                        {data?.nodes[id]?.name?.split('::').pop() || id}
+                                    </li>
+                                ))}
+                                {starNeighborhood.length === 0 && <li className="empty">No connections</li>}
+                            </ul>
+                        </div>
+
+                        <div className="inspector-actions">
+                            <button className="action-btn primary" onClick={copyForAgent}>
+                                {copied ? '✓ Copied!' : '📋 Copy for Agent'}
+                            </button>
+                            <button className="action-btn" onClick={() => {
+                                // TODO: Integrate with issue creation
+                                console.log('Create issue for:', selectedNodeData.name);
+                            }}>
+                                📝 Create Issue
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Legend */}
             <div className="legend">
@@ -308,3 +397,4 @@ export function TopologyScene({ data, onNodeSelect, solidScore }: TopologySceneP
         </div>
     );
 }
+

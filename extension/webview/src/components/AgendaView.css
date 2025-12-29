@@ -1,143 +1,250 @@
-.agenda-view {
-    padding: 24px;
-    max-width: 800px;
+.focus-view {
+    padding: 24px 32px;
+    max-width: 900px;
     margin: 0 auto;
+    overflow-y: auto;
+    height: 100%;
 }
 
-.agenda-title {
-    font-size: 24px;
+.focus-header {
     margin-bottom: 24px;
+}
+
+.focus-header h2 {
+    font-size: 24px;
+    font-weight: 600;
+    margin: 0;
     color: var(--vscode-foreground);
 }
 
-.agenda-section {
+.focus-subtitle {
+    font-size: 13px;
+    color: var(--vscode-descriptionForeground);
+    margin: 4px 0 0 0;
+}
+
+.focus-section {
     margin-bottom: 32px;
 }
 
-.agenda-section h3 {
-    font-size: 16px;
-    margin-bottom: 12px;
-    padding-bottom: 8px;
-    border-bottom: 1px solid var(--vscode-panel-border);
-}
-
-.blocked-section h3 {
-    color: #dc3545;
-}
-
-.in-progress-section h3 {
-    color: #0d6efd;
-}
-
-.priority-section h3 {
-    color: #ff8844;
-}
-
-.agenda-cards {
+.section-header {
     display: flex;
-    flex-direction: column;
-    gap: 12px;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
 }
 
-.agenda-card {
+.section-header h3 {
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0;
+}
+
+.section-count {
+    font-size: 12px;
+    padding: 4px 10px;
+    border-radius: 12px;
+    background: var(--vscode-badge-background);
+    color: var(--vscode-badge-foreground);
+}
+
+.section-hint {
+    font-size: 12px;
+    color: var(--vscode-descriptionForeground);
+    margin: 0 0 12px 0;
+}
+
+/* Section colors */
+.blocked-section .section-header h3 {
+    color: #ff6b6b;
+}
+
+.blocked-section .section-count {
+    background: rgba(255, 107, 107, 0.15);
+    color: #ff6b6b;
+}
+
+.progress-section .section-header h3 {
+    color: #4a9eff;
+}
+
+.priority-section .section-header h3 {
+    color: #ffab44;
+}
+
+.focus-cards {
+    display: grid;
+    gap: 12px;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+}
+
+.focus-card {
     background: var(--vscode-editor-background);
     border: 1px solid var(--vscode-panel-border);
     border-radius: 8px;
     padding: 16px;
     cursor: pointer;
-    transition: box-shadow 0.15s;
+    transition: all 0.15s ease;
 }
 
-.agenda-card:hover {
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+.focus-card:hover {
+    border-color: var(--vscode-focusBorder);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-.agenda-card.priority-1 {
+/* Priority borders */
+.focus-card.priority-1 {
     border-left: 4px solid #ff4444;
 }
 
-.agenda-card.priority-2 {
-    border-left: 4px solid #ff8844;
+.focus-card.priority-2 {
+    border-left: 4px solid #ffab44;
 }
 
-.agenda-card.priority-3 {
+.focus-card.priority-3 {
     border-left: 4px solid #ffcc44;
 }
 
-.agenda-card-header {
+/* Status backgrounds */
+.focus-card.status-blocked {
+    background: rgba(255, 107, 107, 0.08);
+}
+
+.focus-card-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 8px;
-    font-size: 12px;
 }
 
-.card-id {
+.focus-card-header .card-id {
     font-family: var(--vscode-editor-font-family);
+    font-size: 11px;
     color: var(--vscode-textLink-foreground);
 }
 
-.status-badge {
+.priority-badge {
+    font-size: 10px;
+    font-weight: 600;
     padding: 2px 8px;
     border-radius: 4px;
-    font-size: 11px;
-    text-transform: uppercase;
 }
 
-.status-open {
-    background: rgba(240, 173, 78, 0.2);
-    color: #f0ad4e;
+.priority-badge.p1 {
+    background: rgba(255, 68, 68, 0.2);
+    color: #ff6b6b;
 }
 
-.status-in-progress {
-    background: rgba(13, 110, 253, 0.2);
-    color: #0d6efd;
+.priority-badge.p2 {
+    background: rgba(255, 171, 68, 0.2);
+    color: #ffab44;
 }
 
-.status-blocked {
-    background: rgba(220, 53, 69, 0.2);
-    color: #dc3545;
+.priority-badge.p3 {
+    background: rgba(255, 204, 68, 0.2);
+    color: #ffcc44;
 }
 
-.status-closed {
-    background: rgba(25, 135, 84, 0.2);
-    color: #198754;
-}
-
-.agenda-card-title {
-    font-size: 15px;
+.focus-card-title {
+    font-size: 14px;
     font-weight: 500;
     margin-bottom: 8px;
+    line-height: 1.4;
+    color: var(--vscode-foreground);
 }
 
-.agenda-card-meta {
+.focus-card-meta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
     font-size: 12px;
     color: var(--vscode-descriptionForeground);
     margin-bottom: 12px;
 }
 
-.agenda-card-actions {
+.issue-type {
+    text-transform: capitalize;
+}
+
+.assignee {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.assignee-icon {
+    font-size: 10px;
+}
+
+.focus-card-actions {
     display: flex;
     gap: 8px;
 }
 
-.agenda-card-actions button {
+.action-btn {
     padding: 6px 12px;
     border: none;
-    border-radius: 4px;
-    background: var(--vscode-button-background);
-    color: var(--vscode-button-foreground);
+    border-radius: 6px;
     cursor: pointer;
     font-size: 12px;
+    font-weight: 500;
+    transition: all 0.15s;
 }
 
-.agenda-card-actions button:hover {
+.action-btn.unblock {
+    background: rgba(68, 255, 136, 0.15);
+    color: #44ff88;
+}
+
+.action-btn.unblock:hover {
+    background: rgba(68, 255, 136, 0.25);
+}
+
+.action-btn.start {
+    background: var(--vscode-button-background);
+    color: var(--vscode-button-foreground);
+}
+
+.action-btn.start:hover {
     background: var(--vscode-button-hoverBackground);
 }
 
-.agenda-empty {
+.action-btn.complete {
+    background: rgba(68, 255, 136, 0.15);
+    color: #44ff88;
+}
+
+.action-btn.complete:hover {
+    background: rgba(68, 255, 136, 0.25);
+}
+
+.focus-empty {
     text-align: center;
-    padding: 48px;
+    padding: 64px 32px;
     color: var(--vscode-descriptionForeground);
-    font-size: 18px;
+}
+
+.focus-empty .empty-icon {
+    font-size: 48px;
+    display: block;
+    margin-bottom: 16px;
+}
+
+.focus-empty h3 {
+    font-size: 20px;
+    color: var(--vscode-foreground);
+    margin: 0 0 8px 0;
+}
+
+.focus-empty p {
+    margin: 0;
+    font-size: 14px;
+}
+
+/* Legacy support */
+.agenda-view {
+    padding: 24px;
+    max-width: 800px;
+    margin: 0 auto;
 }

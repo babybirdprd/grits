@@ -6,8 +6,11 @@ pub mod search;
 pub mod store;
 pub mod strategic;
 pub mod sync;
-pub mod util;
 pub mod topology;
+pub mod util;
+
+#[cfg(not(target_arch = "wasm32"))]
+pub mod context;
 
 pub use models::*;
 pub use store::Store;

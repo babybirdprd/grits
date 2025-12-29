@@ -12,67 +12,90 @@ export function AgendaView({
     issues,
     onUpdateField,
     onSelectIssue,
-    currentUser,
 }: AgendaViewProps) {
-    // Filter to actionable items: open/in-progress, assigned to user or unassigned, high priority
-    const focusedIssues = issues
-        .filter((i) => i.status !== 'closed')
-        .filter((i) => !currentUser || !i.assignee || i.assignee === currentUser)
-        .sort((a, b) => a.priority - b.priority);
+    // Filter to actionable items
+    const openIssues = issues.filter((i) => i.status !== 'closed');
+    const blocked = openIssues.filter((i) => i.status === 'blocked');
+    const inProgress = openIssues.filter((i) => i.status === 'in-progress');
+    const highPriority = openIssues.filter((i) => i.priority <= 2 && i.status === 'open');
 
-    const highPriority = focusedIssues.filter((i) => i.priority <= 2);
-    const inProgress = focusedIssues.filter((i) => i.status === 'in-progress');
-    const blocked = focusedIssues.filter((i) => i.status === 'blocked');
-
-    const IssueCard = ({ issue }: { issue: Issue }) => (
+    const IssueCard = ({ issue, showActions = true }: { issue: Issue; showActions?: boolean }) => (
         <div
-            className={`agenda-card priority-${issue.priority}`}
+            className={`focus-card priority-${issue.priority} status-${issue.status}`}
             onClick={() => onSelectIssue(issue)}
         >
-            <div className="agenda-card-header">
-                <span className="card-id">{issue.id.slice(0, 8)}</span>
-                <span className={`status-badge status-${issue.status}`}>
-                    {issue.status}
+            <div className="focus-card-header">
+                <span className="card-id">gr-{issue.id.slice(0, 6)}</span>
+                <span className={`priority-badge p${issue.priority}`}>
+                    P{issue.priority}
                 </span>
             </div>
-            <div className="agenda-card-title">{issue.title}</div>
-            <div className="agenda-card-meta">
-                <span>{issue.issue_type}</span>
-                {issue.assignee && <span>• {issue.assignee}</span>}
-            </div>
-            <div className="agenda-card-actions">
-                {issue.status === 'open' && (
-                    <button
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            onUpdateField(issue.id, 'status', 'in-progress');
-                        }}
-                    >
-                        Start
-                    </button>
-                )}
-                {issue.status === 'in-progress' && (
-                    <button
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            onUpdateField(issue.id, 'status', 'closed');
-                        }}
-                    >
-                        Complete
-                    </button>
+            <div className="focus-card-title">{issue.title}</div>
+            <div className="focus-card-meta">
+                <span className="issue-type">{issue.issue_type}</span>
+                {issue.assignee && (
+                    <span className="assignee">
+                        <span className="assignee-icon">👤</span>
+                        {issue.assignee}
+                    </span>
                 )}
             </div>
+            {showActions && (
+                <div className="focus-card-actions">
+                    {issue.status === 'blocked' && (
+                        <button
+                            className="action-btn unblock"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onUpdateField(issue.id, 'status', 'open');
+                            }}
+                        >
+                            ✓ Unblock
+                        </button>
+                    )}
+                    {issue.status === 'open' && (
+                        <button
+                            className="action-btn start"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onUpdateField(issue.id, 'status', 'in-progress');
+                            }}
+                        >
+                            ▶ Start
+                        </button>
+                    )}
+                    {issue.status === 'in-progress' && (
+                        <button
+                            className="action-btn complete"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onUpdateField(issue.id, 'status', 'closed');
+                            }}
+                        >
+                            ✓ Complete
+                        </button>
+                    )}
+                </div>
+            )}
         </div>
     );
 
     return (
-        <div className="agenda-view">
-            <h2 className="agenda-title">🎯 Focus Mode</h2>
+        <div className="focus-view">
+            <div className="focus-header">
+                <h2>🎯 Focus</h2>
+                <p className="focus-subtitle">What needs your attention right now</p>
+            </div>
 
+            {/* BLOCKED - Most important for PM */}
             {blocked.length > 0 && (
-                <section className="agenda-section blocked-section">
-                    <h3>🚫 Blocked ({blocked.length})</h3>
-                    <div className="agenda-cards">
+                <section className="focus-section blocked-section">
+                    <div className="section-header">
+                        <h3>🚫 Blocked</h3>
+                        <span className="section-count">{blocked.length} waiting on you</span>
+                    </div>
+                    <p className="section-hint">These issues need PM action to continue</p>
+                    <div className="focus-cards">
                         {blocked.map((i) => (
                             <IssueCard key={i.id} issue={i} />
                         ))}
@@ -80,10 +103,14 @@ export function AgendaView({
                 </section>
             )}
 
+            {/* IN PROGRESS */}
             {inProgress.length > 0 && (
-                <section className="agenda-section in-progress-section">
-                    <h3>🔄 In Progress ({inProgress.length})</h3>
-                    <div className="agenda-cards">
+                <section className="focus-section progress-section">
+                    <div className="section-header">
+                        <h3>🔄 In Progress</h3>
+                        <span className="section-count">{inProgress.length} active</span>
+                    </div>
+                    <div className="focus-cards">
                         {inProgress.map((i) => (
                             <IssueCard key={i.id} issue={i} />
                         ))}
@@ -91,22 +118,31 @@ export function AgendaView({
                 </section>
             )}
 
+            {/* HIGH PRIORITY READY TO START */}
             {highPriority.length > 0 && (
-                <section className="agenda-section priority-section">
-                    <h3>🔥 High Priority ({highPriority.length})</h3>
-                    <div className="agenda-cards">
-                        {highPriority.map((i) => (
+                <section className="focus-section priority-section">
+                    <div className="section-header">
+                        <h3>🔥 High Priority</h3>
+                        <span className="section-count">{highPriority.length} ready</span>
+                    </div>
+                    <p className="section-hint">Assign these to an agent next</p>
+                    <div className="focus-cards">
+                        {highPriority.slice(0, 5).map((i) => (
                             <IssueCard key={i.id} issue={i} />
                         ))}
                     </div>
                 </section>
             )}
 
-            {focusedIssues.length === 0 && (
-                <div className="agenda-empty">
-                    <p>🎉 All caught up! No urgent issues.</p>
+            {/* ALL CLEAR */}
+            {blocked.length === 0 && inProgress.length === 0 && highPriority.length === 0 && (
+                <div className="focus-empty">
+                    <span className="empty-icon">🎉</span>
+                    <h3>All Clear!</h3>
+                    <p>No blocked issues or urgent work. Great job!</p>
                 </div>
             )}
         </div>
     );
 }
+

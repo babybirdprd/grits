@@ -261,113 +261,153 @@ export function App() {
         }
     }, [refreshIssues]);
 
-    // View switcher
-    const ViewTab = ({ id, label, icon }: { id: ViewType; label: string; icon: string }) => (
+    // View switcher - Icon-based sidebar (Linear/Jira style)
+    const NavItem = ({ id, label, icon, badge }: { id: ViewType; label: string; icon: string; badge?: number }) => (
         <button
-            className={`view-tab ${view === id ? 'active' : ''}`}
+            className={`nav-item ${view === id ? 'active' : ''}`}
             onClick={() => setView(id)}
+            title={label}
         >
-            <span className="view-icon">{icon}</span>
-            <span className="view-label">{label}</span>
+            <span className="nav-icon">{icon}</span>
+            {badge !== undefined && badge > 0 && <span className="nav-badge">{badge}</span>}
         </button>
     );
+
+    // Calculate status counts for badges
+    const inProgressCount = issues.filter(i => i.status === 'in-progress').length;
+    const blockedCount = issues.filter(i => i.status === 'blocked').length;
 
     if (needsOnboarding) {
         return <OnboardingView onInitialize={() => vscode.postMessage({ type: 'onboard' })} />;
     }
 
     return (
-        <div className="app">
-            <header className="app-header">
-                <div className="header-title">
-                    <span className="logo">📋</span>
-                    <h1>Grits</h1>
-                    <span className="issue-count">{issues.length} issues</span>
+        <div className="studio">
+            {/* Left Sidebar Navigation */}
+            <nav className="studio-nav">
+                <div className="nav-section">
+                    <NavItem id="kanban" label="Issues" icon="📋" badge={issues.length} />
+                    <NavItem id="list" label="List View" icon="📄" />
+                    <NavItem id="agenda" label="Focus" icon="🎯" badge={blockedCount} />
                 </div>
-                <nav className="view-tabs">
-                    <ViewTab id="list" label="List" icon="📄" />
-                    <ViewTab id="kanban" label="Kanban" icon="📊" />
-                    <ViewTab id="graph" label="Graph" icon="🔗" />
-                    <ViewTab id="topology" label="3D" icon="🌐" />
-                    <ViewTab id="agenda" label="Focus" icon="🎯" />
-                </nav>
-            </header>
+                <div className="nav-section">
+                    <NavItem id="topology" label="Topology" icon="🔗" />
+                    <NavItem id="graph" label="Analysis" icon="📊" />
+                </div>
+            </nav>
 
-            <main className="app-main">
-                {view === 'list' && (
-                    <ListView
-                        issues={issues}
-                        onUpdateField={handleUpdateField}
-                        onBulkUpdate={handleBulkUpdate}
-                        onSelectIssue={setSelectedIssue}
-                    />
-                )}
-                {view === 'kanban' && (
-                    <KanbanView
-                        issues={issues}
-                        onUpdateField={handleUpdateField}
-                        onSelectIssue={setSelectedIssue}
-                    />
-                )}
-                {view === 'graph' && (
-                    <GraphView issues={issues} onSelectIssue={setSelectedIssue} />
-                )}
-                {view === 'agenda' && (
-                    <AgendaView
-                        issues={issues}
-                        onUpdateField={handleUpdateField}
-                        onSelectIssue={setSelectedIssue}
-                    />
-                )}
-                {view === 'topology' && (
-                    <div className="topology-container">
-                        <div className="topology-overlay">
-                            <div className="symbol-search">
-                                <input
-                                    type="text"
-                                    placeholder="Instant jump to symbol... (<10ms)"
-                                    value={symbolSearchQuery}
-                                    onChange={handleSymbolSearchChange}
-                                />
-                                {symbolSearchResults.length > 0 && (
-                                    <div className="search-results">
-                                        {symbolSearchResults.map((res: any) => (
-                                            <div
-                                                key={res.id}
-                                                className="search-row"
-                                                onClick={() => {
-                                                    // TODO: Orbit controls jump to node
-                                                    console.log('Jump to:', res.id);
-                                                    setSymbolSearchResults([]);
-                                                    setSymbolSearchQuery('');
-                                                }}
-                                            >
-                                                <span className="res-name">{res.name}</span>
-                                                <span className="res-file">{res.file.split(/[\\/]/).pop()}</span>
-                                                <span className="res-rank">{(res.pagerank * 100).toFixed(0)}</span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
+            {/* Main Content Area */}
+            <div className="studio-main">
+                {/* Top Status Bar */}
+                <header className="studio-header">
+                    <div className="header-left">
+                        <h1>Grits Studio</h1>
+                        <span className="header-view-name">{
+                            view === 'kanban' ? 'Issues' :
+                                view === 'list' ? 'List View' :
+                                    view === 'agenda' ? 'Focus' :
+                                        view === 'topology' ? 'Topology' :
+                                            view === 'graph' ? 'Analysis' : ''
+                        }</span>
+                    </div>
+                    <div className="header-stats">
+                        <div className="stat">
+                            <span className="stat-value">{inProgressCount}</span>
+                            <span className="stat-label">In Progress</span>
                         </div>
-                        <TopologyScene
-                            data={topologyData}
-                            onNodeSelect={(id) => console.log('Selected:', id)}
-                            solidScore={vitals.solidScore}
-                        />
-                        <div className="vitals-sidebar">
-                            <VitalsDashboard
-                                solidScore={vitals.solidScore}
-                                betti0={vitals.betti0}
-                                betti1={vitals.betti1}
-                                hotspots={vitals.hotspots}
-                                inProgressCount={issues.filter(i => i.status === 'in-progress').length}
-                            />
+                        <div className="stat">
+                            <span className="stat-value stat-blocked">{blockedCount}</span>
+                            <span className="stat-label">Blocked</span>
+                        </div>
+                        <div className="stat">
+                            <span className="stat-value stat-score" style={{
+                                color: vitals.solidScore > 0.7 ? '#44ff88' :
+                                    vitals.solidScore > 0.4 ? '#ffaa44' : '#ff4444'
+                            }}>
+                                {(vitals.solidScore * 100).toFixed(0)}
+                            </span>
+                            <span className="stat-label">Solid Score</span>
                         </div>
                     </div>
-                )}
-            </main>
+                </header>
+
+                {/* Workspace */}
+                <main className="studio-workspace">
+                    {view === 'list' && (
+                        <ListView
+                            issues={issues}
+                            onUpdateField={handleUpdateField}
+                            onBulkUpdate={handleBulkUpdate}
+                            onSelectIssue={setSelectedIssue}
+                        />
+                    )}
+                    {view === 'kanban' && (
+                        <KanbanView
+                            issues={issues}
+                            onUpdateField={handleUpdateField}
+                            onSelectIssue={setSelectedIssue}
+                        />
+                    )}
+                    {view === 'graph' && (
+                        <GraphView issues={issues} onSelectIssue={setSelectedIssue} />
+                    )}
+                    {view === 'agenda' && (
+                        <AgendaView
+                            issues={issues}
+                            onUpdateField={handleUpdateField}
+                            onSelectIssue={setSelectedIssue}
+                        />
+                    )}
+                    {view === 'topology' && (
+                        <div className="topology-container">
+                            <div className="topology-overlay">
+                                <div className="symbol-search">
+                                    <input
+                                        type="text"
+                                        placeholder="Instant jump to symbol... (<10ms)"
+                                        value={symbolSearchQuery}
+                                        onChange={handleSymbolSearchChange}
+                                    />
+                                    {symbolSearchResults.length > 0 && (
+                                        <div className="search-results">
+                                            {symbolSearchResults.map((res: any) => (
+                                                <div
+                                                    key={res.id}
+                                                    className="search-row"
+                                                    onClick={() => {
+                                                        // TODO: Orbit controls jump to node
+                                                        console.log('Jump to:', res.id);
+                                                        setSymbolSearchResults([]);
+                                                        setSymbolSearchQuery('');
+                                                    }}
+                                                >
+                                                    <span className="res-name">{res.name}</span>
+                                                    <span className="res-file">{res.file.split(/[\\/]/).pop()}</span>
+                                                    <span className="res-rank">{(res.pagerank * 100).toFixed(0)}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                            <TopologyScene
+                                data={topologyData}
+                                onNodeSelect={(id) => console.log('Selected:', id)}
+                                solidScore={vitals.solidScore}
+                            />
+                            <div className="vitals-sidebar">
+                                <VitalsDashboard
+                                    solidScore={vitals.solidScore}
+                                    betti0={vitals.betti0}
+                                    betti1={vitals.betti1}
+                                    hotspots={vitals.hotspots}
+                                    inProgressCount={issues.filter(i => i.status === 'in-progress').length}
+                                />
+                            </div>
+                        </div>
+                    )}
+                </main>
+            </div>
 
             {selectedIssue && (
                 <DetailPanel

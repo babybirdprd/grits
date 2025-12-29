@@ -19,6 +19,162 @@ body {
     background: var(--vscode-editor-background);
 }
 
+/* Studio Layout */
+.studio {
+    display: flex;
+    height: 100%;
+    width: 100%;
+}
+
+/* Left Sidebar Navigation */
+.studio-nav {
+    width: 56px;
+    background: var(--vscode-activityBar-background, #252526);
+    border-right: 1px solid var(--vscode-panel-border);
+    display: flex;
+    flex-direction: column;
+    padding: 8px 0;
+}
+
+.nav-section {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 8px 8px;
+}
+
+.nav-section:not(:last-child) {
+    border-bottom: 1px solid var(--vscode-panel-border);
+}
+
+.nav-item {
+    position: relative;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: transparent;
+    color: var(--vscode-foreground);
+    cursor: pointer;
+    border-radius: 8px;
+    font-size: 20px;
+    transition: all 0.15s ease;
+    opacity: 0.7;
+}
+
+.nav-item:hover {
+    background: var(--vscode-list-hoverBackground);
+    opacity: 1;
+}
+
+.nav-item.active {
+    background: var(--vscode-list-activeSelectionBackground);
+    opacity: 1;
+}
+
+.nav-item.active::before {
+    content: '';
+    position: absolute;
+    left: -8px;
+    width: 3px;
+    height: 24px;
+    background: var(--vscode-focusBorder);
+    border-radius: 0 2px 2px 0;
+}
+
+.nav-badge {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    background: var(--vscode-badge-background);
+    color: var(--vscode-badge-foreground);
+    font-size: 10px;
+    font-weight: 600;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Main Content Area */
+.studio-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* Top Status Bar */
+.studio-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 20px;
+    background: var(--vscode-sideBar-background);
+    border-bottom: 1px solid var(--vscode-panel-border);
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.header-left h1 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--vscode-foreground);
+}
+
+.header-view-name {
+    font-size: 13px;
+    color: var(--vscode-descriptionForeground);
+    padding-left: 12px;
+    border-left: 1px solid var(--vscode-panel-border);
+}
+
+.header-stats {
+    display: flex;
+    gap: 24px;
+}
+
+.stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+}
+
+.stat-value {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--vscode-foreground);
+}
+
+.stat-blocked {
+    color: #ff6b6b;
+}
+
+.stat-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--vscode-descriptionForeground);
+}
+
+/* Workspace */
+.studio-workspace {
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+}
+
+/* Legacy support for old class names */
 .app {
     display: flex;
     flex-direction: column;

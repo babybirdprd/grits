@@ -11,10 +11,11 @@ This documentation is the **sole source of truth** for AI agents using Grits. It
 
 1.  **Always Forward Slashes**: Symbol IDs and file paths **must** use `/` normalization, even on Windows (e.g., `src/main.rs::run`).
 2.  **Run `gr pulse` First**: Start every session with `gr pulse` for instant context.
-3.  **Use `gr workon`**: Start work with `gr workon <id>` to auto-set status and create branch.
-4.  **Link Your Work**: Use `gr update <ID> --add-symbol <SYM>` to populate the **Focus View**.
-5.  **Fix Cycles**: Use `gr refactor` to detect and auto-fix architectural issues.
-6.  **Sync Before Handoff**: `gr sync` is mandatory before every session end.
+3.  **Use `gr workon`**: Start work with `gr workon <id>` to set status and **lock focus**.
+4.  **Sticky Focus**: After `gr workon`, use `gr set stat:ip` without ID — it auto-targets the focused issue.
+5.  **Link Your Work**: Use `gr update <ID> --add-symbol <SYM>` to populate the **Focus View**.
+6.  **Fix Cycles**: Use `gr refactor` to detect and auto-fix architectural issues.
+7.  **Sync Before Handoff**: `gr sync` is mandatory before every session end.
 
 ---
 
@@ -71,17 +72,47 @@ gr analysis search "circular dependency"
 gr analysis duplicates
 ```
 
+### Mini Codebase (Agent Superpower)
+```bash
+# Assemble focused context for an issue
+gr context assemble --issue gr-abc123
+
+# Specify seed symbols directly
+gr context assemble --symbols "store.rs::Store,auth.rs::validate" --depth 2
+
+# Get JSON for programmatic use
+gr context assemble --issue gr-abc123 --format json
+```
+
+**Output includes:**
+- Seed symbols and their star neighborhood
+- File list (unique, for context loading)
+- Betti₁ invariant (cycle count to preserve)
+- Solid Score snapshot
+- Markdown or JSON format
+
+> [!TIP]
+> **Why Mini Codebase?** Instead of loading entire files, extract only topologically-relevant symbols. A 2,000-line file becomes 50 focused lines.
+
 ---
 
 ## 🏗️ Phase 3: Executing Work
 
 ### Start Working on an Issue
 ```bash
-# All-in-one: creates branch, sets status, outputs context
+# Sets status to in-progress + locks focus (no branch by default)
 gr workon gr-abc123
 
-# With custom branch name
+# With branch creation (optional)
 gr workon gr-abc123 --branch feature/my-fix
+```
+
+### Sticky Focus (NEW v2.3)
+After `gr workon`, subsequent commands auto-target the focused issue:
+```bash
+gr workon gr-abc123          # Lock focus
+gr set stat:blocked          # Updates gr-abc123 (no ID needed!)
+gr set pri:1 +l:urgent       # Still updates gr-abc123
 ```
 
 ### Quick Updates with Set
@@ -248,3 +279,71 @@ The extension now opens as a **full dashboard panel** with:
 | `gr analysis volumes` | Find code clusters |
 | `gr analysis check-layers` | Verify architecture |
 | `gr analysis search` | BM25 natural language search |
+
+### Context Commands (NEW v2.3)
+| Command | Example | Purpose |
+|---------|---------|---------|
+| `gr context assemble` | `--issue ID` or `--symbols` | Mini codebase for agents |
+| `gr context error` | `--message "error text"` | Find related issues |
+| `gr context diff` | `--path diff.txt` | Infer issue from changes |
+| `gr context todo` | `--file src/main.rs` | Scan for TODO comments |
+
+---
+
+## 🚨 Error Handling Patterns
+
+### Database Issues
+```bash
+# If DB is missing or corrupt
+gr onboard  # Reinitialize
+
+# If topology cache is stale  
+gr analysis rebuild
+```
+
+### Cycle Detected During Sync
+```bash
+# Check what cycles exist
+gr refactor
+
+# Fix and retry
+gr refactor --apply --cycle 0
+gr sync --validate-topology
+```
+
+### Issue Not Found
+```bash
+# Always use prefix match - gr resolves partial IDs
+gr show abc  # Works if gr-abc123 exists
+```
+
+---
+
+## 🔄 Session Memory Handoff
+
+### Before Ending Session
+```bash
+# 1. Sync all work
+gr sync
+
+# 2. Create continuity issue if work is incomplete
+gr create "CONTINUITY: [Feature] Description" \
+  -d "State: Completed X. Next: Do Y. Blockers: Z." \
+  -t task -p 1
+
+# 3. Assign to next agent
+gr set <ID> a:next_agent stat:open
+```
+
+### Starting From Handoff
+```bash
+# 1. Hydrate
+gr pulse
+
+# 2. Find continuity issues
+gr list --label continuity
+
+# 3. Load full context
+gr inspect <continuity_issue_id>
+gr context assemble --issue <continuity_issue_id>
+```
