@@ -234,6 +234,22 @@ enum Commands {
         #[arg(long, default_value = "markdown")]
         format: String,
     },
+    /// Manage long-term architectural notes for symbols (Symbol Memory)
+    Memo {
+        #[command(subcommand)]
+        command: MemoCommands,
+    },
+}
+
+#[derive(Subcommand)]
+enum MemoCommands {
+    /// Attach a note to a symbol
+    Attach {
+        /// Symbol ID
+        symbol_id: String,
+        /// Note content
+        note: String,
+    },
 }
 
 #[derive(Subcommand)]
@@ -307,6 +323,13 @@ enum AnalysisCommands {
         /// Depth of neighborhood (default: 1)
         #[arg(long, default_value_t = 1)]
         depth: usize,
+    },
+    /// Find shortest path between two symbols
+    Path {
+        /// Start symbol ID
+        start: String,
+        /// End symbol ID
+        end: String,
     },
     /// Find all feature volumes (tightly coupled code clusters)
     Volumes {
@@ -1559,6 +1582,23 @@ fn main() -> anyhow::Result<()> {
                     }
                 }
             }
+            AnalysisCommands::Path { start, end } => {
+                use grits_core::topology::{analysis::TopologicalAnalysis, cache::TopologyCache};
+                let cache_path = db_path.parent().unwrap().join("topology.json");
+                if !cache_path.exists() {
+                    eprintln!("Topology cache not found. Run 'gr analysis rebuild' first.");
+                    std::process::exit(1);
+                }
+                let cache = TopologyCache::load(&cache_path)?;
+                if let Some(path) = TopologicalAnalysis::get_path(&cache.graph, &start, &end) {
+                    println!("Shortest path: {} -> {}", start, end);
+                    for (i, node) in path.iter().enumerate() {
+                        println!("  {}. {}", i + 1, node);
+                    }
+                } else {
+                    println!("No path found between {} and {}", start, end);
+                }
+            }
             AnalysisCommands::Volumes { file } => {
                 use grits_core::topology::{
                     analysis::TopologicalAnalysis, cache::TopologyCache, parser::CodeParser,
@@ -2149,8 +2189,17 @@ fn main() -> anyhow::Result<()> {
                 }
 
                 // Assemble the mini codebase
-                let mini =
+                let mut mini =
                     MiniCodebase::assemble(&cache.graph, seed_symbols, depth, threshold, issue_id);
+
+                // Hydrate with code snippets if byte ranges are available
+                mini.hydrate_code(
+                    db_path
+                        .parent()
+                        .unwrap()
+                        .parent()
+                        .unwrap_or(std::path::Path::new(".")),
+                );
 
                 // Output in requested format
                 match format.as_str() {
@@ -2836,6 +2885,25 @@ fn main() -> anyhow::Result<()> {
                 }
             }
         }
+        Commands::Memo { command } => match command {
+            MemoCommands::Attach { symbol_id, note } => {
+                use grits_core::topology::cache::TopologyCache;
+                let cache_path = db_path.parent().unwrap().join("topology.json");
+                if !cache_path.exists() {
+                    eprintln!("Topology cache not found. Run 'gr analysis rebuild' first.");
+                    std::process::exit(1);
+                }
+                let mut cache = TopologyCache::load(&cache_path)?;
+                if let Some(symbol) = cache.graph.nodes.get_mut(&symbol_id) {
+                    symbol.metadata.insert("memo".to_string(), note);
+                    cache.save(&cache_path)?;
+                    println!("✓ Memo attached to {}", symbol_id);
+                } else {
+                    eprintln!("Symbol not found: {}", symbol_id);
+                    std::process::exit(1);
+                }
+            }
+        },
     }
 
     // AUTO-EXPORT: Push any DB changes back to the Visual Engine (.jsonl)

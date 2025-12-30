@@ -15,6 +15,7 @@ This documentation is the **sole source of truth** for AI agents using Grits. It
 4.  **Sticky Focus**: After `gr workon`, use `gr set stat:ip` without ID — it auto-targets the focused issue.
 5.  **Link Your Work**: Use `gr update <ID> --add-symbol <SYM>` to populate the **Focus View**.
 6.  **Fix Cycles**: Use `gr refactor` to detect and auto-fix architectural issues.
+7.  **Leave Memos**: Use `gr memo attach <SYM> <NOTE>` to store long-term context about specific symbols for future agents.
 
 ---
 
@@ -85,6 +86,7 @@ gr context assemble --issue gr-abc123 --format json
 
 **Output includes:**
 - Seed symbols and their star neighborhood
+- **Hydrated code snippets** for all included symbols
 - File list (unique, for context loading)
 - Betti₁ invariant (cycle count to preserve)
 - Solid Score snapshot
@@ -109,7 +111,7 @@ gr context-bundle gr-abc123 --format json
 > **Why Context Bundle?** Reduces 4-5 separate commands to 1. Perfect for session handoff and issue pickup.
 
 > [!TIP]
-> **Why Mini Codebase?** Instead of loading entire files, extract only topologically-relevant symbols. A 2,000-line file becomes 50 focused lines.
+> **Why Mini Codebase?** Instead of loading entire files, extract only topologically-relevant symbols. A 2,000-line file becomes 50 focused lines, and Grits handles the snippet extraction (hydration) for you.
 
 ---
 
@@ -200,6 +202,12 @@ gr analysis hotspots --limit 10
 gr analysis hotspots --format json
 ```
 
+### Trace Data Flow
+```bash
+# Find the shortest path between two symbols
+gr analysis path "auth.rs::validate" "store.rs::SqliteStore"
+```
+
 ### Architectural Invariants
 ```bash
 # Check against layers.yaml
@@ -207,6 +215,12 @@ gr analysis check-layers --all
 
 # Validate a specific file
 gr analysis validate-topology "src/main.rs"
+```
+
+### Symbol Memory (Long-term Notes)
+```bash
+# Attach a memo to a symbol for future agents
+gr memo attach "src/engine.rs::Core" "Wait for v3 release before refactoring this"
 ```
 
 ---
@@ -288,6 +302,7 @@ The extension now opens as a **full dashboard panel** with:
 | `gr workon` | `gr workon gr-abc` | Start work (branch + status) |
 | `gr set` | `gr set abc pri:1 stat:ip` | Fuzzy updates |
 | `gr refactor` | `gr refactor --apply` | Auto-fix cycles |
+| `gr memo attach` | `gr memo attach sym "note"` | Persist symbol notes |
 | `gr context-bundle` | `gr context-bundle gr-abc` | Complete context bundle |
 | `gr onboard` | `gr onboard --non-interactive` | Initialize (agent-friendly) |
 
@@ -308,6 +323,7 @@ The extension now opens as a **full dashboard panel** with:
 | `gr analysis hotspots` | Get PageRank hotspots |
 | `gr analysis check-layers` | Verify architecture |
 | `gr analysis search` | BM25 natural language search |
+| `gr analysis path` | Shortest path tracing |
 
 ### Context Commands (NEW v2.3)
 | Command | Example | Purpose |
@@ -368,7 +384,10 @@ gr pulse
 # 2. Find continuity issues
 gr list --label continuity
 
-# 3. Load full context
+# 3. Check for symbol memos
+# Look at metadata in context.json or inspect output
+
+# 4. Load full context
 gr inspect <continuity_issue_id>
 gr context assemble --issue <continuity_issue_id>
 ```

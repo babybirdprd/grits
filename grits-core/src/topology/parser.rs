@@ -3,6 +3,8 @@ use super::{Symbol, SymbolGraph};
 #[cfg(not(target_arch = "wasm32"))]
 use anyhow::Result;
 #[cfg(not(target_arch = "wasm32"))]
+use std::collections::HashMap;
+#[cfg(not(target_arch = "wasm32"))]
 use streaming_iterator::StreamingIterator;
 #[cfg(not(target_arch = "wasm32"))]
 use tree_sitter::{Parser, Query, QueryCursor};
@@ -386,6 +388,8 @@ impl CodeParser {
             package: None,
             language: self.language.clone(),
             kind: "file".to_string(),
+            byte_range: Some((0, content.len())),
+            metadata: HashMap::new(),
         });
 
         let content_bytes = content.as_bytes();
@@ -417,6 +421,19 @@ impl CodeParser {
                         if capture_name == "name" {
                             let id = format!("{}::{}", file_path, text);
                             let kind = capture.node.kind().to_string();
+                            let mut decl_node = capture.node;
+                            if let Some(parent) = decl_node.parent() {
+                                let pk = parent.kind();
+                                if pk.contains("_item")
+                                    || pk == "function_item"
+                                    || pk == "struct_item"
+                                    || pk == "impl_item"
+                                {
+                                    decl_node = parent;
+                                }
+                            }
+                            let full_range = decl_node.byte_range();
+
                             graph.add_symbol(Symbol {
                                 id: id.clone(),
                                 name: text.to_string(),
@@ -424,6 +441,8 @@ impl CodeParser {
                                 package: None,
                                 language: self.language.clone(),
                                 kind: kind.clone(),
+                                byte_range: Some((full_range.start, full_range.end)),
+                                metadata: HashMap::new(),
                             });
                             // Also link symbol to file
                             graph.add_weighted_dependency(&id, file_path, "defined_in", 1.0);
@@ -524,13 +543,25 @@ impl CodeParser {
 
                         if capture_name == "name" {
                             let id = format!("{}::{}", file_path, text);
+                            let kind = capture.node.kind().to_string();
+                            let mut decl_node = capture.node;
+                            if let Some(parent) = decl_node.parent() {
+                                let pk = parent.kind();
+                                if pk.contains("declaration") || pk.contains("statement") {
+                                    decl_node = parent;
+                                }
+                            }
+                            let full_range = decl_node.byte_range();
+
                             graph.add_symbol(Symbol {
                                 id: id.clone(),
                                 name: text.to_string(),
                                 file_path: file_path.to_string(),
                                 package: None,
                                 language: self.language.clone(),
-                                kind: capture.node.kind().to_string(),
+                                kind,
+                                byte_range: Some((full_range.start, full_range.end)),
+                                metadata: HashMap::new(),
                             });
                             graph.add_weighted_dependency(&id, file_path, "defined_in", 1.0);
                         } else if capture_name == "call" {
@@ -586,13 +617,25 @@ impl CodeParser {
 
                         if capture_name == "name" {
                             let id = format!("{}::{}", file_path, text);
+                            let kind = capture.node.kind().to_string();
+                            let mut decl_node = capture.node;
+                            if let Some(parent) = decl_node.parent() {
+                                let pk = parent.kind();
+                                if pk.contains("declaration") || pk.contains("statement") {
+                                    decl_node = parent;
+                                }
+                            }
+                            let full_range = decl_node.byte_range();
+
                             graph.add_symbol(Symbol {
                                 id: id.clone(),
                                 name: text.to_string(),
                                 file_path: file_path.to_string(),
                                 package: None,
                                 language: self.language.clone(),
-                                kind: capture.node.kind().to_string(),
+                                kind,
+                                byte_range: Some((full_range.start, full_range.end)),
+                                metadata: HashMap::new(),
                             });
                             graph.add_weighted_dependency(&id, file_path, "defined_in", 1.0);
                         } else if capture_name == "call" {
@@ -649,13 +692,25 @@ impl CodeParser {
 
                         if capture_name == "name" {
                             let id = format!("{}::{}", file_path, text);
+                            let kind = capture.node.kind().to_string();
+                            let mut decl_node = capture.node;
+                            if let Some(parent) = decl_node.parent() {
+                                let pk = parent.kind();
+                                if pk.contains("definition") || pk.contains("statement") {
+                                    decl_node = parent;
+                                }
+                            }
+                            let full_range = decl_node.byte_range();
+
                             graph.add_symbol(Symbol {
                                 id: id.clone(),
                                 name: text.to_string(),
                                 file_path: file_path.to_string(),
                                 package: None,
                                 language: self.language.clone(),
-                                kind: capture.node.kind().to_string(),
+                                kind,
+                                byte_range: Some((full_range.start, full_range.end)),
+                                metadata: HashMap::new(),
                             });
                             graph.add_weighted_dependency(&id, file_path, "defined_in", 1.0);
                         } else if capture_name == "call" {
@@ -707,13 +762,25 @@ impl CodeParser {
 
                         if capture_name == "name" {
                             let id = format!("{}::{}", file_path, text);
+                            let kind = capture.node.kind().to_string();
+                            let mut decl_node = capture.node;
+                            if let Some(parent) = decl_node.parent() {
+                                let pk = parent.kind();
+                                if pk.contains("declaration") || pk.contains("spec") {
+                                    decl_node = parent;
+                                }
+                            }
+                            let full_range = decl_node.byte_range();
+
                             graph.add_symbol(Symbol {
                                 id: id.clone(),
                                 name: text.to_string(),
                                 file_path: file_path.to_string(),
                                 package: None,
                                 language: self.language.clone(),
-                                kind: capture.node.kind().to_string(),
+                                kind,
+                                byte_range: Some((full_range.start, full_range.end)),
+                                metadata: HashMap::new(),
                             });
                             graph.add_weighted_dependency(&id, file_path, "defined_in", 1.0);
                         } else if capture_name == "call" {

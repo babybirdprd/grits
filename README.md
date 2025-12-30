@@ -4,7 +4,7 @@ A Git-native, local-first issue tracker with a **Twin Engine** architecture:
 - 🤖 **Agent Engine**: MCP server + agent-native CLI (inspect, workon, pulse, refactor)
 - 👀 **Grits Studio**: VS Code extension with 3D topology visualization + command center UI
 
-**Status**: v2.3.0 — "Mini Codebase"
+**Status**: v2.5.0 — "Semantic Hydration"
 
 ## Quick Start
 
@@ -83,7 +83,7 @@ gr context assemble --issue gr-abc123
 gr context assemble --symbols "store.rs::Store" --depth 2 --format json
 ```
 
-**Why?** Instead of loading entire files, extract only the topologically-relevant symbols. A 2,000-line file becomes 50 focused lines.
+**Why?** Instead of loading entire files, extract only the topologically-relevant symbols. A 2,000-line file becomes 50 focused lines, now with **hydrated code snippets** for instant context.
 
 ### 📺 Grits Studio (VS Code)
 
@@ -143,6 +143,7 @@ gr serve-mcp
 | `gr workon <id>` | Start work (branch + status) |
 | `gr set <id> <changes>` | Fuzzy updates |
 | `gr refactor` | Auto-fix cycles |
+| `gr memo attach` | Persist symbol notes |
 
 ### Core
 | Command | Purpose |
@@ -161,6 +162,7 @@ gr serve-mcp
 | `gr analysis volumes <file>` | Feature clusters |
 | `gr analysis check-layers` | Architectural invariants |
 | `gr analysis search <query>` | BM25 search |
+| `gr analysis path <s1> <s2>` | Shortest path tracing |
 
 ### Context (NEW v2.3)
 | Command | Purpose |

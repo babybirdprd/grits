@@ -1,6 +1,7 @@
 #[cfg(not(target_arch = "wasm32"))]
 use grits_core::topology::parser::CodeParser;
 use grits_core::topology::{analysis::TopologicalAnalysis, Symbol, SymbolGraph};
+use std::collections::HashMap;
 
 #[test]
 fn test_topology_analysis() {
@@ -22,6 +23,8 @@ fn test_topology_analysis() {
         language: "rust".to_string(),
         kind: "fn".to_string(),
         package: None,
+        byte_range: None,
+        metadata: HashMap::new(),
     });
     graph.add_symbol(grits_core::topology::Symbol {
         id: "B".to_string(),
@@ -30,6 +33,8 @@ fn test_topology_analysis() {
         language: "rust".to_string(),
         kind: "fn".to_string(),
         package: None,
+        byte_range: None,
+        metadata: HashMap::new(),
     });
     graph.add_symbol(grits_core::topology::Symbol {
         id: "C".to_string(),
@@ -38,6 +43,8 @@ fn test_topology_analysis() {
         language: "rust".to_string(),
         kind: "fn".to_string(),
         package: None,
+        byte_range: None,
+        metadata: HashMap::new(),
     });
     graph.add_symbol(grits_core::topology::Symbol {
         id: "D".to_string(),
@@ -46,6 +53,8 @@ fn test_topology_analysis() {
         language: "rust".to_string(),
         kind: "fn".to_string(),
         package: None,
+        byte_range: None,
+        metadata: HashMap::new(),
     });
 
     let analysis = TopologicalAnalysis::analyze(&graph);
@@ -71,6 +80,8 @@ fn test_betti_2_octahedron() {
             language: "r".to_string(),
             kind: "k".to_string(),
             package: None,
+            byte_range: None,
+            metadata: HashMap::new(),
         });
     }
 

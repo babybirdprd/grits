@@ -159,8 +159,8 @@ impl MiniCodebase {
                         name: symbol.name.clone(),
                         file_path: symbol.file_path.clone(),
                         kind: symbol.kind.clone(),
-                        code: None, // To be filled by caller with Tree-sitter
-                        byte_range: None,
+                        code: None, // To be filled by hydrate_code
+                        byte_range: symbol.byte_range,
                         pagerank: Some(rank),
                         in_cycle: cycle_nodes.contains(id),
                     });
@@ -211,6 +211,38 @@ impl MiniCodebase {
             files: files.into_iter().collect(),
             invariants,
             metadata,
+        }
+    }
+
+    /// Extract code snippets for symbols using their byte ranges
+    pub fn hydrate_code(&mut self, base_path: &std::path::Path) {
+        use std::collections::HashMap;
+        use std::fs;
+
+        let mut file_cache: HashMap<String, String> = HashMap::new();
+
+        for symbol in &mut self.symbols {
+            if let Some((start, end)) = symbol.byte_range {
+                let content = if let Some(c) = file_cache.get(&symbol.file_path) {
+                    c
+                } else {
+                    let full_path = base_path.join(&symbol.file_path);
+                    if let Ok(c) = fs::read_to_string(full_path) {
+                        file_cache.insert(symbol.file_path.clone(), c);
+                        file_cache.get(&symbol.file_path).unwrap()
+                    } else {
+                        continue;
+                    }
+                };
+
+                // Extract substring based on byte indices
+                // Safety: We use byte ranges from tree-sitter, which are valid byte offsets.
+                // However, we should be careful with UTF-8 boundaries if we were using character offsets.
+                // tree_sitter::Node::byte_range() returns valid byte offsets.
+                if start < content.len() && end <= content.len() && start <= end {
+                    symbol.code = Some(content[start..end].to_string());
+                }
+            }
         }
     }
 
@@ -282,6 +314,7 @@ impl MiniCodebase {
 mod tests {
     use super::*;
     use crate::topology::Symbol;
+    use std::collections::HashMap;
 
     #[test]
     fn test_mini_codebase_assembly() {
@@ -295,6 +328,8 @@ mod tests {
             package: None,
             language: "rust".to_string(),
             kind: "function".to_string(),
+            byte_range: None,
+            metadata: HashMap::new(),
         });
 
         graph.add_symbol(Symbol {
@@ -304,6 +339,8 @@ mod tests {
             package: None,
             language: "rust".to_string(),
             kind: "struct".to_string(),
+            byte_range: None,
+            metadata: HashMap::new(),
         });
 
         graph.add_dependency("main.rs::main", "store.rs::Store", "calls");

@@ -10,6 +10,10 @@ pub struct Symbol {
     pub package: Option<String>, // Workspace package name (monorepo)
     pub language: String,
     pub kind: String, // "function", "class", "struct", etc.
+    #[serde(default)]
+    pub byte_range: Option<(usize, usize)>,
+    #[serde(default)]
+    pub metadata: HashMap<String, String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

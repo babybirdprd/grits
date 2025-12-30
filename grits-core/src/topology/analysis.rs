@@ -1,5 +1,5 @@
 use super::SymbolGraph;
-use petgraph::algo::connected_components;
+use petgraph::algo::{astar, connected_components};
 use petgraph::graph::{DiGraph, NodeIndex, UnGraph};
 use petgraph::visit::EdgeRef;
 use serde::{Deserialize, Serialize};
@@ -628,6 +628,40 @@ impl TopologicalAnalysis {
             betti_cycles,
             cohesion_bonus,
         }
+    }
+
+    /// Find shortest path between two symbols using A*
+    pub fn get_path(graph_data: &SymbolGraph, start: &str, end: &str) -> Option<Vec<String>> {
+        let mut digraph = DiGraph::<String, ()>::new();
+        let mut node_to_idx = HashMap::new();
+
+        // Ensure all nodes from edges are also included
+        let mut all_node_ids = HashSet::new();
+        for (id, _) in &graph_data.nodes {
+            all_node_ids.insert(id.clone());
+        }
+        for (from, to, _) in &graph_data.edges {
+            all_node_ids.insert(from.clone());
+            all_node_ids.insert(to.clone());
+        }
+
+        for id in all_node_ids {
+            let idx = digraph.add_node(id.clone());
+            node_to_idx.insert(id.clone(), idx);
+        }
+
+        for (from, to, _) in &graph_data.edges {
+            if let (Some(&u), Some(&v)) = (node_to_idx.get(from), node_to_idx.get(to)) {
+                digraph.add_edge(u, v, ());
+            }
+        }
+
+        let start_idx = *node_to_idx.get(start)?;
+        let end_idx = *node_to_idx.get(end)?;
+
+        let path = astar(&digraph, start_idx, |n| n == end_idx, |_| 1, |_| 0)?;
+
+        Some(path.1.into_iter().map(|idx| digraph[idx].clone()).collect())
     }
 }
 
