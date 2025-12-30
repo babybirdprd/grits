@@ -73,6 +73,9 @@ gr analysis search "dependency"
 
 # Topology diff (shows changes since last rebuild)
 gr analysis diff
+
+# Trace shortest path between two symbols
+gr analysis path "grits-core/src/lib.rs" "grits-core/src/topology/mod.rs"
 ```
 
 Update your issue: `gr update --notes "Analysis tour complete. [friction notes here]"`
@@ -105,6 +108,9 @@ gr ready
 
 # Quick triage
 gr workflow triage <child-b-id> <child-c-id> --status closed
+
+# Attach a long-term memo to a symbol
+gr memo attach "grits-core/src/lib.rs" "Main entry point - fragile"
 ```
 
 ### 2.3 Context Loading Challenge (10 min)
@@ -121,8 +127,8 @@ gr analysis star "grits-core/src/context.rs" --depth 1
 # Second: Use context-bundle on your main issue
 gr context-bundle <your-evaluation-issue-id>
 
-# Third: Use context assemble
-gr context assemble --symbols "grits-core/src/context.rs" --depth 2
+# Third: Use context assemble (verify hydrated code snippets in output)
+gr context assemble --symbols "grits-core/src/context.rs" --depth 1
 
 # Fourth: Inspect your issue
 gr inspect <your-evaluation-issue-id>
@@ -209,7 +215,7 @@ gr analysis hotspots --limit 3
 Create `agent_experience_qa_v<VERSION>.md` with this structure:
 
 ```markdown
-# Deep Agent Experience Evaluation: Grits v<VERSION>
+# Deep Agent Experience Evaluation: Grits v2.6.0
 
 **Date**: YYYY-MM-DD
 **Tracking Issue**: <issue-id>
@@ -282,7 +288,8 @@ You have successfully stress-tested Grits if:
 3. ✅ Found **at least 3 friction points**
 4. ✅ Identified **at least 1 unhelpful error message**
 5. ✅ Able to answer: "What is the Solid Score and what does it mean?"
-6. ✅ Suggested **one concrete improvement**
-7. ✅ Created the evaluation report file
+6. ✅ Verified **hydrated code snippets** in `gr context assemble`
+7. ✅ Suggested **one concrete improvement**
+8. ✅ Created the evaluation report file
 
 > The goal is to find EVERY rough edge so we can sand it down.

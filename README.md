@@ -4,7 +4,7 @@ A Git-native, local-first issue tracker with a **Twin Engine** architecture:
 - 🤖 **Agent Engine**: MCP server + agent-native CLI (inspect, workon, pulse, refactor)
 - 👀 **Grits Studio**: VS Code extension with 3D topology visualization + command center UI
 
-**Status**: v2.5.0 — "Semantic Hydration"
+**Status**: v2.6.0 — "Semantic Hydration"
 
 ## Quick Start
 
