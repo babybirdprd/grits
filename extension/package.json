@@ -2,7 +2,7 @@
   "name": "grits-kanban",
   "displayName": "Grits Issue Tracker",
   "description": "Visual Kanban board and issue management for Grits (.jsonl) files",
-  "version": "2.5.0",
+  "version": "2.6.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/babybirdprd/grits"
