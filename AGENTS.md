@@ -148,8 +148,8 @@ gr create "Refactor store" -t task -p 2 -d "Detailed description here"
 # Full topology rebuild
 gr analysis rebuild
 
-# Get solid score dashboard
-gr stats --topology
+# Get solid score via pulse (includes betti numbers and architecture health)
+gr pulse
 ```
 
 ### Detect and Fix Cycles

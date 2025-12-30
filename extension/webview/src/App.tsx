@@ -286,11 +286,11 @@ export function App() {
         </button>
     );
 
-    // Filter issues based on search query
+    // Filter issues based on search query (with defensive null checks)
     const filteredIssues = issues.filter(issue =>
-        issue.title.toLowerCase().includes(issueSearchQuery.toLowerCase()) ||
-        issue.id.toLowerCase().includes(issueSearchQuery.toLowerCase()) ||
-        issue.labels.some(l => l.toLowerCase().includes(issueSearchQuery.toLowerCase()))
+        (issue.title || '').toLowerCase().includes(issueSearchQuery.toLowerCase()) ||
+        (issue.id || '').toLowerCase().includes(issueSearchQuery.toLowerCase()) ||
+        (issue.labels || []).some(l => l.toLowerCase().includes(issueSearchQuery.toLowerCase()))
     );
 
     const inProgressCount = issues.filter(i => i.status === 'in-progress').length;

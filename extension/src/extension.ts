@@ -94,29 +94,38 @@ class GritsDashboardPanel {
     }
 
     private async _sendInitialData() {
-        // Find issues.jsonl and send to webview
-        const files = await vscode.workspace.findFiles('**/.grits/issues.jsonl', null, 1);
-        if (files.length > 0) {
-            const doc = await vscode.workspace.openTextDocument(files[0]);
-            this._panel.webview.postMessage({
-                type: 'init',
-                issues: doc.getText(),
-                workspacePath: vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || '',
-            });
-        }
-
-        // Also try to load topology.json if it exists
-        const topoFiles = await vscode.workspace.findFiles('**/.grits/topology.json', null, 1);
-        if (topoFiles.length > 0) {
-            try {
-                const topoDoc = await vscode.workspace.openTextDocument(topoFiles[0]);
+        try {
+            // Find issues.jsonl and send to webview
+            const files = await vscode.workspace.findFiles('**/.grits/issues.jsonl', null, 1);
+            if (files.length > 0) {
+                const doc = await vscode.workspace.openTextDocument(files[0]);
                 this._panel.webview.postMessage({
-                    type: 'topology',
-                    data: topoDoc.getText(),
+                    type: 'init',
+                    issues: doc.getText(),
+                    workspacePath: vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || '',
                 });
-            } catch (e) {
-                console.log('No topology cache found');
+            } else {
+                // No issues file found - trigger onboarding flow
+                console.log('No .grits/issues.jsonl found, showing onboarding');
+                this._panel.webview.postMessage({ type: 'no-config' });
             }
+
+            // Also try to load topology.json if it exists
+            const topoFiles = await vscode.workspace.findFiles('**/.grits/topology.json', null, 1);
+            if (topoFiles.length > 0) {
+                try {
+                    const topoDoc = await vscode.workspace.openTextDocument(topoFiles[0]);
+                    this._panel.webview.postMessage({
+                        type: 'topology',
+                        data: topoDoc.getText(),
+                    });
+                } catch (e) {
+                    console.log('No topology cache found');
+                }
+            }
+        } catch (e) {
+            console.error('Failed to send initial data:', e);
+            this._panel.webview.postMessage({ type: 'no-config' });
         }
     }
 

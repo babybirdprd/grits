@@ -54,11 +54,12 @@ enum Commands {
     },
     /// Update one or more fields on an issue
     Update {
-        /// Issue ID or prefix
-        id: String,
+        /// Issue ID or prefix (optional if focus set via 'gr workon')
+        #[arg(long)]
+        id: Option<String>,
         #[arg(long)]
         title: Option<String>,
-        #[arg(long)]
+        #[arg(long, alias = "notes")]
         description: Option<String>,
         #[arg(long)]
         status: Option<String>,
@@ -601,7 +602,24 @@ fn main() -> anyhow::Result<()> {
             add_symbol,
             remove_symbol,
         } => {
-            if let Some(mut issue) = store.get_issue(&id)? {
+            // Resolve ID from argument or focus file (sticky focus)
+            let grits_dir = db_path.parent().unwrap();
+            let focus_path = grits_dir.join("focus");
+            let resolved_id = match id {
+                Some(i) => i,
+                None => {
+                    if focus_path.exists() {
+                        std::fs::read_to_string(&focus_path)?.trim().to_string()
+                    } else {
+                        eprintln!(
+                            "No issue ID provided. Use 'gr workon <ID>' first or provide --id."
+                        );
+                        std::process::exit(1);
+                    }
+                }
+            };
+
+            if let Some(mut issue) = store.get_issue(&resolved_id)? {
                 let mut updated = false;
                 let user_name = store
                     .get_config("user.name")?
@@ -737,7 +755,7 @@ fn main() -> anyhow::Result<()> {
                     println!("No changes provided.");
                 }
             } else {
-                eprintln!("Issue not found: {}", id);
+                eprintln!("Issue not found: {}", resolved_id);
             }
         }
         Commands::Edit { id } => {
@@ -2174,6 +2192,12 @@ fn main() -> anyhow::Result<()> {
         Commands::Pulse { assignee } => {
             use grits_core::topology::{analysis::TopologicalAnalysis, cache::TopologyCache};
 
+            // Check if grits is initialized
+            if !db_path.exists() {
+                eprintln!("Grits not initialized. Run `gr onboard` first to set up the project.");
+                std::process::exit(1);
+            }
+
             let cache_path = db_path.parent().unwrap().join("topology.json");
             let grits_dir = db_path.parent().unwrap();
             let git_root = grits_dir.parent().unwrap_or(std::path::Path::new("."));
@@ -2195,7 +2219,7 @@ fn main() -> anyhow::Result<()> {
                 }
             }
 
-            // 2. In-progress issues
+            // 2. In-progress issues (filtered by assignee if provided)
             let in_progress = store.list_issues(
                 Some("in-progress"),
                 assignee.as_deref(),
@@ -2207,9 +2231,29 @@ fn main() -> anyhow::Result<()> {
             pulse["in_progress"] = serde_json::json!(in_progress
                 .iter()
                 .map(
-                    |i| serde_json::json!({"id": &i.id, "title": &i.title, "priority": i.priority})
+                    |i| serde_json::json!({"id": &i.id, "title": &i.title, "priority": i.priority, "assignee": &i.assignee})
                 )
                 .collect::<Vec<_>>());
+
+            // 2b. Unassigned in-progress issues (always shown for visibility)
+            let all_in_progress = store.list_issues(
+                Some("in-progress"),
+                None, // No assignee filter
+                None,
+                None,
+                None,
+                None,
+            )?;
+            let unassigned: Vec<_> = all_in_progress
+                .iter()
+                .filter(|i| i.assignee.is_none())
+                .map(
+                    |i| serde_json::json!({"id": &i.id, "title": &i.title, "priority": i.priority}),
+                )
+                .collect();
+            if !unassigned.is_empty() {
+                pulse["unassigned_in_progress"] = serde_json::json!(unassigned);
+            }
 
             // 3. Recent git activity
             let git_log = std::process::Command::new("git")
