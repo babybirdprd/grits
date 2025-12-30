@@ -11,14 +11,37 @@ use tree_sitter::{Parser, Query, QueryCursor};
 /// These create "noise" in cycle detection as they're used everywhere.
 #[cfg(not(target_arch = "wasm32"))]
 fn is_builtin_symbol(name: &str, language: &str) -> bool {
+    // Quick pattern-based checks (before expensive array lookups)
+    // Filter single-letter identifiers (generic type params like T, E, F)
+    if name.len() == 1
+        && name
+            .chars()
+            .next()
+            .map_or(false, |c| c.is_ascii_uppercase())
+    {
+        return true;
+    }
+
+    // Filter compound expressions that got captured (e.g., "Ok(())")
+    if name.contains("()") || name.contains("::") {
+        return true;
+    }
+
+    // Filter numeric literals and simple strings
+    if name.parse::<f64>().is_ok() || name.starts_with('"') || name.starts_with('\'') {
+        return true;
+    }
+
     // Rust built-ins
     static RUST_BUILTINS: &[&str] = &[
+        // Result/Option variants
         "Ok",
         "Err",
         "Some",
         "None",
         "Result",
         "Option",
+        // Collections
         "String",
         "Vec",
         "Box",
@@ -32,6 +55,10 @@ fn is_builtin_symbol(name: &str, language: &str) -> bool {
         "HashSet",
         "BTreeMap",
         "BTreeSet",
+        "VecDeque",
+        "LinkedList",
+        "BinaryHeap",
+        // Printing/debugging macros
         "println",
         "print",
         "eprintln",
@@ -42,6 +69,7 @@ fn is_builtin_symbol(name: &str, language: &str) -> bool {
         "assert_eq",
         "assert_ne",
         "debug_assert",
+        "debug_assert_eq",
         "unreachable",
         "todo",
         "unimplemented",
@@ -56,6 +84,12 @@ fn is_builtin_symbol(name: &str, language: &str) -> bool {
         "stringify",
         "cfg",
         "matches",
+        "log",
+        "trace",
+        "info",
+        "warn",
+        "error",
+        // Common traits
         "Clone",
         "Copy",
         "Default",
@@ -87,7 +121,12 @@ fn is_builtin_symbol(name: &str, language: &str) -> bool {
         "Seek",
         "BufRead",
         "Error",
-        "Display",
+        "Serialize",
+        "Deserialize",
+        "Fn",
+        "FnMut",
+        "FnOnce",
+        // Primitive types
         "()",
         "unit",
         "bool",
@@ -109,6 +148,7 @@ fn is_builtin_symbol(name: &str, language: &str) -> bool {
         "f64",
         "str",
         "char",
+        // Keywords and common identifiers
         "Self",
         "self",
         "static",
@@ -118,6 +158,76 @@ fn is_builtin_symbol(name: &str, language: &str) -> bool {
         "move",
         "drop",
         "forget",
+        "new",
+        "default",
+        // Error handling (anyhow, thiserror, etc.)
+        "anyhow",
+        "bail",
+        "ensure",
+        "context",
+        "Context",
+        "with_context",
+        // Path and filesystem (commonly imported everywhere)
+        "Path",
+        "PathBuf",
+        "File",
+        "fs",
+        "io",
+        "std",
+        // Common method names that get captured as calls
+        "clone",
+        "into",
+        "from",
+        "as_ref",
+        "as_mut",
+        "unwrap",
+        "unwrap_or",
+        "unwrap_or_else",
+        "unwrap_or_default",
+        "expect",
+        "ok",
+        "err",
+        "is_ok",
+        "is_err",
+        "is_some",
+        "is_none",
+        "map",
+        "map_err",
+        "and_then",
+        "or_else",
+        "take",
+        "replace",
+        "get",
+        "get_mut",
+        "insert",
+        "remove",
+        "contains",
+        "push",
+        "pop",
+        "len",
+        "is_empty",
+        "iter",
+        "iter_mut",
+        "into_iter",
+        "collect",
+        "filter",
+        "find",
+        "any",
+        "all",
+        "to_string",
+        "to_owned",
+        "as_str",
+        "as_bytes",
+        "parse",
+        "try_into",
+        "try_from",
+        // Async runtime
+        "async",
+        "await",
+        "spawn",
+        "block_on",
+        "tokio",
+        "async_std",
     ];
 
     // TypeScript/JavaScript built-ins

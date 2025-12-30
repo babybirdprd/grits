@@ -987,14 +987,27 @@ fn main() -> anyhow::Result<()> {
             }
 
             // Auto-build topology
-            println!("Building code topology...");
+            print!("Discovering files for topology...");
+            use std::io::Write;
+            std::io::stdout().flush().ok();
             use grits_core::topology::{cache::TopologyCache, scanner::DirectoryScanner};
             let scanner = DirectoryScanner::new();
             let graph = scanner.scan_with_progress(std::path::Path::new("."), |p| {
                 if let Some(total) = p.total_files {
+                    let pct = if total > 0 {
+                        (p.files_scanned as f64 / total as f64 * 100.0) as u32
+                    } else {
+                        0
+                    };
+                    // Truncate filename if too long
+                    let filename = if p.current_file.len() > 40 {
+                        format!("...{}", &p.current_file[p.current_file.len() - 37..])
+                    } else {
+                        p.current_file.clone()
+                    };
                     print!(
-                        "\r\x1b[KScanning topology [{}/{}] {}",
-                        p.files_scanned, total, p.current_file
+                        "\r\x1b[K[{:3}%] ({}/{}) Parsing {}",
+                        pct, p.files_scanned, total, filename
                     );
                 } else {
                     print!(
@@ -1002,7 +1015,6 @@ fn main() -> anyhow::Result<()> {
                         p.files_scanned, p.current_file
                     );
                 }
-                use std::io::Write;
                 std::io::stdout().flush().ok();
             })?;
             println!();
@@ -1692,14 +1704,32 @@ fn main() -> anyhow::Result<()> {
                 let scanner = DirectoryScanner::new();
                 let mut cache = TopologyCache::new();
 
+                // Immediate feedback so user knows something is happening
+                print!("Discovering files in '{}'...", scan_dir);
+                std::io::stdout().flush().ok();
+
                 cache.update_from_dir_with_progress(
                     Path::new(&scan_dir),
                     &scanner,
                     |progress| {
                         if let Some(total) = progress.total_files {
+                            let pct = if total > 0 {
+                                (progress.files_scanned as f64 / total as f64 * 100.0) as u32
+                            } else {
+                                0
+                            };
+                            // Truncate filename if too long
+                            let filename = if progress.current_file.len() > 50 {
+                                format!(
+                                    "...{}",
+                                    &progress.current_file[progress.current_file.len() - 47..]
+                                )
+                            } else {
+                                progress.current_file.clone()
+                            };
                             print!(
-                                "\r\x1b[KScanning [{}/{}] {}",
-                                progress.files_scanned, total, progress.current_file
+                                "\r\x1b[K[{:3}%] ({}/{}) Parsing {}",
+                                pct, progress.files_scanned, total, filename
                             );
                         } else {
                             print!(
