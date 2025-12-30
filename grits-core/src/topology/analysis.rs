@@ -663,6 +663,73 @@ impl TopologicalAnalysis {
 
         Some(path.1.into_iter().map(|idx| digraph[idx].clone()).collect())
     }
+
+    /// Find a symbol ID using fuzzy matching.
+    /// Tries exact match first, then suffix match (e.g., "::SqliteStore" matches "store::SqliteStore").
+    /// Returns the full symbol ID if found.
+    pub fn find_symbol_fuzzy(graph_data: &SymbolGraph, query: &str) -> Option<String> {
+        // Collect all node IDs
+        let mut all_ids: HashSet<String> = HashSet::new();
+        for (id, _) in &graph_data.nodes {
+            all_ids.insert(id.clone());
+        }
+        for (from, to, _) in &graph_data.edges {
+            all_ids.insert(from.clone());
+            all_ids.insert(to.clone());
+        }
+
+        // 1. Try exact match first
+        if all_ids.contains(query) {
+            return Some(query.to_string());
+        }
+
+        // 2. Try suffix match (ends with "::query" or "/query")
+        let suffix_patterns = [
+            format!("::{}", query),
+            format!("/{}", query),
+            format!(".{}", query),
+        ];
+
+        for id in &all_ids {
+            for suffix in &suffix_patterns {
+                if id.ends_with(suffix) {
+                    return Some(id.clone());
+                }
+            }
+        }
+
+        // 3. Try substring match (contains the query as a component)
+        for id in &all_ids {
+            // Extract the final component of the symbol path
+            let final_component = id
+                .rsplit("::")
+                .next()
+                .or_else(|| id.rsplit('/').next())
+                .or_else(|| id.rsplit('.').next())
+                .unwrap_or(id);
+
+            if final_component == query {
+                return Some(id.clone());
+            }
+        }
+
+        // 4. Try case-insensitive match on the final component
+        let query_lower = query.to_lowercase();
+        for id in &all_ids {
+            let final_component = id
+                .rsplit("::")
+                .next()
+                .or_else(|| id.rsplit('/').next())
+                .or_else(|| id.rsplit('.').next())
+                .unwrap_or(id);
+
+            if final_component.to_lowercase() == query_lower {
+                return Some(id.clone());
+            }
+        }
+
+        None
+    }
 }
 
 /// Layer configuration for invariant checking

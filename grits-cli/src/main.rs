@@ -180,11 +180,14 @@ enum Commands {
 
     /// Start working on an issue (creates branch, sets status, outputs context)
     Workon {
-        /// Issue ID
-        id: String,
+        /// Issue ID (optional if --clear is used)
+        id: Option<String>,
         /// Custom branch name (default: grits/<issue_id>)
         #[arg(long)]
         branch: Option<String>,
+        /// Clear the current focus (removes .grits/focus file)
+        #[arg(long)]
+        clear: bool,
     },
 
     /// Session hydration - get project state and suggested next task
@@ -238,6 +241,25 @@ enum Commands {
     Memo {
         #[command(subcommand)]
         command: MemoCommands,
+    },
+
+    /// Search issues using natural language (alias for 'analysis search')
+    #[command(name = "issue")]
+    Issue {
+        #[command(subcommand)]
+        command: IssueCommands,
+    },
+}
+
+#[derive(Subcommand)]
+enum IssueCommands {
+    /// Search issues using natural language
+    Search {
+        /// Search query
+        query: String,
+        /// Maximum number of results
+        #[arg(long, default_value_t = 10)]
+        limit: i32,
     },
 }
 
@@ -751,9 +773,11 @@ fn main() -> anyhow::Result<()> {
                 }
 
                 // Handle Symbols
+                let mut newly_added_symbols = Vec::new();
                 for symbol in add_symbol {
                     if !issue.affected_symbols.contains(&symbol) {
-                        issue.affected_symbols.push(symbol);
+                        issue.affected_symbols.push(symbol.clone());
+                        newly_added_symbols.push(symbol);
                         updated = true;
                     }
                 }
@@ -762,6 +786,77 @@ fn main() -> anyhow::Result<()> {
                     issue.affected_symbols.retain(|s| s != &symbol);
                     if issue.affected_symbols.len() != initial_len {
                         updated = true;
+                    }
+                }
+
+                // Superpower: Automatic Dependency Resolution
+                // When symbols are added, suggest related symbols and issues
+                if !newly_added_symbols.is_empty() {
+                    use grits_core::topology::{
+                        analysis::TopologicalAnalysis, cache::TopologyCache,
+                    };
+                    let cache_path = db_path.parent().unwrap().join("topology.json");
+                    if let Ok(cache) = TopologyCache::load(&cache_path) {
+                        let mut related_symbols: std::collections::HashSet<String> =
+                            std::collections::HashSet::new();
+
+                        for symbol_id in &newly_added_symbols {
+                            // Use fuzzy matching to resolve the symbol
+                            let resolved =
+                                TopologicalAnalysis::find_symbol_fuzzy(&cache.graph, symbol_id)
+                                    .unwrap_or_else(|| symbol_id.clone());
+
+                            // Get star neighborhood
+                            let star = TopologicalAnalysis::get_star(&cache.graph, &resolved, 1);
+                            for neighbor in star.neighbors {
+                                // Don't suggest symbols already in the issue
+                                if !issue.affected_symbols.contains(&neighbor) {
+                                    related_symbols.insert(neighbor);
+                                }
+                            }
+                        }
+
+                        // Limit suggestions to top 5
+                        let suggestions: Vec<_> = related_symbols.into_iter().take(5).collect();
+                        if !suggestions.is_empty() {
+                            println!("\n💡 Related symbols you may want to add:");
+                            for sym in &suggestions {
+                                println!("   gr update --add-symbol \"{}\"", sym);
+                            }
+                        }
+
+                        // Find related issues that share affected_symbols with our neighbors
+                        let all_issues = store.list_issues(None, None, None, None, None, None)?;
+                        let mut related_issues: Vec<(&grits_core::Issue, usize)> = Vec::new();
+
+                        for other_issue in &all_issues {
+                            if other_issue.id == issue.id {
+                                continue;
+                            }
+                            // Count overlap with affected symbols
+                            let overlap = other_issue
+                                .affected_symbols
+                                .iter()
+                                .filter(|s| issue.affected_symbols.contains(s))
+                                .count();
+                            if overlap > 0 {
+                                related_issues.push((other_issue, overlap));
+                            }
+                        }
+
+                        // Sort by overlap and take top 3
+                        related_issues.sort_by(|a, b| b.1.cmp(&a.1));
+                        let top_related: Vec<_> = related_issues.into_iter().take(3).collect();
+
+                        if !top_related.is_empty() {
+                            println!("\n🔗 Potentially affected issues:");
+                            for (related_issue, overlap) in top_related {
+                                println!(
+                                    "   [{}] {} ({} shared symbols)",
+                                    related_issue.id, related_issue.title, overlap
+                                );
+                            }
+                        }
                     }
                 }
 
@@ -1538,30 +1633,53 @@ fn main() -> anyhow::Result<()> {
                 depth,
             } => {
                 use grits_core::topology::{
-                    analysis::TopologicalAnalysis, parser::CodeParser, SymbolGraph,
+                    analysis::TopologicalAnalysis, cache::TopologyCache, parser::CodeParser,
+                    SymbolGraph,
                 };
 
-                let lang = if file.ends_with(".rs") {
-                    "rust"
-                } else if file.ends_with(".ts") {
-                    "typescript"
-                } else if file.ends_with(".js") {
-                    "javascript"
+                // First, try to use topology cache if available (supports fuzzy matching)
+                let cache_path = db_path.parent().unwrap().join("topology.json");
+
+                let (graph, center) = if cache_path.exists() {
+                    // Use cached topology for fuzzy symbol matching
+                    let cache = TopologyCache::load(&cache_path)?;
+                    let query = symbol.as_ref().unwrap_or(&file);
+
+                    // Try fuzzy matching
+                    let resolved = TopologicalAnalysis::find_symbol_fuzzy(&cache.graph, query)
+                        .unwrap_or_else(|| query.clone());
+
+                    if symbol.is_some() && resolved != *query {
+                        println!("🔍 Resolved '{}' to '{}'", query, resolved);
+                    }
+
+                    (cache.graph, resolved)
                 } else {
-                    println!("Skipped: Unsupported language");
-                    return Ok(());
+                    // Fall back to parsing file directly
+                    let lang = if file.ends_with(".rs") {
+                        "rust"
+                    } else if file.ends_with(".ts") {
+                        "typescript"
+                    } else if file.ends_with(".js") {
+                        "javascript"
+                    } else {
+                        println!("Skipped: Unsupported language");
+                        return Ok(());
+                    };
+
+                    let content = std::fs::read_to_string(&file)
+                        .context(format!("Failed to read file: {}", file))?;
+
+                    let mut graph = SymbolGraph::new();
+                    let mut parser = CodeParser::new(lang).context("Failed to create parser")?;
+                    parser
+                        .parse_file(&file, &content, &mut graph)
+                        .context("Failed to parse")?;
+
+                    let center = symbol.unwrap_or_else(|| file.clone());
+                    (graph, center)
                 };
 
-                let content = std::fs::read_to_string(&file)
-                    .context(format!("Failed to read file: {}", file))?;
-
-                let mut graph = SymbolGraph::new();
-                let mut parser = CodeParser::new(lang).context("Failed to create parser")?;
-                parser
-                    .parse_file(&file, &content, &mut graph)
-                    .context("Failed to parse")?;
-
-                let center = symbol.unwrap_or_else(|| file.clone());
                 let star = TopologicalAnalysis::get_star(&graph, &center, depth);
 
                 println!("Star Neighborhood for: {}", star.center);
@@ -1590,13 +1708,32 @@ fn main() -> anyhow::Result<()> {
                     std::process::exit(1);
                 }
                 let cache = TopologyCache::load(&cache_path)?;
-                if let Some(path) = TopologicalAnalysis::get_path(&cache.graph, &start, &end) {
-                    println!("Shortest path: {} -> {}", start, end);
+
+                // Use fuzzy matching for both start and end symbols
+                let resolved_start = TopologicalAnalysis::find_symbol_fuzzy(&cache.graph, &start)
+                    .unwrap_or_else(|| start.clone());
+                let resolved_end = TopologicalAnalysis::find_symbol_fuzzy(&cache.graph, &end)
+                    .unwrap_or_else(|| end.clone());
+
+                if resolved_start != start {
+                    println!("🔍 Resolved start '{}' to '{}'", start, resolved_start);
+                }
+                if resolved_end != end {
+                    println!("🔍 Resolved end '{}' to '{}'", end, resolved_end);
+                }
+
+                if let Some(path) =
+                    TopologicalAnalysis::get_path(&cache.graph, &resolved_start, &resolved_end)
+                {
+                    println!("Shortest path: {} -> {}", resolved_start, resolved_end);
                     for (i, node) in path.iter().enumerate() {
                         println!("  {}. {}", i + 1, node);
                     }
                 } else {
-                    println!("No path found between {} and {}", start, end);
+                    println!(
+                        "No path found between {} and {}",
+                        resolved_start, resolved_end
+                    );
                 }
             }
             AnalysisCommands::Volumes { file } => {
@@ -2300,11 +2437,33 @@ fn main() -> anyhow::Result<()> {
             println!("{}", serde_json::to_string_pretty(&result)?);
         }
 
-        Commands::Workon { id, branch } => {
+        Commands::Workon { id, branch, clear } => {
             use grits_core::topology::{analysis::TopologicalAnalysis, cache::TopologyCache};
 
-            if let Some(mut issue) = store.get_issue(&id)? {
-                let grits_dir = db_path.parent().unwrap();
+            let grits_dir = db_path.parent().unwrap();
+            let focus_path = grits_dir.join("focus");
+
+            // Handle --clear flag
+            if clear {
+                if focus_path.exists() {
+                    std::fs::remove_file(&focus_path)?;
+                    println!("✓ Focus cleared");
+                } else {
+                    println!("No focus was set");
+                }
+                return Ok(());
+            }
+
+            // Require id if not clearing
+            let issue_id = match id {
+                Some(i) => i,
+                None => {
+                    eprintln!("Issue ID required. Use 'gr workon <ID>' or 'gr workon --clear' to clear focus.");
+                    std::process::exit(1);
+                }
+            };
+
+            if let Some(mut issue) = store.get_issue(&issue_id)? {
                 let git_root = grits_dir.parent().unwrap_or(std::path::Path::new("."));
 
                 // 1. Only create/switch branch if --branch is explicitly provided
@@ -2352,7 +2511,6 @@ fn main() -> anyhow::Result<()> {
                 }
 
                 // 3. Save focus ID to .grits/focus for "sticky focus"
-                let focus_path = grits_dir.join("focus");
                 std::fs::write(&focus_path, &issue.id)?;
                 println!("✓ Focus set to: {} (use 'gr set' without ID)", issue.id);
 
@@ -2389,7 +2547,7 @@ fn main() -> anyhow::Result<()> {
 
                 println!("\n{}", serde_json::to_string_pretty(&context)?);
             } else {
-                eprintln!("Issue not found: {}", id);
+                eprintln!("Issue not found: {}", issue_id);
             }
         }
 
@@ -2901,6 +3059,30 @@ fn main() -> anyhow::Result<()> {
                 } else {
                     eprintln!("Symbol not found: {}", symbol_id);
                     std::process::exit(1);
+                }
+            }
+        },
+        Commands::Issue { command } => match command {
+            IssueCommands::Search { query, limit } => {
+                // Use the same search logic as analysis search
+                let results =
+                    grits_core::strategic::analysis::search_issues(&store, &query, limit)?;
+                if results.is_empty() {
+                    println!("No issues found matching: {}", query);
+                } else {
+                    println!("🔍 Issues matching '{}':\n", query);
+                    for (i, result) in results.iter().enumerate() {
+                        println!(
+                            "{}. [{}] {} (score: {:.2})",
+                            i + 1,
+                            result.id,
+                            result.title,
+                            result.relevance_score
+                        );
+                        if !result.snippet.is_empty() {
+                            println!("   {}", result.snippet);
+                        }
+                    }
                 }
             }
         },

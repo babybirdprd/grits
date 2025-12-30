@@ -65,7 +65,10 @@ gr inspect src/store.rs::SqliteStore
 
 ### Search and Triage
 ```bash
-# Natural language search
+# Natural language issue search (NEW v2.6 - clearer naming)
+gr issue search "circular dependency"
+
+# Alternative (same as above)
 gr analysis search "circular dependency"
 
 # Check for duplicates before creating
@@ -124,6 +127,9 @@ gr workon gr-abc123
 
 # With branch creation (optional)
 gr workon gr-abc123 --branch feature/my-fix
+
+# Clear current focus (NEW v2.6)
+gr workon --clear
 ```
 
 ### Sticky Focus (NEW v2.3)
@@ -152,6 +158,23 @@ gr update gr-abc123 --status in-progress --priority 1
 gr update gr-abc123 --add-symbol "src/store.rs::create_issue"
 gr update gr-abc123 --add-dependency gr-xyz789
 ```
+
+### 🚀 Automatic Dependency Resolution (NEW v2.6 - Superpower)
+When you add a symbol to an issue, Grits automatically suggests related symbols and potentially affected issues:
+```bash
+# Add a symbol - Grits will suggest related context
+gr update gr-abc123 --add-symbol "store.rs::SqliteStore"
+
+# Output includes:
+# 💡 Related symbols you may want to add:
+#    gr update --add-symbol "store.rs::Store"
+#    gr update --add-symbol "store.rs::get_issue"
+# 🔗 Potentially affected issues:
+#    [gr-xyz789] Refactor store layer (2 shared symbols)
+```
+
+> [!TIP]
+> **Why this matters?** Building complete dependency chains manually is tedious. This superpower surfaces connections you might miss, reducing bugs from incomplete context.
 
 ### Create Issues
 ```bash
@@ -192,6 +215,9 @@ gr refactor --undo --target src/store.rs
 # Get all connected code for a file (use FILE paths, not symbol paths)
 gr analysis star "src/utils.rs" --depth 2
 
+# NEW v2.6: Fuzzy symbol matching - use short names!
+gr analysis star "src/store.rs" --symbol "SqliteStore"  # Resolves automatically
+
 # Find feature volumes (tightly coupled clusters)
 # Can use file path OR project-wide from cache
 gr analysis volumes "src/engine.rs"
@@ -204,8 +230,8 @@ gr analysis hotspots --format json
 
 ### Trace Data Flow
 ```bash
-# Find the shortest path between two symbols
-gr analysis path "auth.rs::validate" "store.rs::SqliteStore"
+# Find the shortest path between two symbols (supports fuzzy matching)
+gr analysis path "validate" "SqliteStore"  # Resolves to full symbol IDs
 ```
 
 ### Architectural Invariants
@@ -292,7 +318,7 @@ The extension now opens as a **full dashboard panel** with:
 
 ---
 
-## 🧮 Command Reference (v2.0)
+## 🧮 Command Reference (v2.6)
 
 ### Agent-Native Commands (NEW)
 | Command | Example | Purpose |
@@ -300,10 +326,12 @@ The extension now opens as a **full dashboard panel** with:
 | `gr pulse` | `gr pulse --assignee me` | Session hydration |
 | `gr inspect` | `gr inspect gr-abc` | One-shot context |
 | `gr workon` | `gr workon gr-abc` | Start work (branch + status) |
+| `gr workon --clear` | `gr workon --clear` | Clear current focus (NEW v2.6) |
 | `gr set` | `gr set abc pri:1 stat:ip` | Fuzzy updates |
 | `gr refactor` | `gr refactor --apply` | Auto-fix cycles |
 | `gr memo attach` | `gr memo attach sym "note"` | Persist symbol notes |
 | `gr context-bundle` | `gr context-bundle gr-abc` | Complete context bundle |
+| `gr issue search` | `gr issue search "query"` | Issue search (NEW v2.6) |
 | `gr onboard` | `gr onboard --non-interactive` | Initialize (agent-friendly) |
 
 ### Core Commands
@@ -318,12 +346,12 @@ The extension now opens as a **full dashboard panel** with:
 | Command | Purpose |
 |---------|---------|
 | `gr analysis rebuild` | Build topology cache |
-| `gr analysis star <FILE>` | Get connected context (FILE path, not symbol) |
+| `gr analysis star <FILE>` | Get connected context (supports fuzzy symbol matching) |
 | `gr analysis volumes [FILE]` | Find code clusters (optional file, uses cache) |
 | `gr analysis hotspots` | Get PageRank hotspots |
 | `gr analysis check-layers` | Verify architecture |
 | `gr analysis search` | BM25 natural language search |
-| `gr analysis path` | Shortest path tracing |
+| `gr analysis path` | Shortest path tracing (supports fuzzy matching) |
 
 ### Context Commands (NEW v2.3)
 | Command | Example | Purpose |

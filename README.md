@@ -141,15 +141,17 @@ gr serve-mcp
 | `gr pulse` | Session hydration |
 | `gr inspect <target>` | One-shot context |
 | `gr workon <id>` | Start work (branch + status) |
+| `gr workon --clear` | Clear focus (v2.6) |
 | `gr set <id> <changes>` | Fuzzy updates |
 | `gr refactor` | Auto-fix cycles |
 | `gr memo attach` | Persist symbol notes |
+| `gr issue search` | Search issues (v2.6) |
 
 ### Core
 | Command | Purpose |
 |---------|---------|
 | `gr create` | Create issue |
-| `gr update` | Update issue |
+| `gr update` | Update issue (with auto-suggestions) |
 | `gr list` | List issues |
 | `gr ready` | Actionable issues |
 | `gr sync` | Git sync |
@@ -158,11 +160,11 @@ gr serve-mcp
 | Command | Purpose |
 |---------|---------|
 | `gr analysis rebuild` | Build topology cache |
-| `gr analysis star <sym>` | Star neighborhood |
+| `gr analysis star <sym>` | Star neighborhood (fuzzy matching) |
 | `gr analysis volumes <file>` | Feature clusters |
 | `gr analysis check-layers` | Architectural invariants |
 | `gr analysis search <query>` | BM25 search |
-| `gr analysis path <s1> <s2>` | Shortest path tracing |
+| `gr analysis path <s1> <s2>` | Shortest path (fuzzy matching) |
 
 ### Context (NEW v2.3)
 | Command | Purpose |
