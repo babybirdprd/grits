@@ -335,18 +335,20 @@ export function App() {
                     </div>
 
                     {/* Central Search */}
-                    <div className="flex-1 max-w-md mx-8 relative group">
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-vscode-fg/30 group-focus-within:text-vscode-accent">
-                            <span>🔍</span>
+                    {view !== 'topology' && (
+                        <div className="flex-1 max-w-md mx-8 relative group">
+                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-vscode-fg/30 group-focus-within:text-vscode-accent">
+                                <span>🔍</span>
+                            </div>
+                            <input
+                                type="text"
+                                className="block w-full pl-10 pr-3 py-1.5 bg-vscode-bg/50 border border-vscode-border rounded-lg text-sm placeholder-vscode-fg/30 focus:outline-none focus:ring-1 focus:ring-vscode-accent focus:border-vscode-accent transition-all hover:bg-vscode-bg/80"
+                                placeholder="Search issues, labels, or IDs..."
+                                value={issueSearchQuery}
+                                onChange={(e) => setIssueSearchQuery(e.target.value)}
+                            />
                         </div>
-                        <input
-                            type="text"
-                            className="block w-full pl-10 pr-3 py-1.5 bg-vscode-bg/50 border border-vscode-border rounded-lg text-sm placeholder-vscode-fg/30 focus:outline-none focus:ring-1 focus:ring-vscode-accent focus:border-vscode-accent transition-all hover:bg-vscode-bg/80"
-                            placeholder="Search issues, labels, or IDs..."
-                            value={issueSearchQuery}
-                            onChange={(e) => setIssueSearchQuery(e.target.value)}
-                        />
-                    </div>
+                    )}
 
                     {/* View Toggle */}
                     <div className="flex items-center gap-3">

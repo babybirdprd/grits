@@ -88,6 +88,36 @@ fn is_builtin_symbol(name: &str, language: &str) -> bool {
         "BufRead",
         "Error",
         "Display",
+        "()",
+        "unit",
+        "bool",
+        "true",
+        "false",
+        "i8",
+        "i16",
+        "i32",
+        "i64",
+        "i128",
+        "isize",
+        "u8",
+        "u16",
+        "u32",
+        "u64",
+        "u128",
+        "usize",
+        "f32",
+        "f64",
+        "str",
+        "char",
+        "Self",
+        "self",
+        "static",
+        "mut",
+        "ref",
+        "pub",
+        "move",
+        "drop",
+        "forget",
     ];
 
     // TypeScript/JavaScript built-ins
@@ -255,6 +285,7 @@ impl CodeParser {
             let query_str = r#"
                 (function_item name: (identifier) @name) @func
                 (struct_item name: (type_identifier) @name) @struct
+                (impl_item type: (type_identifier) @name) @impl
                 (mod_item name: (identifier) @mod_name) @mod
                 (use_declaration argument: (_) @import) @use
                 (call_expression function: (identifier) @call) @call
@@ -275,16 +306,46 @@ impl CodeParser {
 
                         if capture_name == "name" {
                             let id = format!("{}::{}", file_path, text);
+                            let kind = capture.node.kind().to_string();
                             graph.add_symbol(Symbol {
                                 id: id.clone(),
                                 name: text.to_string(),
                                 file_path: file_path.to_string(),
                                 package: None,
                                 language: self.language.clone(),
-                                kind: capture.node.kind().to_string(),
+                                kind: kind.clone(),
                             });
                             // Also link symbol to file
                             graph.add_weighted_dependency(&id, file_path, "defined_in", 1.0);
+
+                            // If this is a function, check if it's inside an impl block
+                            if kind == "function_item"
+                                || capture
+                                    .node
+                                    .parent()
+                                    .map_or(false, |p| p.kind() == "function_item")
+                            {
+                                let mut curr = capture.node.parent();
+                                while let Some(p) = curr {
+                                    if p.kind() == "impl_item" {
+                                        if let Some(type_node) = p.child_by_field_name("type") {
+                                            let type_range = type_node.byte_range();
+                                            if type_range.end <= content.len() {
+                                                let struct_name =
+                                                    &content[type_range.start..type_range.end];
+                                                let struct_id =
+                                                    format!("{}::{}", file_path, struct_name);
+                                                // Link function to struct via "implemented_for"
+                                                graph.add_weighted_dependency(
+                                                    &id, &struct_id, "part_of", 1.0,
+                                                );
+                                            }
+                                        }
+                                        break;
+                                    }
+                                    curr = p.parent();
+                                }
+                            }
                         } else if capture_name == "mod_name" {
                             graph.add_weighted_dependency(file_path, text, "imports", 0.3);
                         } else if capture_name == "call" {

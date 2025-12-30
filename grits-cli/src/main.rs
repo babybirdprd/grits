@@ -335,6 +335,14 @@ enum AnalysisCommands {
         #[arg(long)]
         dir: Option<String>,
     },
+    /// Prune orphaned nodes from the topology
+    Prune {
+        /// Delete orphaned symbols from the graph
+        #[arg(long)]
+        orphans: bool,
+        /// Directory to scan (default: current directory)
+        dir: Option<String>,
+    },
 }
 
 #[derive(Subcommand)]
@@ -382,7 +390,7 @@ enum ContextCommands {
         #[arg(long)]
         issue: Option<String>,
         /// Seed symbols to expand from (comma-separated)
-        #[arg(long, value_delimiter = ',')]
+        #[arg(long, value_delimiter = ',', alias = "symbol")]
         symbols: Option<Vec<String>>,
         /// Output format: json, markdown
         #[arg(long, default_value = "markdown")]
@@ -1845,6 +1853,59 @@ fn main() -> anyhow::Result<()> {
                     std::fs::write(&output, dot)?;
                 }
                 println!("Graph exported to: {}", output);
+            }
+            AnalysisCommands::Prune { orphans, dir } => {
+                use grits_core::topology::{cache::TopologyCache, scanner::DirectoryScanner};
+                use std::path::Path;
+
+                if !orphans {
+                    println!("Nothing to prune. Use --orphans.");
+                    return Ok(());
+                }
+
+                let scan_dir = dir.unwrap_or_else(|| ".".to_string());
+                let scanner = DirectoryScanner::new();
+                let cache_path = db_path.parent().unwrap().join("topology.json");
+
+                if !cache_path.exists() {
+                    eprintln!("No cache found. Run 'gr analysis rebuild' first.");
+                    return Ok(());
+                }
+
+                let mut cache = TopologyCache::load(&cache_path)?;
+                let current_graph = scanner.scan(Path::new(&scan_dir))?;
+
+                // Identify orphaned nodes: present in cache but NOT in current scan
+                let current_nodes: std::collections::HashSet<_> =
+                    current_graph.nodes.keys().cloned().collect();
+                let cache_nodes: Vec<_> = cache.graph.nodes.keys().cloned().collect();
+
+                let orphans_list: Vec<_> = cache_nodes
+                    .into_iter()
+                    .filter(|id| !current_nodes.contains(id))
+                    .collect();
+
+                if orphans_list.is_empty() {
+                    println!("No orphaned nodes found.");
+                    return Ok(());
+                }
+
+                println!("Found {} orphaned nodes.", orphans_list.len());
+                for id in &orphans_list {
+                    cache.graph.nodes.remove(id);
+                    // Also remove any edges connected to this node
+                    cache
+                        .graph
+                        .edges
+                        .retain(|(from, to, _)| from != id && to != id);
+                    println!("  - Pruned: {}", id);
+                }
+
+                cache.save(&cache_path)?;
+                println!(
+                    "✅ Shaved {} orphans. Topology is now cleaner.",
+                    orphans_list.len()
+                );
             }
         },
         Commands::Workflow { command } => match command {

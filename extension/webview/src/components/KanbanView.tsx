@@ -78,7 +78,7 @@ export function KanbanView({ issues, onUpdateField, onSelectIssue }: KanbanViewP
                                     </div>
 
                                     <div className="flex flex-wrap gap-1.5 mb-3">
-                                        {issue.labels.slice(0, 3).map(label => (
+                                        {(issue.labels || []).slice(0, 3).map(label => (
                                             <span key={label} className="px-1.5 py-0.5 bg-vscode-accent/10 text-vscode-accent text-[9px] font-bold rounded-md border border-vscode-accent/20 uppercase">
                                                 {label}
                                             </span>
