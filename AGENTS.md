@@ -159,7 +159,7 @@ gr update gr-abc123 --add-symbol "src/store.rs::create_issue"
 gr update gr-abc123 --add-dependency gr-xyz789
 ```
 
-### 🚀 Automatic Dependency Resolution (NEW v2.6 - Superpower)
+### 🚀 Automatic Dependency Resolution (NEW v2.7 - Superpower)
 When you add a symbol to an issue, Grits automatically suggests related symbols and potentially affected issues:
 ```bash
 # Add a symbol - Grits will suggest related context
@@ -169,12 +169,20 @@ gr update gr-abc123 --add-symbol "store.rs::SqliteStore"
 # 💡 Related symbols you may want to add:
 #    gr update --add-symbol "store.rs::Store"
 #    gr update --add-symbol "store.rs::get_issue"
+#    (or use --auto-expand to add them automatically)
 # 🔗 Potentially affected issues:
 #    [gr-xyz789] Refactor store layer (2 shared symbols)
+
+# NEW v2.7: Auto-expand to add ALL related symbols automatically
+gr update gr-abc123 --add-symbol "store.rs::SqliteStore" --auto-expand
+# ⚡ Auto-expanded: Added 5 related symbols
+#    + store.rs::Store
+#    + store.rs::get_issue
+#    ...
 ```
 
 > [!TIP]
-> **Why this matters?** Building complete dependency chains manually is tedious. This superpower surfaces connections you might miss, reducing bugs from incomplete context.
+> **Why --auto-expand?** Building complete dependency chains manually is tedious. Use `--auto-expand` to automatically add the entire star neighborhood of highly-coupled symbols.
 
 ### Create Issues
 ```bash

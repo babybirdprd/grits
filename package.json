@@ -1,7 +1,7 @@
 {
     "name": "grits-workspace",
     "private": true,
-    "version": "2.7.0",
+    "version": "2.7.1",
     "description": "Root workspace for Grits Twin Engine",
     "scripts": {
         "build:core": "cargo build -p grits-core",

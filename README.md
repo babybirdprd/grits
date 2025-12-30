@@ -133,7 +133,7 @@ gr serve-mcp
 
 ---
 
-## CLI Reference (v2.7.0)
+## CLI Reference (v2.7.1)
 
 ### Agent-Native (NEW)
 | Command | Purpose |
@@ -141,11 +141,11 @@ gr serve-mcp
 | `gr pulse` | Session hydration |
 | `gr inspect <target>` | One-shot context |
 | `gr workon <id>` | Start work (branch + status) |
-| `gr workon --clear` | Clear focus (v2.7.0) |
+| `gr workon --clear` | Clear focus (v2.7.1) |
 | `gr set <id> <changes>` | Fuzzy updates |
 | `gr refactor` | Auto-fix cycles |
 | `gr memo attach` | Persist symbol notes |
-| `gr issue search` | Search issues (v2.7.0) |
+| `gr issue search` | Search issues (v2.7.1) |
 
 ### Core
 | Command | Purpose |

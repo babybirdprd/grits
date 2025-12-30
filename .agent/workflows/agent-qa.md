@@ -13,6 +13,9 @@ This workflow creates an **intensive hands-on evaluation** of Grits. You will co
 
 ## Phase 1: Setup (3 min)
 
+> [!IMPORTANT]
+> **Read [AGENTS.md] FIRST** before running any commands. It contains critical context about Grits workflows, command shortcuts, and the "Golden Rules" for agents.
+
 ### 1.1 Fresh Start
 ```bash
 # Verify OR initialize Grits
@@ -169,6 +172,86 @@ Note which errors are helpful vs confusing.
 
 ---
 
+## Phase 2.5: Problem-Solving Challenges (15 min)
+
+**These challenges test if YOU can use Grits to solve real problems, not just run commands.**
+
+### Challenge A: 🔍 Blind Navigation
+
+**Goal**: Find where "issue storage" logic lives WITHOUT being told the file path.
+
+Rules:
+- You may NOT use `find`, `grep`, or read files directly
+- You MUST use Grits commands to discover the location
+
+Suggested approach:
+```bash
+# Start from hotspots - storage is probably central
+gr analysis hotspots --limit 15
+
+# Pick a promising candidate and explore its neighborhood
+gr analysis star "<promising-file>" --depth 2
+
+# Find tightly coupled clusters
+gr analysis volumes
+```
+
+**Record your answer**: Which file(s) handle issue storage? How did Grits help?
+
+Update: `gr update --notes "Blind Nav: Found storage at [X] using [commands]"`
+
+### Challenge B: 🏗️ Blast Radius Assessment
+
+**Scenario**: Someone wants to refactor `grits-core/src/models.rs`. What might break?
+
+```bash
+# Get the star neighborhood (who depends on models?)
+gr analysis star "grits-core/src/models.rs" --depth 2
+
+# Trace paths to key consumers
+gr analysis path "grits-core/src/models.rs" "grits-cli/src/main.rs"
+
+# Check if it's in any detected volumes
+gr analysis volumes
+```
+
+**Record your answer**: List 3+ files that would be affected by changes to `models.rs`.
+
+### Challenge C: 🐛 Root Cause Hunt
+
+**Scenario**: You see this error: `"Failed to update issue: database locked"`
+
+Use Grits to trace where database operations happen:
+```bash
+# Search issues for similar problems
+gr issue search "database"
+gr issue search "sqlite"
+
+# Find the database-related hotspots
+gr analysis hotspots --limit 20 --format json | grep -i store
+
+# Trace the call path
+gr analysis path "store.rs" "main.rs"
+```
+
+**Record your answer**: Which file would you investigate first? Why?
+
+### Challenge D: ⚡ Speed Run (Timed)
+
+**Test real handoff speed.**
+
+1. Run `gr workon --clear` to reset focus
+2. Start a timer
+3. Run ONLY these commands:
+   - `gr pulse`
+   - `gr inspect <suggested-issue>`
+   - `gr context-bundle <suggested-issue>`
+4. Stop timer when you feel "ready to code"
+
+**Record**: How many seconds? What was missing (if anything)?
+
+---
+
 ## Phase 3: Simulate Session Handoff (5 min)
 
 **Test the handoff scenario from scratch.**
@@ -212,7 +295,7 @@ gr analysis hotspots --limit 3
 
 ## Phase 5: Report Generation
 
-Create `agent_experience_qa_v<VERSION>.md` with this structure:
+Create `agent_experience_qa_v<VERSION>.md` with this structure - save to repo:
 
 ```markdown
 # Deep Agent Experience Evaluation: Grits v2.6.0
@@ -241,16 +324,24 @@ Create `agent_experience_qa_v<VERSION>.md` with this structure:
 ## 4. Topological Insights
 [Metrics table + interpretation. Did geometry help?]
 
-## 5. Workflow Ergonomics
+## 5. Problem-Solving Challenge Results
+| Challenge | Result | What Worked | What Didn't |
+|-----------|--------|-------------|-------------|
+| Blind Navigation | Found: ___ | | |
+| Blast Radius | Files affected: ___ | | |
+| Root Cause Hunt | Investigate: ___ | | |
+| Speed Run | Time: ___s | | |
+
+## 6. Workflow Ergonomics
 [AGENTS.md assessment, CLI usability, flags, shortcuts]
 
-## 6. Session Handoff
+## 7. Session Handoff
 [Could a fresh agent pick up your work? What's missing?]
 
-## 7. Superpower Suggestion
+## 8. Superpower Suggestion
 [ONE feature that would make Grits 10x more valuable]
 
-## 8. Final Verdict
+## 9. Final Verdict
 **Indispensability Score: X/10**
 [One-sentence summary]
 
@@ -259,6 +350,10 @@ Create `agent_experience_qa_v<VERSION>.md` with this structure:
 - [ ] Completed issue CRUD gauntlet
 - [ ] Tested context loading
 - [ ] Tested error cases
+- [ ] **Completed Blind Navigation challenge**
+- [ ] **Completed Blast Radius challenge**
+- [ ] **Completed Root Cause Hunt challenge**
+- [ ] **Completed Speed Run (recorded time)**
 - [ ] Simulated handoff
 - [ ] Captured all metrics
 - [ ] Created this report
@@ -287,9 +382,11 @@ You have successfully stress-tested Grits if:
 2. ✅ Created, updated, and linked **at least 3 issues**
 3. ✅ Found **at least 3 friction points**
 4. ✅ Identified **at least 1 unhelpful error message**
-5. ✅ Able to answer: "What is the Solid Score and what does it mean?"
-6. ✅ Verified **hydrated code snippets** in `gr context assemble`
-7. ✅ Suggested **one concrete improvement**
-8. ✅ Created the evaluation report file
+5. ✅ **Completed ALL 4 problem-solving challenges**
+6. ✅ **Recorded Speed Run time** (target: <60 seconds to "ready to code")
+7. ✅ Able to answer: "What is the Solid Score and what does it mean?"
+8. ✅ Verified **hydrated code snippets** in `gr context assemble`
+9. ✅ Suggested **one concrete improvement**
+10. ✅ Created the evaluation report file in the repo
 
 > The goal is to find EVERY rough edge so we can sand it down.

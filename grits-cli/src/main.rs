@@ -83,6 +83,9 @@ enum Commands {
         add_symbol: Vec<String>,
         #[arg(long, action = clap::ArgAction::Append)]
         remove_symbol: Vec<String>,
+        /// Auto-expand symbols to include their entire star neighborhood (adds highly-coupled symbols automatically)
+        #[arg(long)]
+        auto_expand: bool,
     },
     /// Edit an issue in your $EDITOR
     Edit {
@@ -139,7 +142,6 @@ enum Commands {
         #[arg(long)]
         assignee: Option<String>,
     },
-    /// Synchronize issues with git remote
     /// Show issue statistics
     Stats,
     /// Manage configuration settings
@@ -197,12 +199,19 @@ enum Commands {
         assignee: Option<String>,
     },
 
-    /// Quick update with fuzzy key matching (e.g., "stat:ip pri:1 +label:bug")
+    /// Quick update with fuzzy key matching.
+    ///
+    /// Shortcuts: stat: (ip/o/c/b), pri: (1-5), a: (assignee), +l: (add label), -l: (remove label)
+    ///
+    /// Examples:
+    ///   gr set stat:ip pri:1         (set status=in-progress, priority=1)
+    ///   gr set +l:urgent -l:done     (add urgent label, remove done label)
+    ///   gr set a:agent-name          (set assignee)
     Set {
         /// Issue ID (optional if focus is set via 'gr workon')
         #[arg(long)]
         id: Option<String>,
-        /// Changes in shorthand format
+        /// Changes in shorthand format (e.g., stat:ip pri:1 +l:bug)
         changes: Vec<String>,
     },
 
@@ -301,7 +310,7 @@ enum AnalysisCommands {
     Duplicates,
     /// Find issues related to a specific file
     Related { file: String },
-    /// Search issues using natural language
+    /// Search issues using natural language (prefer `gr issue search` instead)
     Search {
         query: String,
         #[arg(long, default_value_t = 10)]
@@ -673,6 +682,7 @@ fn main() -> anyhow::Result<()> {
             remove_dependency,
             add_symbol,
             remove_symbol,
+            auto_expand,
         } => {
             // Resolve ID from argument or focus file (sticky focus)
             let grits_dir = db_path.parent().unwrap();
@@ -816,13 +826,35 @@ fn main() -> anyhow::Result<()> {
                             }
                         }
 
-                        // Limit suggestions to top 5
+                        // Limit to top 5 related symbols
                         let suggestions: Vec<_> = related_symbols.into_iter().take(5).collect();
-                        if !suggestions.is_empty() {
+
+                        // If auto_expand is enabled, add all related symbols automatically
+                        // Otherwise, just suggest them
+                        if auto_expand {
+                            let mut auto_added_count = 0;
+                            for sym in &suggestions {
+                                if !issue.affected_symbols.contains(sym) {
+                                    issue.affected_symbols.push(sym.clone());
+                                    auto_added_count += 1;
+                                }
+                            }
+                            if auto_added_count > 0 {
+                                println!(
+                                    "\n⚡ Auto-expanded: Added {} related symbols",
+                                    auto_added_count
+                                );
+                                for sym in &suggestions {
+                                    println!("   + {}", sym);
+                                }
+                                updated = true;
+                            }
+                        } else if !suggestions.is_empty() {
                             println!("\n💡 Related symbols you may want to add:");
                             for sym in &suggestions {
                                 println!("   gr update --add-symbol \"{}\"", sym);
                             }
+                            println!("   (or use --auto-expand to add them automatically)");
                         }
 
                         // Find related issues that share affected_symbols with our neighbors
