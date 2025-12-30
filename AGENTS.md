@@ -90,6 +90,24 @@ gr context assemble --issue gr-abc123 --format json
 - Solid Score snapshot
 - Markdown or JSON format
 
+### 🚀 Context Bundle (NEW v2.5 - Agent Superpower)
+```bash
+# Get complete context bundle for an issue in one call
+gr context-bundle gr-abc123
+
+# JSON output for programmatic use
+gr context-bundle gr-abc123 --format json
+```
+
+**Output includes:**
+- Issue details (title, status, priority, labels, description)
+- Affected symbols list
+- Star neighborhoods for each affected symbol
+- Topology health (Solid Score, Betti numbers, triangles)
+
+> [!TIP]
+> **Why Context Bundle?** Reduces 4-5 separate commands to 1. Perfect for session handoff and issue pickup.
+
 > [!TIP]
 > **Why Mini Codebase?** Instead of loading entire files, extract only topologically-relevant symbols. A 2,000-line file becomes 50 focused lines.
 
@@ -169,11 +187,17 @@ gr refactor --undo --target src/store.rs
 
 ### Star Neighborhoods (Context Loading)
 ```bash
-# Get all connected code for a symbol
+# Get all connected code for a file (use FILE paths, not symbol paths)
 gr analysis star "src/utils.rs" --depth 2
 
 # Find feature volumes (tightly coupled clusters)
+# Can use file path OR project-wide from cache
 gr analysis volumes "src/engine.rs"
+gr analysis volumes  # Uses topology cache
+
+# Get PageRank hotspots (most connected symbols)
+gr analysis hotspots --limit 10
+gr analysis hotspots --format json
 ```
 
 ### Architectural Invariants
@@ -264,6 +288,8 @@ The extension now opens as a **full dashboard panel** with:
 | `gr workon` | `gr workon gr-abc` | Start work (branch + status) |
 | `gr set` | `gr set abc pri:1 stat:ip` | Fuzzy updates |
 | `gr refactor` | `gr refactor --apply` | Auto-fix cycles |
+| `gr context-bundle` | `gr context-bundle gr-abc` | Complete context bundle |
+| `gr onboard` | `gr onboard --non-interactive` | Initialize (agent-friendly) |
 
 ### Core Commands
 | Command | Arguments | Use Case |
@@ -277,8 +303,9 @@ The extension now opens as a **full dashboard panel** with:
 | Command | Purpose |
 |---------|---------|
 | `gr analysis rebuild` | Build topology cache |
-| `gr analysis star` | Get connected context |
-| `gr analysis volumes` | Find code clusters |
+| `gr analysis star <FILE>` | Get connected context (FILE path, not symbol) |
+| `gr analysis volumes [FILE]` | Find code clusters (optional file, uses cache) |
+| `gr analysis hotspots` | Get PageRank hotspots |
 | `gr analysis check-layers` | Verify architecture |
 | `gr analysis search` | BM25 natural language search |
 

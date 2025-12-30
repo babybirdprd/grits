@@ -2,187 +2,287 @@
 description: Evaluate the Grits experience from an AI agent perspective
 ---
 
-# Agent Experience Deep-Dive
+# Agent Experience Stress Test
 
-This workflow creates a **hands-on evaluation** of Grits. You will complete a real task using Grits, then analyze your experience to identify improvements.
+This workflow creates an **intensive hands-on evaluation** of Grits. You will complete multiple real tasks using every major Grits feature, then analyze your experience.
 
 > [!IMPORTANT]
-> **Do NOT create a new Git branch for this evaluation.** All work happens on the current branch using Grits' issue tracking only.
+> **Do NOT create a new Git branch for this evaluation.** All work happens on the current branch using Grits' issue tracking.
 
 ---
 
-## Phase 1: Setup (2 min)
+## Phase 1: Setup (3 min)
 
-### 1.1 Verify Grits Installation
+### 1.1 Fresh Start
 ```bash
-# Check Grits is working
-gr pulse
+# Verify OR initialize Grits
+gr pulse || gr onboard --non-interactive
 
-# If not initialized:
-gr onboard
+# Rebuild topology from scratch (watch the progress!)
+gr analysis rebuild
 ```
 
-### 1.2 Create Your Evaluation Issue
+### 1.2 Create Evaluation Tracking Issue
 ```bash
-# Create the tracking issue for this evaluation
-gr create "Agent Experience Evaluation - $(date +%Y-%m-%d)" \
-  -d "Hands-on QA evaluation following /agent-qa workflow" \
-  -t task -p 3
+# Create the master tracking issue
+gr create "Agent Stress Test - $(date +%Y-%m-%d)" \
+  -d "Comprehensive Grits stress test following /agent-qa workflow" \
+  -t epic -p 2
 
-# Lock focus to this issue (no ID needed for subsequent commands)
+# Lock focus
 gr workon <issue-id>
 ```
 
 ---
 
-## Phase 2: The Real Task (15-30 min)
+## Phase 2: The Gauntlet (30-45 min)
 
-**You must complete an actual task using Grits.** Choose ONE:
+**You MUST complete ALL of these tasks.** Document friction points as you go.
 
-### Option A: Bug Hunt
-1. Run `gr analysis rebuild` to build the topology cache
-2. Run `gr refactor` to find cycles in the codebase
-3. Investigate ONE cycle - use `gr analysis star <symbol>` to understand context
-4. Document your findings with `gr update --notes "Found cycle: ..."`
+### 2.1 Full Tour of Analysis Commands (10 min)
 
-### Option B: Code Understanding
-1. Pick a file you've never seen: `gr analysis star "path/to/file.rs" --depth 2`
-2. Use `gr context assemble --symbol <interesting_symbol>` to extract context
-3. Write a summary of what the code does
-4. Update issue: `gr update --notes "File X does: ..."`
-
-### Option C: Issue Triage
-1. Run `gr list` to see all open issues
-2. Run `gr ready` to find actionable work
-3. Pick an issue and run `gr inspect <id>` for full context
-4. Add symbols: `gr update <id> --add-symbol "path/to/related/file.rs"`
-
-### Option D: Architecture Review
-1. Create a `layers.yaml` if none exists (see examples/ in repo)
-2. Run `gr analysis check-layers --all`
-3. Document any layer violations found
-4. Use `gr analysis volumes` to find tightly coupled clusters
-
-**Document everything as you go with `gr update --notes`**
-
----
-
-## Phase 3: Experience Analysis (10 min)
-
-Now evaluate your experience. Be brutally honest.
-
-### 3.1 Friction Log
-
-Record every point where you got stuck, confused, or had to look something up:
-
-| Moment | What Happened | How You Resolved It | Suggested Fix |
-|--------|---------------|---------------------|---------------|
-| 1      |               |                     |               |
-| 2      |               |                     |               |
-| 3      |               |                     |               |
-
-### 3.2 Concept Validation
-
-**The "Latency Test"**: Compare navigation WITH and WITHOUT Grits.
-
-- **Without Grits**: How would you have found the same information? (grep? reading files? asking user?)
-- **With Grits**: Which commands saved time? Estimate: __% faster or slower
-
-**The "Aha Test"**: Did Grits reveal something you wouldn't have seen otherwise?
-
-Examples:
-- "The cycle detector showed me that ModuleA and ModuleB have a hidden circular dependency"
-- "Star neighborhood made me realize this 'utility' function is actually load-bearing"
-- "Solid Score dropped after my change, alerting me to architectural damage"
-
-### 3.3 Topology Insights
-
-| Metric | Value | Your Interpretation |
-|--------|-------|---------------------|
-| Solid Score | __% | |
-| Betti₀ (components) | __ | |
-| Betti₁ (cycles) | __ | |
-| Hottest symbol (PageRank) | __ | |
-
-Did the "simplicial" view (treating code as geometry) help or feel gimmicky?
-
-### 3.4 Session Handoff Test
-
-If you had to hand off to another agent RIGHT NOW:
-
-1. Would they find your issue with `gr pulse`?
-2. Would `gr inspect <your-issue>` give them full context?
-3. What's missing from the handoff?
-
----
-
-## Phase 4: Report Generation
-
-### 4.1 Create the Report
-
-Write your evaluation as a markdown file: `agent_experience_qa_v<VERSION>.md`
-
-Structure:
-```markdown
-# Deep Agent Experience Evaluation: Grits
-
-## 1. Task Completed
-[What you actually did]
-
-## 2. Friction Points
-[The moments that slowed you down]
-
-## 3. Topological Insights
-[What the Betti numbers / Solid Score / PageRank revealed]
-
-## 4. Workflow Ergonomics
-[AGENTS.md assessment, CLI usability]
-
-## 5. Session Handoff
-[How well does Grits preserve context?]
-
-## 6. Superpower Suggestion
-[One feature that would make Grits essential]
-
-## 7. Final Verdict
-[Indispensability Score: X/10]
-[One-sentence summary]
-```
-
-### 4.2 Sync Your Work
+Run EVERY analysis command below. For each, note if it worked as expected.
 
 ```bash
-# Update issue with your findings
-gr update --description "$(cat agent_experience_qa_v*.md)"
+# Star neighborhood - try with a real file
+gr analysis star "grits-core/src/lib.rs" --depth 2
 
-# Close the evaluation issue
-gr update --status closed
+# Star neighborhood - try with a symbol  
+gr analysis star "grits-core/src/lib.rs" --symbol "SqliteStore"
+
+# Volumes - with file
+gr analysis volumes "grits-core/src/topology/parser.rs"
+
+# Volumes - from cache (no file arg)
+gr analysis volumes
+
+# Hotspots - who are the big players?
+gr analysis hotspots --limit 10
+
+# Hotspots - JSON output
+gr analysis hotspots --format json --limit 5
+
+# Cycle detection
+gr refactor
+
+# Layer check (may not have config - that's ok, note the error)
+gr analysis check-layers --all
+
+# Search for something
+gr analysis search "dependency"
+
+# Topology diff (shows changes since last rebuild)
+gr analysis diff
+```
+
+Update your issue: `gr update --notes "Analysis tour complete. [friction notes here]"`
+
+### 2.2 Issue CRUD Gauntlet (10 min)
+
+Create, modify, link, and close issues rapidly.
+
+```bash
+# Create 3 child issues under your evaluation
+gr create "Child A: Test create flow" -t task -p 3
+gr create "Child B: Test update flow" -t bug -p 2  
+gr create "Child C: Test dependency flow" -t feature -p 4
+
+# Update one with various flags
+gr update --id <child-a-id> --status in-progress --priority 1 --add-label "stress-test"
+
+# Add a symbol to an issue
+gr update --id <child-b-id> --add-symbol "grits-core/src/wasm.rs"
+
+# Create a dependency chain: C depends on B, B depends on A
+gr update --id <child-b-id> --add-dependency <child-a-id>
+gr update --id <child-c-id> --add-dependency <child-b-id>
+
+# Use the shorthand 'set' command (fuzzy)
+gr set --id <child-a-id> stat:closed
+
+# Check ready issues - should show C is blocked
+gr ready
+
+# Quick triage
+gr workflow triage <child-b-id> <child-c-id> --status closed
+```
+
+### 2.3 Context Loading Challenge (10 min)
+
+Use context tools to understand unfamiliar code.
+
+```bash
+# Pick a file you've never read before
+# Try to understand it using ONLY Grits commands
+
+# First: Get its star neighborhood
+gr analysis star "grits-core/src/context.rs" --depth 1
+
+# Second: Use context-bundle on your main issue
+gr context-bundle <your-evaluation-issue-id>
+
+# Third: Use context assemble
+gr context assemble --symbols "grits-core/src/context.rs" --depth 2
+
+# Fourth: Inspect your issue
+gr inspect <your-evaluation-issue-id>
+
+# Fifth: Check pulse
+gr pulse
+```
+
+**Write a 2-sentence summary of what `context.rs` does**, using only info from Grits commands. Update: `gr update --notes "Context.rs does: ..."`
+
+### 2.4 Edge Cases & Error Handling (5 min)
+
+Deliberately try things that might break.
+
+```bash
+# Invalid issue ID
+gr show nonexistent-id
+
+# Missing topology cache (if you haven't rebuilt)
+rm .grits/topology.json 2>/dev/null
+gr analysis volumes
+
+# Rebuild to restore
+gr analysis rebuild
+
+# Empty search
+gr analysis search ""
+
+# Star on unsupported file type
+gr analysis star "Cargo.toml"
+
+# Update with no ID and no focus set
+gr workon --clear 2>/dev/null  # clear focus if this exists
+gr update --status closed  # should error or use focus
+```
+
+Note which errors are helpful vs confusing.
+
+---
+
+## Phase 3: Simulate Session Handoff (5 min)
+
+**Test the handoff scenario from scratch.**
+
+1. Pretend you are a NEW agent with zero context
+2. Run ONLY `gr pulse`
+3. Can you figure out what's in-progress?
+4. Run `gr inspect <suggested-issue>` 
+5. Run `gr context-bundle <suggested-issue>`
+6. Is there enough info to continue the work?
+
+---
+
+## Phase 4: Metrics Collection
+
+### 4.1 Capture Final Topology State
+```bash
+gr analysis rebuild  # Fresh scan
+gr pulse  # Get Solid Score
+
+# Record these values:
+gr analysis hotspots --limit 3
+```
+
+### 4.2 Fill in the Metrics Table
+
+| Metric | Value | Notes |
+|--------|-------|-------|
+| Solid Score | ___ % | |
+| Betti₀ (components) | ___ | |
+| Betti₁ (cycles) | ___ | |
+| Betti₂ (voids) | ___ | |
+| Triangles | ___ | |
+| Total Nodes | ___ | |
+| Total Edges | ___ | |
+| Top 3 Hotspots | 1. ___ 2. ___ 3. ___ | |
+| Issues Created | ___ | |
+| Commands Run | ~___ | |
+
+---
+
+## Phase 5: Report Generation
+
+Create `agent_experience_qa_v<VERSION>.md` with this structure:
+
+```markdown
+# Deep Agent Experience Evaluation: Grits v<VERSION>
+
+**Date**: YYYY-MM-DD
+**Tracking Issue**: <issue-id>
+**Commands Run**: ~N
+
+---
+
+## 1. Task Completed
+[Summary of the gauntlet - which parts you completed]
+
+## 2. Friction Points
+| # | Moment | What Happened | Resolution | Suggested Fix |
+|---|--------|---------------|------------|---------------|
+| 1 | | | | |
+| 2 | | | | |
+(Continue for ALL friction points)
+
+## 3. Error Message Audit
+| Command | Error | Was it Helpful? | Suggestion |
+|---------|-------|-----------------|------------|
+| | | Yes/No/Partial | |
+
+## 4. Topological Insights
+[Metrics table + interpretation. Did geometry help?]
+
+## 5. Workflow Ergonomics
+[AGENTS.md assessment, CLI usability, flags, shortcuts]
+
+## 6. Session Handoff
+[Could a fresh agent pick up your work? What's missing?]
+
+## 7. Superpower Suggestion
+[ONE feature that would make Grits 10x more valuable]
+
+## 8. Final Verdict
+**Indispensability Score: X/10**
+[One-sentence summary]
+
+## Evaluation Checklist
+- [ ] Ran ALL analysis commands
+- [ ] Completed issue CRUD gauntlet
+- [ ] Tested context loading
+- [ ] Tested error cases
+- [ ] Simulated handoff
+- [ ] Captured all metrics
+- [ ] Created this report
 ```
 
 ---
 
-## Evaluation Checklist
+## Phase 6: Cleanup
 
-Before closing, verify:
+```bash
+# Update your tracking issue with the report
+gr update --description "[Summary of findings - see agent_experience_qa_v*.md]"
+gr update --status closed
 
-- [ ] Completed at least ONE real task (Phase 2)
-- [ ] Documented friction points as you encountered them
-- [ ] Recorded Solid Score and Betti numbers
-- [ ] Tested handoff scenario
-- [ ] Suggested at least one "superpower" feature
-- [ ] Created `agent_experience_qa_v<VERSION>.md` report file
-- [ ] Synced issue with findings
+# Export for version control
+gr export
+```
 
 ---
 
-## Key Questions for Product Improvement
+## Success Criteria
 
-Your evaluation should help answer:
+You have successfully stress-tested Grits if:
 
-1. **Discoverability**: Could you figure out what to do without reading docs?
-2. **Error Messages**: When commands failed, did you understand why?
-3. **Documentation**: Is AGENTS.md sufficient? What's missing?
-4. **CLI Design**: Any commands that feel "off" (wrong flags, confusing names)?
-5. **Topology Value**: Is the "code as geometry" concept actually useful or just novel?
+1. ✅ Ran **every command** in the Analysis Tour
+2. ✅ Created, updated, and linked **at least 3 issues**
+3. ✅ Found **at least 3 friction points**
+4. ✅ Identified **at least 1 unhelpful error message**
+5. ✅ Able to answer: "What is the Solid Score and what does it mean?"
+6. ✅ Suggested **one concrete improvement**
+7. ✅ Created the evaluation report file
 
-> The goal is to find the friction so we can eliminate it.
+> The goal is to find EVERY rough edge so we can sand it down.

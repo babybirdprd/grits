@@ -225,6 +225,15 @@ enum Commands {
         #[arg(long)]
         undo: bool,
     },
+
+    /// Get complete context bundle for an issue (agent superpower)
+    ContextBundle {
+        /// Issue ID to bundle context for
+        id: String,
+        /// Output format: markdown or json
+        #[arg(long, default_value = "markdown")]
+        format: String,
+    },
 }
 
 #[derive(Subcommand)]
@@ -287,9 +296,10 @@ enum AnalysisCommands {
         /// File path to validate
         file: String,
     },
-    /// Get star neighborhood for a symbol (all connected context)
+    /// Get star neighborhood for a symbol (all connected context).
+    /// NOTE: Provide a FILE path (e.g. "src/main.rs"), not a symbol path.
     Star {
-        /// File path to analyze
+        /// File path to analyze (e.g. "src/store.rs")
         file: String,
         /// Symbol name to get star for (optional, uses file if not specified)
         #[arg(long)]
@@ -300,8 +310,8 @@ enum AnalysisCommands {
     },
     /// Find all feature volumes (tightly coupled code clusters)
     Volumes {
-        /// File path to analyze
-        file: String,
+        /// File path to analyze (optional - uses topology cache if not provided)
+        file: Option<String>,
     },
     /// Check layer architecture invariants
     CheckLayers {
@@ -342,6 +352,15 @@ enum AnalysisCommands {
         orphans: bool,
         /// Directory to scan (default: current directory)
         dir: Option<String>,
+    },
+    /// Get PageRank hotspots (most connected/important symbols)
+    Hotspots {
+        /// Number of symbols to show (default: 10)
+        #[arg(long, default_value_t = 10)]
+        limit: usize,
+        /// Output format: table or json
+        #[arg(long, default_value = "table")]
+        format: String,
     },
 }
 
@@ -1542,32 +1561,47 @@ fn main() -> anyhow::Result<()> {
             }
             AnalysisCommands::Volumes { file } => {
                 use grits_core::topology::{
-                    analysis::TopologicalAnalysis, parser::CodeParser, SymbolGraph,
+                    analysis::TopologicalAnalysis, cache::TopologyCache, parser::CodeParser,
+                    SymbolGraph,
                 };
 
-                let lang = if file.ends_with(".rs") {
-                    "rust"
-                } else if file.ends_with(".ts") {
-                    "typescript"
-                } else if file.ends_with(".js") {
-                    "javascript"
+                let (graph, source_name) = if let Some(file_path) = file.as_ref() {
+                    let lang = if file_path.ends_with(".rs") {
+                        "rust"
+                    } else if file_path.ends_with(".ts") {
+                        "typescript"
+                    } else if file_path.ends_with(".js") {
+                        "javascript"
+                    } else {
+                        println!("Skipped: Unsupported language");
+                        return Ok(());
+                    };
+
+                    let content = std::fs::read_to_string(file_path)
+                        .context(format!("Failed to read file: {}", file_path))?;
+
+                    let mut graph = SymbolGraph::new();
+                    let mut parser = CodeParser::new(lang).context("Failed to create parser")?;
+                    parser
+                        .parse_file(file_path, &content, &mut graph)
+                        .context("Failed to parse")?;
+                    (graph, file_path.clone())
                 } else {
-                    println!("Skipped: Unsupported language");
-                    return Ok(());
+                    // Load from cache
+                    let cache_path = db_path.parent().unwrap().join("topology.json");
+                    if !cache_path.exists() {
+                        eprintln!(
+                            "No cache found. Provide a file or run 'gr analysis rebuild' first."
+                        );
+                        return Ok(());
+                    }
+                    let cache = TopologyCache::load(&cache_path)?;
+                    (cache.graph, "Project Topology".to_string())
                 };
-
-                let content = std::fs::read_to_string(&file)
-                    .context(format!("Failed to read file: {}", file))?;
-
-                let mut graph = SymbolGraph::new();
-                let mut parser = CodeParser::new(lang).context("Failed to create parser")?;
-                parser
-                    .parse_file(&file, &content, &mut graph)
-                    .context("Failed to parse")?;
 
                 let analysis = TopologicalAnalysis::analyze(&graph);
 
-                println!("Feature Volumes in: {}", file);
+                println!("Feature Volumes in: {}", source_name);
                 println!("  Total Triangles: {}", analysis.triangle_count);
                 println!("  Total Volumes: {}", analysis.feature_volumes.len());
 
@@ -1936,6 +1970,36 @@ fn main() -> anyhow::Result<()> {
                     "✅ Shaved {} orphans. Topology is now cleaner.",
                     orphans_list.len()
                 );
+            }
+            AnalysisCommands::Hotspots { limit, format } => {
+                use grits_core::topology::{analysis::TopologicalAnalysis, cache::TopologyCache};
+
+                let cache_path = db_path.parent().unwrap().join("topology.json");
+                if !cache_path.exists() {
+                    eprintln!("No cache found. Run 'gr analysis rebuild' first.");
+                    return Ok(());
+                }
+
+                let cache = TopologyCache::load(&cache_path)?;
+                let ranks = TopologicalAnalysis::weighted_pagerank(&cache.graph, 0.85, 50);
+
+                let mut ranked: Vec<_> = ranks.into_iter().collect();
+                ranked.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
+
+                if format == "json" {
+                    let hotspots: Vec<_> = ranked
+                        .iter()
+                        .take(limit)
+                        .map(|(id, score)| serde_json::json!({"id": id, "pagerank": score}))
+                        .collect();
+                    println!("{}", serde_json::to_string_pretty(&hotspots)?);
+                } else {
+                    println!("🔥 Top {} PageRank Hotspots:", limit);
+                    println!("{:-<60}", "");
+                    for (i, (id, score)) in ranked.iter().take(limit).enumerate() {
+                        println!("  {}. {} ({:.4})", i + 1, id, score);
+                    }
+                }
             }
         },
         Commands::Workflow { command } => match command {
@@ -2656,6 +2720,121 @@ fn main() -> anyhow::Result<()> {
             }
 
             println!("{}", serde_json::to_string_pretty(&result)?);
+        }
+        Commands::ContextBundle { id, format } => {
+            use grits_core::topology::{analysis::TopologicalAnalysis, cache::TopologyCache};
+
+            let issue = store
+                .get_issue(&id)?
+                .ok_or_else(|| anyhow::anyhow!("Issue not found: {}", id))?;
+
+            // Load topology if available
+            let cache_path = db_path.parent().unwrap().join("topology.json");
+            let topology_info = if cache_path.exists() {
+                let cache = TopologyCache::load(&cache_path)?;
+                let analysis = TopologicalAnalysis::analyze(&cache.graph);
+
+                // Gather star neighborhoods for affected symbols
+                let stars: Vec<_> = issue
+                    .affected_symbols
+                    .iter()
+                    .map(|symbol| {
+                        let star = TopologicalAnalysis::get_star(&cache.graph, symbol, 1);
+                        (symbol.clone(), star)
+                    })
+                    .collect();
+
+                Some((analysis, stars))
+            } else {
+                None
+            };
+
+            if format == "json" {
+                // Output structured JSON
+                let bundle = serde_json::json!({
+                    "issue": {
+                        "id": issue.id,
+                        "title": issue.title,
+                        "description": issue.description,
+                        "status": issue.status,
+                        "priority": issue.priority,
+                        "type": issue.issue_type,
+                        "labels": issue.labels,
+                        "affected_symbols": issue.affected_symbols,
+                    },
+                    "topology": topology_info.as_ref().map(|(analysis, stars)| {
+                        serde_json::json!({
+                            "solid_score": analysis.solid_score().normalized,
+                            "node_count": analysis.node_count,
+                            "edge_count": analysis.edge_count,
+                            "betti_0": analysis.betti_0,
+                            "betti_1": analysis.betti_1,
+                            "betti_2": analysis.betti_2,
+                            "triangles": analysis.triangle_count,
+                            "stars": stars.iter().map(|(sym, star)| {
+                                serde_json::json!({
+                                    "symbol": sym,
+                                    "neighbors": star.neighbors,
+                                    "edges": star.edges.iter().map(|(f, t, r)| {
+                                        serde_json::json!({"from": f, "to": t, "relation": r})
+                                    }).collect::<Vec<_>>(),
+                                })
+                            }).collect::<Vec<_>>(),
+                        })
+                    }),
+                });
+                println!("{}", serde_json::to_string_pretty(&bundle)?);
+            } else {
+                // Human-readable markdown output
+                println!("# Context Bundle: {}\n", issue.id);
+                println!("## Issue Details\n");
+                println!("- **Title**: {}", issue.title);
+                println!("- **Status**: {}", issue.status);
+                println!("- **Priority**: {}", issue.priority);
+                println!("- **Type**: {}", issue.issue_type);
+                if !issue.labels.is_empty() {
+                    println!("- **Labels**: {}", issue.labels.join(", "));
+                }
+                if !issue.affected_symbols.is_empty() {
+                    println!(
+                        "- **Affected Symbols**: {}",
+                        issue.affected_symbols.join(", ")
+                    );
+                }
+                println!("\n### Description\n\n{}\n", issue.description);
+
+                if let Some((analysis, stars)) = topology_info {
+                    println!("## Topology Health\n");
+                    println!(
+                        "- **Solid Score**: {:.1}%",
+                        analysis.solid_score().normalized * 100.0
+                    );
+                    println!("- **Nodes**: {}", analysis.node_count);
+                    println!("- **Edges**: {}", analysis.edge_count);
+                    println!("- **Cycles (Betti₁)**: {}", analysis.betti_1);
+                    println!("- **Triangles**: {}", analysis.triangle_count);
+
+                    if !stars.is_empty() {
+                        println!("\n## Star Neighborhoods\n");
+                        for (sym, star) in &stars {
+                            println!("### `{}`\n", sym);
+                            if star.neighbors.is_empty() {
+                                println!("  No neighbors found.\n");
+                            } else {
+                                for neighbor in &star.neighbors {
+                                    println!("  - {}", neighbor);
+                                }
+                                println!();
+                            }
+                        }
+                    }
+                } else {
+                    println!("## Topology\n");
+                    println!(
+                        "_No topology cache available. Run `gr analysis rebuild` to enable._\n"
+                    );
+                }
+            }
         }
     }
 
