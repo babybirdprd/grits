@@ -106,14 +106,10 @@ pub fn get_star(graph_data: &SymbolGraph, node_id: &str, depth: usize) -> StarNe
 }
 
 // Keeping parser, scanner, cache, workspace as they are useful for basic graph building
-#[cfg(not(target_arch = "wasm32"))]
 pub mod parser;
 
-#[cfg(not(target_arch = "wasm32"))]
 pub mod scanner;
 
-#[cfg(not(target_arch = "wasm32"))]
 pub mod cache;
 
-#[cfg(not(target_arch = "wasm32"))]
 pub mod workspace;
