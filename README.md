@@ -1,17 +1,14 @@
 # Grits
 
-A Git-native, local-first issue tracker with a **Twin Engine** architecture:        
-- 🤖 **Agent Engine**: MCP server + agent-native CLI (inspect, workon, pulse, refactor)
-- 👀 **Grits Studio**: VS Code extension with 3D topology visualization + command center UI
+A Git-native, local-first issue tracker designed for **AI Agents** and humans.
 
-**Status**: v2.6.0 — "Semantic Hydration"
+**Status**: v2.7.1 — "Graph-Lite"
 
 ## Quick Start
 
 ### Prerequisites
 - Rust (latest stable)
 - Git
-- Node.js 18+ (for VS Code extension)
 
 ### Install CLI
 
@@ -29,181 +26,80 @@ cd your-project
 gr onboard
 ```
 
-## v2.0 Highlights
+## Core Workflow
 
-### 🚀 Agent-Native Commands
-
+### 1. Check Pulse
+Hydrate your session (or your agent's context) with the current project status.
 ```bash
-# Session hydration - get project context instantly
 gr pulse
-
-# One-shot context for any target
-gr inspect gr-abc123   # Issue
-gr inspect src/main.rs # File
-
-# Start working (creates branch + sets status + outputs context)
-gr workon gr-abc123
-
-# Fuzzy shorthand updates  
-gr set gr-abc pri:1 stat:ip +l:urgent
-
-# Auto-fix dependency cycles
-gr refactor --apply --cycle 0
 ```
 
-### 🔬 Solid Graph Topology
-
+### 2. Create Issue
 ```bash
-# Build topology cache (Tree-sitter: Rust, TS, JS, Python, Go)
-gr analysis rebuild
-
-# Compute Solid Score (architectural health metric)
-gr stats --topology
-
-# Detect and auto-fix cycles
-gr refactor                    # Show cycles + suggestions
-gr refactor --apply --cycle 0  # Apply fix
-gr refactor --undo --target f  # Restore from backup
+gr create "Fix login bug" --type bug --priority 1
 ```
 
-| **Betti Numbers** | B₀=components, B₁=cycles, B₂=voids |
-| **Solid Score** | Unified health metric (0-100%) |
-| **Edge Persistence** | Identify weakest links in cycles |
-| **Star Neighborhoods** | Context loading for AI editing |
-| **Mini Codebase** | Semantic tree-shaking for agents |
-| **Monorepo Support** | Cargo, pnpm, turbo, go.work detection |
-
-### 🧠 Mini Codebase (NEW)
-
+### 3. Work on Issue
+Sets the "sticky focus" and updates status to `in-progress`.
 ```bash
-# Assemble focused context from topology
-gr context assemble --issue gr-abc123
-
-# Specify symbols directly
-gr context assemble --symbols "store.rs::Store" --depth 2 --format json
+gr workon <issue-id>
 ```
 
-**Why?** Instead of loading entire files, extract only the topologically-relevant symbols. A 2,000-line file becomes 50 focused lines, now with **hydrated code snippets** for instant context.
+### 4. Context Awareness (Star Neighborhood)
+Find files topologically connected to your target.
+```bash
+gr star src/auth.rs
+```
 
-### 📺 Grits Studio (VS Code)
+### 5. Assemble Context
+Bundle relevant code into a Markdown format for LLM analysis.
+```bash
+gr context assemble --issue <issue-id>
+```
 
-The extension opens as a **command center** with:
+## CLI Reference
 
-- **Left Sidebar**: Icon-based navigation (Linear/Jira style)
-- **Top Header**: Live stats (In Progress, Blocked, Solid Score)
-- **3D Topology View**: React Three Fiber + Node Inspector with "Copy for Agent" button
-- **Focus View**: Blocked items prominently displayed with quick actions
-- **List/Kanban/Graph**: Standard issue management
+| Command | Purpose |
+|---------|---------|
+| `gr list` | List issues (filter by status, assignee, etc.) |
+| `gr show <id>` | Show issue details |
+| `gr update` | Update issue fields |
+| `gr close <id>` | Close an issue |
+| `gr pulse` | Session hydration (Focus + Blockers + Recent Commits) |
+| `gr workon <id>` | Set focus and status |
+| `gr star <file>` | Get connected files (imports/calls) |
+| `gr context assemble` | Generate mini-codebase from focus or symbols |
+| `gr export` | Export to JSONL (for git sync) |
+| `gr import` | Import from JSONL |
+| `gr stats` | Simple issue statistics |
 
 ---
 
-## Twin Engine Architecture
+## Agent Skills
 
-### 🔗 Tethered Sync
-- **SQLite** (`.grits/grits.db`) — Fast local queries
-- **JSONL** (`.grits/issues.jsonl`) — Git-versioned, human-readable
-- All commands auto-sync between engines
+Grits exposes its functionality as a standardized "Agent Skill" for AI agents. This allows agents to natively discover and utilize Grits for task management and context retrieval.
 
-### 🤖 Agent Engine (MCP Server)
+- **Skill Definition**: [.agent/skills/grits/SKILL.md](.agent/skills/grits/SKILL.md)
+- **Standard**: Follows the [Agent Skills](https://agentskills.io) open specification.
 
-```bash
-gr serve-mcp
-```
-
-**Antigravity Config** (`.vscode/mcp.json`):
-```json
-{
-    "servers": {
-        "grits": {
-            "command": "gr",
-            "args": ["serve-mcp"],
-            "env": { "GRITS_PROJECT_ROOT": "${workspaceFolder}" }
-        }
-    }
-}
-```
-
-**16 MCP Tools:**
-| Category | Tools |
-|----------|-------|
-| CRUD | `list_issues`, `create_issue`, `update_issue`, `close_issue`, `get_issue` |
-| Search | `search_issues`, `find_related_issues`, `detect_duplicates` |
-| Strategic | `get_next_task`, `summarize_sprint`, `cleanup_stale` |
-| Context | `suggest_issue_for_error`, `infer_issue_from_diff` |
-
----
-
-## CLI Reference (v2.7.1)
-
-### Agent-Native (NEW)
-| Command | Purpose |
-|---------|---------|
-| `gr pulse` | Session hydration |
-| `gr inspect <target>` | One-shot context |
-| `gr workon <id>` | Start work (branch + status) |
-| `gr workon --clear` | Clear focus (v2.7.1) |
-| `gr set <id> <changes>` | Fuzzy updates |
-| `gr refactor` | Auto-fix cycles |
-| `gr memo attach` | Persist symbol notes |
-| `gr issue search` | Search issues (v2.7.1) |
-
-### Core
-| Command | Purpose |
-|---------|---------|
-| `gr create` | Create issue |
-| `gr update` | Update issue (with auto-suggestions) |
-| `gr list` | List issues |
-| `gr ready` | Actionable issues |
-| `gr sync` | Git sync |
-
-### Analysis
-| Command | Purpose |
-|---------|---------|
-| `gr analysis rebuild` | Build topology cache |
-| `gr analysis star <sym>` | Star neighborhood (fuzzy matching) |
-| `gr analysis volumes <file>` | Feature clusters |
-| `gr analysis check-layers` | Architectural invariants |
-| `gr analysis search <query>` | BM25 search |
-| `gr analysis path <s1> <s2>` | Shortest path (fuzzy matching) |
-
-### Context (NEW v2.3)
-| Command | Purpose |
-|---------|---------|
-| `gr context assemble` | Mini codebase for agents |
-| `gr context error` | Find issues by error message |
-| `gr context diff` | Infer issue from git diff |
-
----
-
-## Project Structure
-
-```
-grits/
-├── grits-core/           # Core library (WASM-compatible)
-│   └── src/topology/     # Solid Graph analysis
-│       ├── analysis.rs   # Betti numbers, PageRank, persistence
-│       ├── refactor.rs   # Auto-fix cycle mutations
-│       └── workspace.rs  # Monorepo detection
-├── grits-cli/            # CLI + MCP server
-├── extension/            # VS Code extension
-│   └── webview/          # React + Three.js dashboard
-└── .agent/workflows/     # Agent workflow rules
-```
+To use this skill with a compatible agent (e.g., in a browser environment or agent runner), point the agent to the `.agent/skills/grits` directory.
 
 ---
 
 ## Documentation
 
 - [AGENTS.md](AGENTS.md): Comprehensive agent guide
-- [docs/cli_usage.md](docs/cli_usage.md): Full command reference
-- [docs/architecture.md](docs/architecture.md): Twin Engine design
+- [TASK.md](TASK.md): Current strategic plan
 
-## Credits
+## Architecture
 
-Inspired by [Beads](https://github.com/steveyegge/beads) by Steve Yegge — 
-"A memory upgrade for your coding agent."
+**Twin Engine**:
+- **SQLite** (`.grits/grits.db`) — Fast local queries.
+- **JSONL** (`.grits/issues.jsonl`) — Git-versioned source of truth.
 
-Based on the ["Solid Graph" philosophy](https://arxiv.org/html/2512.19736v1) from algebraic topology.
+**Graph-Lite**:
+- Uses a lightweight AST parser to build a dependency graph.
+- Provides "Star Neighborhoods" (connected files) to agents without heavy analysis.
 
 ## License
 
