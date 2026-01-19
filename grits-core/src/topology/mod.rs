@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Symbol {
@@ -56,8 +56,56 @@ impl SymbolGraph {
     }
 }
 
-pub mod analysis;
+/// Star neighborhood - all nodes connected to a center node
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct StarNeighborhood {
+    pub center: String,
+    pub neighbors: Vec<String>,
+    pub edges: Vec<(String, String, String)>, // (from, to, relation)
+    pub depth: usize,
+}
 
+pub fn get_star(graph_data: &SymbolGraph, node_id: &str, depth: usize) -> StarNeighborhood {
+    let mut neighbors = HashSet::new();
+    let mut edges = Vec::new();
+    let mut current_level = HashSet::new();
+    current_level.insert(node_id.to_string());
+    let mut visited = HashSet::new();
+
+    // Mark start node as visited so we don't include it in neighbors
+    visited.insert(node_id.to_string());
+
+    for _ in 0..depth {
+        let mut next_level = HashSet::new();
+
+        for current in &current_level {
+            for (from, to, edge) in &graph_data.edges {
+                if from == current && !visited.contains(to) {
+                    neighbors.insert(to.clone());
+                    next_level.insert(to.clone());
+                    visited.insert(to.clone());
+                    edges.push((from.clone(), to.clone(), edge.relation.clone()));
+                }
+                if to == current && !visited.contains(from) {
+                    neighbors.insert(from.clone());
+                    next_level.insert(from.clone());
+                    visited.insert(from.clone());
+                    edges.push((from.clone(), to.clone(), edge.relation.clone()));
+                }
+            }
+        }
+        current_level = next_level;
+    }
+
+    StarNeighborhood {
+        center: node_id.to_string(),
+        neighbors: neighbors.into_iter().collect(),
+        edges,
+        depth,
+    }
+}
+
+// Keeping parser, scanner, cache, workspace as they are useful for basic graph building
 #[cfg(not(target_arch = "wasm32"))]
 pub mod parser;
 
@@ -68,10 +116,4 @@ pub mod scanner;
 pub mod cache;
 
 #[cfg(not(target_arch = "wasm32"))]
-pub mod incremental;
-
-#[cfg(not(target_arch = "wasm32"))]
 pub mod workspace;
-
-#[cfg(not(target_arch = "wasm32"))]
-pub mod refactor;

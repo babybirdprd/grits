@@ -1,7 +1,5 @@
 use crate::fs::FileSystem;
 use crate::merge::merge3way;
-#[cfg(not(target_arch = "wasm32"))]
-use crate::topology::{SymbolGraph, parser::CodeParser};
 use crate::{GitOps, Store};
 use anyhow::{bail, Context, Result};
 use std::path::Path;
@@ -123,105 +121,6 @@ pub fn run_sync(
     store
         .import_from_jsonl(jsonl_path, fs)
         .context("Import failed")?;
-
-    // 7. Topology Update (Solid Graph)
-    // We run this after import so we have the latest issues.
-    #[cfg(not(target_arch = "wasm32"))]
-    {
-        update_topology(store, git_root)?;
-    }
-
-    Ok(())
-}
-
-#[cfg(not(target_arch = "wasm32"))]
-fn update_topology(store: &mut impl Store, git_root: &Path) -> Result<()> {
-    tracing::info!("Updating code topology...");
-    // 1. Scan files
-    // For simplicity, we scan all tracked files (or a subset)
-    // In a real incremental system, we'd use git diff or dirty_issues
-    // For this implementation, let's just scan files referenced by issues or all small source files
-    // But since we want "affected_symbols", we should scan everything or at least what issues touch.
-    // Let's iterate issues, see if they claim files (via frontmatter or references?)
-    // The requirement says "Issue is a Simplex... that encapsulates a specific subgraph".
-    // Currently, Issue doesn't explicitly list files except maybe in description.
-    // BUT, we added `affected_symbols`.
-    // Let's assume we want to populate `affected_symbols` and `solid_volume` for all issues.
-    // Wait, how does an issue KNOW which files it owns?
-    // "An Issue is... a Simplex (a volume) that encapsulates a specific subgraph of code."
-    // This implies we need to infer it or the user sets it.
-    // If the user didn't set it, maybe we use "Context" tools to find related files?
-    // For this "Solid Graph" MVP, let's focus on calculating the global graph and checking if issues define a volume.
-    // If an issue has no volume, we try to find one?
-    // Or maybe we just build the graph of the whole repo so `validate_architectural_change` is fast?
-    // The prompt says: "Hook SymbolGraph updates into sync.rs (update graph when files change)."
-
-    // Let's build a global graph of the repo.
-    let mut graph = SymbolGraph::new();
-
-    // Walk directory
-    for entry in walkdir::WalkDir::new(git_root).into_iter().filter_map(|e| e.ok()) {
-        if entry.file_type().is_file() {
-            let path = entry.path();
-            let ext = path.extension().and_then(|s| s.to_str()).unwrap_or("");
-            let lang = match ext {
-                "rs" => "rust",
-                "ts" | "tsx" => "typescript",
-                _ => continue,
-            };
-
-            if let Ok(content) = std::fs::read_to_string(path) {
-                // Determine relative path for ID
-                let rel_path = path.strip_prefix(git_root).unwrap_or(path).to_string_lossy();
-                if let Ok(mut parser) = CodeParser::new(lang) {
-                    let _ = parser.parse_file(&rel_path, &content, &mut graph);
-                }
-            }
-        }
-    }
-
-    // Now we have a global graph.
-    // We should update issues that claim to cover certain symbols or files.
-    // If an issue has `affected_symbols`, we can compute its `solid_volume`.
-    // If it has none, we leave it.
-
-    let issues = store.list_issues(None, None, None, None, None, None)?;
-    for mut issue in issues {
-        if !issue.affected_symbols.is_empty() {
-             // Build subgraph
-             // Simplified: just include the nodes and edges between them?
-             // Or include neighbors?
-             // "encapsulates a specific subgraph"
-             // Let's take the induced subgraph on affected_symbols + immediate neighbors
-             // For now, strict induced subgraph on affected_symbols to avoid explosion
-
-             let mut sub_nodes = std::collections::HashMap::new();
-             let mut sub_edges = Vec::new();
-
-             for sym_id in &issue.affected_symbols {
-                 if let Some(sym) = graph.nodes.get(sym_id) {
-                     sub_nodes.insert(sym_id.clone(), sym.clone());
-                 }
-             }
-
-             for (from, to, edge) in &graph.edges {
-                 if sub_nodes.contains_key(from) && sub_nodes.contains_key(to) {
-                     sub_edges.push((from.clone(), to.clone(), edge.clone()));
-                 }
-             }
-
-             let volume = SymbolGraph {
-                 nodes: sub_nodes,
-                 edges: sub_edges,
-             };
-
-             if let Ok(json) = serde_json::to_string(&volume) {
-                 issue.solid_volume = Some(json);
-                 issue.is_solid = true;
-                 let _ = store.update_issue(&issue);
-             }
-        }
-    }
 
     Ok(())
 }

@@ -4,7 +4,6 @@ pub mod merge;
 pub mod models;
 pub mod search;
 pub mod store;
-pub mod strategic;
 pub mod sync;
 pub mod topology;
 pub mod util;

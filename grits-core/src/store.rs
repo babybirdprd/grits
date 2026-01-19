@@ -83,10 +83,7 @@ pub mod sqlite_impl {
                     deleted_by TEXT DEFAULT '',
                     delete_reason TEXT DEFAULT '',
                     original_type TEXT DEFAULT '',
-                    affected_symbols TEXT DEFAULT '',
-                    solid_volume TEXT,
-                    topology_hash TEXT DEFAULT '',
-                    is_solid BOOLEAN DEFAULT 0
+                    affected_symbols TEXT DEFAULT ''
                 );
 
                 CREATE TABLE IF NOT EXISTS labels (
@@ -144,7 +141,7 @@ pub mod sqlite_impl {
                     created_at, updated_at, closed_at, external_ref,
                     sender, ephemeral, replies_to, relates_to, duplicate_of, superseded_by,
                     deleted_at, deleted_by, delete_reason, original_type,
-                    affected_symbols, solid_volume, topology_hash, is_solid
+                    affected_symbols
                 FROM issues
                 ORDER BY id",
             )?;
@@ -209,9 +206,6 @@ pub mod sqlite_impl {
                     comments: comments_map.get(&id).cloned().unwrap_or_default(),
 
                     affected_symbols,
-                    solid_volume: row.get(27).ok(),
-                    topology_hash: row.get(28).unwrap_or_default(),
-                    is_solid: row.get(29).unwrap_or(false),
                 })
             })?;
 
@@ -325,7 +319,7 @@ pub mod sqlite_impl {
                     sender = ?17, ephemeral = ?18, replies_to = ?19, relates_to = ?20,
                     duplicate_of = ?21, superseded_by = ?22,
                     deleted_at = ?23, deleted_by = ?24, delete_reason = ?25, original_type = ?26,
-                    affected_symbols = ?27, solid_volume = ?28, topology_hash = ?29, is_solid = ?30
+                    affected_symbols = ?27
                 WHERE id = ?1",
                 params![
                     &issue.id,
@@ -355,9 +349,6 @@ pub mod sqlite_impl {
                     &issue.delete_reason,
                     &issue.original_type,
                     affected_symbols_json,
-                    &issue.solid_volume,
-                    &issue.topology_hash,
-                    issue.is_solid,
                 ],
             )?;
 
@@ -424,7 +415,7 @@ pub mod sqlite_impl {
                     created_at, updated_at, closed_at, external_ref,
                     sender, ephemeral, replies_to, relates_to, duplicate_of, superseded_by,
                     deleted_at, deleted_by, delete_reason, original_type,
-                    affected_symbols, solid_volume, topology_hash, is_solid
+                    affected_symbols
                 FROM issues
                 WHERE id LIKE ?1
                 LIMIT 1",
@@ -539,9 +530,6 @@ pub mod sqlite_impl {
                 dependencies: deps,
                 comments,
                 affected_symbols,
-                solid_volume: row.get(27).ok(),
-                topology_hash: row.get(28).unwrap_or_default(),
-                is_solid: row.get(29).unwrap_or(false),
             }))
         }
 
@@ -652,9 +640,6 @@ pub mod sqlite_impl {
                     dependencies: Vec::new(),
                     comments: Vec::new(),
                     affected_symbols,
-                    solid_volume: None,
-                    topology_hash: String::new(),
-                    is_solid: false,
                 })
             })?;
 
@@ -692,12 +677,12 @@ pub mod sqlite_impl {
                         created_at, updated_at, closed_at, external_ref,
                         sender, ephemeral, replies_to, relates_to, duplicate_of, superseded_by,
                         deleted_at, deleted_by, delete_reason, original_type,
-                        affected_symbols, solid_volume, topology_hash, is_solid
+                        affected_symbols
                     )
                     VALUES (
                         ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12,
                         ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21, ?22,
-                        ?23, ?24, ?25, ?26, ?27, ?28, ?29, ?30
+                        ?23, ?24, ?25, ?26, ?27
                     )",
                     params![
                         &issue.id,
@@ -727,9 +712,6 @@ pub mod sqlite_impl {
                         &issue.delete_reason,
                         &issue.original_type,
                         affected_symbols_json,
-                        &issue.solid_volume,
-                        &issue.topology_hash,
-                        issue.is_solid,
                     ],
                 )?;
 
@@ -825,12 +807,12 @@ pub mod sqlite_impl {
                     created_at, updated_at, closed_at, external_ref,
                     sender, ephemeral, replies_to, relates_to, duplicate_of, superseded_by,
                     deleted_at, deleted_by, delete_reason, original_type,
-                    affected_symbols, solid_volume, topology_hash, is_solid
+                    affected_symbols
                 )
                 VALUES (
                     ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12,
                     ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21, ?22,
-                    ?23, ?24, ?25, ?26, ?27, ?28, ?29, ?30
+                    ?23, ?24, ?25, ?26, ?27
                 )",
                 params![
                     &issue.id,
@@ -860,9 +842,6 @@ pub mod sqlite_impl {
                     &issue.delete_reason,
                     &issue.original_type,
                     affected_symbols_json,
-                    &issue.solid_volume,
-                    &issue.topology_hash,
-                    issue.is_solid,
                 ],
             )?;
 
