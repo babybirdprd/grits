@@ -1,4 +1,3 @@
-use anyhow::Context;
 use chrono::Utc;
 use clap::{Parser, Subcommand};
 use grits_core::{Issue, SqliteStore, StdFileSystem, Store};
@@ -392,7 +391,7 @@ fn main() -> anyhow::Result<()> {
                  }
              }
         }
-        Commands::Pulse { assignee } => {
+        Commands::Pulse { assignee: _ } => {
              let grits_dir = db_path.parent().unwrap();
              let focus_path = grits_dir.join("focus");
              
@@ -528,7 +527,7 @@ fn main() -> anyhow::Result<()> {
                 }
              }
         }
-        Commands::Onboard { non_interactive } => {
+        Commands::Onboard { non_interactive: _ } => {
             if !std::path::Path::new(".git").exists() {
                 println!("Not a git repository. Initializing...");
                 std::process::Command::new("git").arg("init").status()?;

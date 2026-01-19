@@ -2,7 +2,7 @@
 
 A Git-native, local-first issue tracker designed for **AI Agents** and humans.
 
-**Status**: v2.7.1 — "Graph-Lite"
+**Status**: v2.8.0 — "Graph-Lite"
 
 ## Quick Start
 

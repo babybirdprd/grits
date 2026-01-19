@@ -50,51 +50,6 @@ jobs:
           name: gr-${{ matrix.target }}
           path: dist/
 
-  build-extension:
-    name: Build VS Code Extension
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: 9
-      
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-      
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: wasm32-unknown-unknown
-      
-      - name: Install wasm-pack
-        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
-      
-      - name: Install dependencies
-        run: pnpm install
-      
-      - name: Build WASM
-        run: pnpm run build:wasm
-
-      - name: Build
-        run: |
-          pnpm run build:webview
-          pnpm run build:extension
-      
-      - name: Package VSIX
-        working-directory: extension
-        run: npx vsce package --no-dependencies
-      
-      - name: Upload VSIX
-        uses: actions/upload-artifact@v4
-        with:
-          name: grits-extension
-          path: extension/*.vsix
-
   publish-crates:
     name: Publish to crates.io
     runs-on: ubuntu-latest
@@ -119,7 +74,7 @@ jobs:
 
   release:
     name: Create Release
-    needs: [build-cli, build-extension]
+    needs: [build-cli]
     runs-on: ubuntu-latest
     steps:
       - name: Download all artifacts
@@ -132,5 +87,4 @@ jobs:
         with:
           files: |
             artifacts/gr-*/*
-            artifacts/grits-extension/*.vsix
           generate_release_notes: true

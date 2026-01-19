@@ -15,8 +15,6 @@ jobs:
       
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: wasm32-unknown-unknown
       
       - name: Cache cargo
         uses: Swatinem/rust-cache@v2
@@ -26,45 +24,3 @@ jobs:
       
       - name: Test
         run: cargo test --workspace
-      
-      - name: Check WASM
-        run: cargo build -p grits-core --target wasm32-unknown-unknown
-
-  extension:
-    name: Extension Build
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: 9
-      
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'pnpm'
-          cache-dependency-path: |
-            extension/pnpm-lock.yaml
-            extension/webview/pnpm-lock.yaml
-      
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: wasm32-unknown-unknown
-
-      - name: Install wasm-pack
-        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
-
-      - name: Install dependencies
-        run: pnpm install
-      
-      - name: Build WASM
-        run: pnpm run build:wasm
-      
-      - name: Build
-        run: |
-          pnpm run build:webview
-          pnpm run build:extension
