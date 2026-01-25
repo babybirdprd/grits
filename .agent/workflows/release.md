@@ -81,8 +81,7 @@ gr --version
 
 2. Check GitHub Release page:
    - https://github.com/babybirdprd/grits/releases
-   - Should have 5 artifacts: 4 binaries + 1 VSIX
-   - **Note**: VS Code Marketplace publishing is disabled. Install the VSIX manually from the release page.
+   - Should have 4 artifacts
 
 3. Test installed CLI:
 ```bash
