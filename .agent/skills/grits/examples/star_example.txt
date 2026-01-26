@@ -1,11 +1,37 @@
 User: "What depends on the Context module?"
 Agent: `gr star grits-core/src/context.rs`
 Output:
-[
-  "grits-core/src/context.rs::ContextMetadata",
-  "grits-core/src/context.rs::MiniCodebase",
-  "grits-core/src/context.rs::assemble",
-  "grits-core/src/context.rs::hydrate_code",
-  "grits-core/src/lib.rs",
-  "grits-cli/src/main.rs"
-]
+{
+  "connected_files": [
+    "grits-core/src/lib.rs",
+    "grits-cli/src/main.rs"
+  ],
+  "connected_symbols": [
+    "grits-core/src/context.rs::ContextMetadata",
+    "grits-core/src/context.rs::MiniCodebase",
+    "grits-core/src/context.rs::assemble",
+    "grits-core/src/context.rs::hydrate_code"
+  ],
+  "depth": 1
+}
+
+User: "Just give me the symbols, one per line"
+Agent: `gr star grits-core/src/context.rs --format symbols`
+Output:
+grits-core/src/context.rs::ContextMetadata
+grits-core/src/context.rs::MiniCodebase
+grits-core/src/context.rs::assemble
+grits-core/src/context.rs::hydrate_code
+
+User: "What's connected to my current work?"
+Agent: `gr star` (uses focused issue automatically)
+Output:
+{
+  "connected_files": ["src/auth.rs", "src/user.rs"],
+  "connected_symbols": [
+    "src/auth.rs::validate_user",
+    "src/user.rs::User",
+    "src/auth.rs::AuthError"
+  ],
+  "depth": 1
+}

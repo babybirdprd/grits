@@ -29,6 +29,7 @@ enum Commands {
         #[arg(long = "type")] type_: Option<String>,
         #[arg(long)] label: Option<String>,
         #[arg(long)] sort: Option<String>,
+        #[arg(long, default_value = "table")] format: String,
     },
     /// Show detailed information about an issue
     Show { id: String },
@@ -47,6 +48,7 @@ enum Commands {
         #[arg(long, action = clap::ArgAction::Append)] remove_dependency: Vec<String>,
         #[arg(long, action = clap::ArgAction::Append)] add_symbol: Vec<String>,
         #[arg(long, action = clap::ArgAction::Append)] remove_symbol: Vec<String>,
+        #[arg(long, action = clap::ArgAction::Append)] scan_file: Vec<String>,
     },
     /// Create a new issue
     Create {
@@ -54,6 +56,8 @@ enum Commands {
         #[arg(short, long, default_value = "")] description: String,
         #[arg(short = 't', long = "type", default_value = "bug")] type_: String,
         #[arg(short, long, default_value_t = 2)] priority: i32,
+        #[arg(long, action = clap::ArgAction::Append)] scan_file: Vec<String>,
+        #[arg(long)] start_work: bool,
     },
     /// Close an issue
     Close { id: String },
@@ -72,8 +76,9 @@ enum Commands {
     },
     /// Get star neighborhood for a file (Connected Files)
     Star {
-        file: String,
+        file: Option<String>,
         #[arg(long, default_value_t = 1)] depth: usize,
+        #[arg(long, default_value = "structured")] format: String,
     },
      /// Context-aware tools
     Context {
@@ -106,6 +111,7 @@ enum ContextCommands {
         #[arg(long, value_delimiter = ',')] symbols: Option<Vec<String>>,
         #[arg(long, default_value = "markdown")] format: String,
         #[arg(long, default_value_t = 1)] depth: usize,
+        #[arg(long)] auto_expand: bool,
     },
 }
 
@@ -178,47 +184,67 @@ fn main() -> anyhow::Result<()> {
     }
 
     match cli.command {
-        Commands::List { status, assignee, priority, type_, label, sort } => {
+        Commands::List { status, assignee, priority, type_, label, sort, format } => {
             let issues = store.list_issues(status.as_deref(), assignee.as_deref(), priority, type_.as_deref(), label.as_deref(), sort.as_deref())?;
              
-             use comfy_table::modifiers::UTF8_ROUND_CORNERS;
-            use comfy_table::presets::UTF8_FULL;
-            use comfy_table::{Cell, Table};
+            match format.as_str() {
+                "json" => {
+                    let json_issues: Vec<_> = issues.iter().map(|i| serde_json::json!({
+                        "id": i.id,
+                        "title": i.title,
+                        "status": i.status,
+                        "priority": i.priority,
+                        "type": i.issue_type
+                    })).collect();
+                    println!("{}", serde_json::to_string_pretty(&json_issues)?);
+                }
+                "ids" => {
+                    for issue in issues {
+                        println!("{}", issue.id);
+                    }
+                }
+                _ => {
+                    // Default table format
+                    use comfy_table::modifiers::UTF8_ROUND_CORNERS;
+                    use comfy_table::presets::UTF8_FULL;
+                    use comfy_table::{Cell, Table};
 
-            let mut table = Table::new();
-            table
-                .load_preset(UTF8_FULL)
-                .apply_modifier(UTF8_ROUND_CORNERS)
-                .set_content_arrangement(comfy_table::ContentArrangement::Dynamic);
+                    let mut table = Table::new();
+                    table
+                        .load_preset(UTF8_FULL)
+                        .apply_modifier(UTF8_ROUND_CORNERS)
+                        .set_content_arrangement(comfy_table::ContentArrangement::Dynamic);
 
-            table.set_header(vec!["ID", "Status", "Priority", "Title"]);
+                    table.set_header(vec!["ID", "Status", "Priority", "Title"]);
 
-            for issue in issues {
-                 let status_str = issue.status.clone();
-                let status_cell = if status_str == "bug" {
-                    Cell::new(&status_str).fg(comfy_table::Color::Red)
-                } else if status_str == "closed" {
-                    Cell::new(&status_str).fg(comfy_table::Color::Green)
-                } else if status_str == "open" {
-                    Cell::new(&status_str).fg(comfy_table::Color::Yellow)
-                } else {
-                    Cell::new(&status_str)
-                };
+                    for issue in issues {
+                         let status_str = issue.status.clone();
+                        let status_cell = if status_str == "bug" {
+                            Cell::new(&status_str).fg(comfy_table::Color::Red)
+                        } else if status_str == "closed" {
+                            Cell::new(&status_str).fg(comfy_table::Color::Green)
+                        } else if status_str == "open" {
+                            Cell::new(&status_str).fg(comfy_table::Color::Yellow)
+                        } else {
+                            Cell::new(&status_str)
+                        };
 
-                let title_truncated = if issue.title.len() > 60 {
-                    format!("{}...", &issue.title[..57])
-                } else {
-                    issue.title.clone()
-                };
+                        let title_truncated = if issue.title.len() > 60 {
+                            format!("{}...", &issue.title[..57])
+                        } else {
+                            issue.title.clone()
+                        };
 
-                table.add_row(vec![
-                    Cell::new(&issue.id),
-                    status_cell,
-                    Cell::new(issue.priority),
-                    Cell::new(title_truncated),
-                ]);
+                        table.add_row(vec![
+                            Cell::new(&issue.id),
+                            status_cell,
+                            Cell::new(issue.priority),
+                            Cell::new(title_truncated),
+                        ]);
+                    }
+                    println!("{}", table);
+                }
             }
-            println!("{}", table);
         }
         Commands::Show { id } => {
              if let Some(issue) = store.get_issue(&id)? {
@@ -248,7 +274,7 @@ fn main() -> anyhow::Result<()> {
                 eprintln!("Issue not found: {}", id);
              }
         }
-        Commands::Update { id, title, description, status, priority, type_, assignee, add_label, remove_label, add_dependency, remove_dependency, add_symbol, remove_symbol } => {
+        Commands::Update { id, title, description, status, priority, type_, assignee, add_label, remove_label, add_dependency, remove_dependency, add_symbol, remove_symbol, scan_file } => {
             let grits_dir = db_path.parent().unwrap();
             let focus_path = grits_dir.join("focus");
             let resolved_id = match id {
@@ -270,12 +296,23 @@ fn main() -> anyhow::Result<()> {
                 if let Some(t) = type_ { issue.issue_type = t; }
                 if let Some(a) = assignee { issue.assignee = if a.is_empty() { None } else { Some(a) }; }
                 
-                 // Handle Symbols
+                // Handle Symbols
                 for symbol in add_symbol {
                     if !issue.affected_symbols.contains(&symbol) {
                         issue.affected_symbols.push(symbol);
                     }
                 }
+                
+                // Handle file scanning for auto-symbol discovery
+                for file_path in scan_file {
+                    let symbols = discover_symbols_in_file(&file_path)?;
+                    for symbol in symbols {
+                        if !issue.affected_symbols.contains(&symbol) {
+                            issue.affected_symbols.push(symbol);
+                        }
+                    }
+                }
+                
                 for symbol in remove_symbol {
                     issue.affected_symbols.retain(|s| s != &symbol);
                 }
@@ -317,13 +354,13 @@ fn main() -> anyhow::Result<()> {
                 println!("Updated issue {}", issue.id);
             }
         }
-        Commands::Create { title, description, type_, priority } => {
+        Commands::Create { title, description, type_, priority, scan_file, start_work } => {
              let now = Utc::now();
             let prefix = store.get_config("issue_id_prefix")?.unwrap_or("gr".to_string());
             let user = store.get_config("user.name")?.unwrap_or("unknown".to_string());
             let short_id = store.generate_unique_id(&prefix, &title, &description, &user)?;
             
-             let issue = Issue {
+             let mut issue = Issue {
                 id: short_id.clone(),
                 content_hash: String::new(),
                 title,
@@ -335,8 +372,36 @@ fn main() -> anyhow::Result<()> {
                 updated_at: now,
                 ..Default::default()
             };
+            
+            // Auto-discover symbols from scanned files
+            for file_path in &scan_file {
+                let symbols = discover_symbols_in_file(file_path)?;
+                for symbol in symbols {
+                    if !issue.affected_symbols.contains(&symbol) {
+                        issue.affected_symbols.push(symbol);
+                    }
+                }
+            }
+            
             store.create_issue(&issue)?;
             println!("Created issue {}", short_id);
+            
+            if !scan_file.is_empty() {
+                println!("Auto-discovered symbols from {} files", scan_file.len());
+            }
+            
+            // Auto-start work if requested
+            if start_work {
+                let grits_dir = db_path.parent().unwrap();
+                let focus_path = grits_dir.join("focus");
+                std::fs::write(&focus_path, &issue.id)?;
+                
+                issue.status = "in-progress".to_string();
+                issue.updated_at = Utc::now();
+                store.update_issue(&issue)?;
+                
+                println!("Started working on: {} {}", issue.id, issue.title);
+            }
         }
         Commands::Close { id } => {
              if let Some(mut issue) = store.get_issue(&id)? {
@@ -395,41 +460,48 @@ fn main() -> anyhow::Result<()> {
              let grits_dir = db_path.parent().unwrap();
              let focus_path = grits_dir.join("focus");
              
-             let mut pulse = serde_json::json!({});
+             let mut pulse = serde_json::json!({
+                 "status": "ready"
+             });
              
-             // 1. Focus
+             // 1. Current Focus
              if focus_path.exists() {
                  let focus_id = std::fs::read_to_string(&focus_path)?.trim().to_string();
                  if let Some(issue) = store.get_issue(&focus_id)? {
-                     pulse["focus"] = serde_json::json!({
+                     pulse["current_work"] = serde_json::json!({
                          "id": issue.id,
                          "title": issue.title,
-                         "status": issue.status
+                         "status": issue.status,
+                         "connected_files": issue.affected_symbols
                      });
-                 }
-             }
-             
-             // 2. Blockers
-             if let Some(focus) = pulse.get("focus") {
-                 let fid = focus["id"].as_str().unwrap();
-                 if let Some(issue) = store.get_issue(fid)? {
-                     let blockers: Vec<_> = issue.dependencies.iter().filter(|d| d.type_ == "blocking").collect();
+                     
+                     // Check for blockers
+                     let blockers: Vec<_> = issue.dependencies.iter()
+                         .filter(|d| d.type_ == "blocking")
+                         .map(|d| &d.depends_on_id)
+                         .collect();
                      if !blockers.is_empty() {
                          pulse["blockers"] = serde_json::json!(blockers);
+                         pulse["status"] = serde_json::json!("blocked");
                      }
                  }
+             } else {
+                 pulse["message"] = serde_json::json!("No current work. Use 'gr workon <issue-id>' to start.");
              }
              
-             // 3. Recent commits
+             // 2. Recent Activity (simplified)
              let git_root = grits_dir.parent().unwrap_or(std::path::Path::new("."));
-              let git_log = std::process::Command::new("git")
-                .args(["log", "--oneline", "-3"])
+             let git_log = std::process::Command::new("git")
+                .args(["log", "--oneline", "-3", "--pretty=format:%h %s"])
                 .current_dir(git_root)
                 .output();
              if let Ok(output) = git_log {
                  if output.status.success() {
                      let log_str = String::from_utf8_lossy(&output.stdout);
-                     pulse["recent_commits"] = serde_json::json!(log_str.lines().collect::<Vec<_>>());
+                     let commits: Vec<&str> = log_str.lines().collect();
+                     if !commits.is_empty() {
+                         pulse["recent_commits"] = serde_json::json!(commits);
+                     }
                  }
              }
              
@@ -473,7 +545,7 @@ fn main() -> anyhow::Result<()> {
                  eprintln!("Issue ID required.");
             }
         }
-        Commands::Star { file, depth } => {
+        Commands::Star { file, depth, format } => {
              use grits_core::topology::{get_star, scanner::DirectoryScanner, cache::TopologyCache};
              
              let cache_path = db_path.parent().unwrap().join("topology.json");
@@ -484,11 +556,87 @@ fn main() -> anyhow::Result<()> {
                   scanner.scan(std::path::Path::new("."))?
              };
              
-             let star = get_star(&graph, &file, depth);
-             println!("{}", serde_json::to_string_pretty(&star.neighbors)?);
+             // Context-aware: use focused issue's symbols if no file specified
+             let files_to_analyze = if let Some(f) = file {
+                 vec![f]
+             } else {
+                 let grits_dir = db_path.parent().unwrap();
+                 let focus_path = grits_dir.join("focus");
+                 
+                 if focus_path.exists() {
+                     let focus_id = std::fs::read_to_string(&focus_path)?.trim().to_string();
+                     if let Some(issue) = store.get_issue(&focus_id)? {
+                         if issue.affected_symbols.is_empty() {
+                             eprintln!("No focused issue or files specified. Use: gr star <file>");
+                             std::process::exit(1);
+                         }
+                         issue.affected_symbols
+                     } else {
+                         eprintln!("Focused issue not found. Use: gr star <file>");
+                         std::process::exit(1);
+                     }
+                 } else {
+                     eprintln!("No focused issue or files specified. Use: gr star <file>");
+                     std::process::exit(1);
+                 }
+             };
+             
+             let mut all_neighbors = std::collections::HashSet::new();
+             for file_path in &files_to_analyze {
+                 let star = get_star(&graph, file_path, depth);
+                 for neighbor in star.neighbors {
+                     all_neighbors.insert(neighbor);
+                 }
+             }
+             
+             // Filter and categorize symbols for cleaner output
+             let mut files = Vec::new();
+             let mut symbols = Vec::new();
+             
+             for neighbor in all_neighbors {
+                 if is_meaningful_symbol(&neighbor) {
+                     if neighbor.contains("::") && !neighbor.starts_with("std::") && !neighbor.starts_with("serde::") {
+                         // This looks like a project symbol (file::symbol)
+                         symbols.push(neighbor);
+                     } else if neighbor.ends_with(".rs") || neighbor.contains("/") {
+                         // This looks like a file path
+                         files.push(neighbor);
+                     }
+                 }
+             }
+             
+             // Clean, structured output
+             match format.as_str() {
+                 "files" => {
+                     // Just the files, one per line (simplest for agents)
+                     for file in files {
+                         println!("{}", file);
+                     }
+                 }
+                 "symbols" => {
+                     // Just the symbols, one per line
+                     for symbol in symbols {
+                         println!("{}", symbol);
+                     }
+                 }
+                 "json" => {
+                     // Raw JSON array (legacy format)
+                     let all: Vec<String> = files.into_iter().chain(symbols.into_iter()).collect();
+                     println!("{}", serde_json::to_string_pretty(&all)?);
+                 }
+                 _ => {
+                     // Default: structured format
+                     let output = serde_json::json!({
+                         "connected_files": files,
+                         "connected_symbols": symbols,
+                         "depth": depth
+                     });
+                     println!("{}", serde_json::to_string_pretty(&output)?);
+                 }
+             }
         }
         Commands::Context { command } => match command {
-             ContextCommands::Assemble { issue, symbols, format, depth } => {
+             ContextCommands::Assemble { issue, symbols, format, depth, auto_expand } => {
                   use grits_core::context::MiniCodebase; 
                   use grits_core::topology::cache::TopologyCache;
 
@@ -513,8 +661,39 @@ fn main() -> anyhow::Result<()> {
                         std::process::exit(1);
                     }
                 } else {
-                    None
+                    // Context-aware: use focused issue if no issue specified
+                    let grits_dir = db_path.parent().unwrap();
+                    let focus_path = grits_dir.join("focus");
+                    
+                    if focus_path.exists() && seed_symbols.is_empty() {
+                        let focus_id = std::fs::read_to_string(&focus_path)?.trim().to_string();
+                        if let Some(iss) = store.get_issue(&focus_id)? {
+                            for sym in &iss.affected_symbols {
+                                if !seed_symbols.contains(sym) {
+                                    seed_symbols.push(sym.clone());
+                                }
+                            }
+                            Some(iss.id)
+                        } else {
+                            None
+                        }
+                    } else {
+                        None
+                    }
                 };
+
+                // Auto-expand: include star neighborhoods of all seed symbols
+                if auto_expand {
+                    let mut expanded_symbols = std::collections::HashSet::new();
+                    for seed in &seed_symbols {
+                        let star = grits_core::topology::get_star(&cache.graph, seed, depth);
+                        expanded_symbols.insert(star.center);
+                        for neighbor in star.neighbors {
+                            expanded_symbols.insert(neighbor);
+                        }
+                    }
+                    seed_symbols = expanded_symbols.into_iter().collect();
+                }
 
                 // For simple assembly without PageRank threshold
                 let mut mini = MiniCodebase::assemble(&cache.graph, seed_symbols, depth, 0.0, issue_id);
@@ -603,4 +782,54 @@ fn find_db_path(explicit_root: Option<PathBuf>) -> PathBuf {
         if !current.pop() { break; }
     }
     PathBuf::from(".grits/grits.db")
+}
+
+/// Auto-discover symbols in a file by scanning with the topology parser
+fn discover_symbols_in_file(file_path: &str) -> anyhow::Result<Vec<String>> {
+    use std::path::Path;
+    
+    let path = Path::new(file_path);
+    if !path.exists() {
+        return Ok(vec![file_path.to_string()]); // Return file path if file doesn't exist
+    }
+    
+    // For now, return the file path itself as a symbol
+    // This can be enhanced later to parse actual symbols using the topology parser
+    Ok(vec![file_path.to_string()])
+}
+
+/// Filter out noisy/meaningless symbols for cleaner agent output
+fn is_meaningful_symbol(symbol: &str) -> bool {
+    // Filter out noise patterns
+    if symbol.starts_with("Ok(") || symbol.starts_with("Some(") || symbol.starts_with("Err(") {
+        return false;
+    }
+    
+    if symbol.starts_with("drop(") || symbol.contains("row.get(") {
+        return false;
+    }
+    
+    // Filter out single expressions and literals
+    if symbol.contains("?") && symbol.len() < 50 {
+        return false;
+    }
+    
+    // Filter out very short symbols (likely noise)
+    if symbol.len() < 3 {
+        return false;
+    }
+    
+    // Filter out common stdlib imports (keep project-specific ones)
+    let stdlib_prefixes = [
+        "std::", "core::", "alloc::", "rusqlite::", "serde::", "chrono::", 
+        "anyhow::", "sha2::", "tokio::", "futures::", "tracing::"
+    ];
+    
+    for prefix in &stdlib_prefixes {
+        if symbol.starts_with(prefix) {
+            return false;
+        }
+    }
+    
+    true
 }

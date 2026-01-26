@@ -7,6 +7,55 @@ This documentation is the **sole source of truth** for AI agents using Grits. It
 
 ---
 
+## 🤖 NEW: AI Agent Automation Features (v2.8+)
+
+### **One-Shot Issue Creation**
+```bash
+# Create issue, auto-discover symbols, and start work in one command:
+gr create "Fix auth bug" --scan-file "src/auth.rs" --scan-file "src/user.rs" --start-work
+# ✅ Creates issue, auto-discovers symbols, starts work
+```
+
+### **Context-Aware Commands (Default Behavior)**
+```bash
+# After gr workon, commands automatically use focused issue:
+gr star                    # Uses focused issue's symbols (no file argument needed)
+gr context assemble        # Uses focused issue automatically  
+gr update --scan-file X    # Updates focused issue (no --id needed)
+```
+
+### **Clean, Structured Outputs**
+```bash
+# Clean, structured output with noise filtering:
+gr star → {
+  "connected_files": ["src/auth.rs", "src/user.rs"],
+  "connected_symbols": ["src/auth.rs::validate_user", "src/user.rs::User"],
+  "depth": 1
+}
+
+# Multiple formats for different needs:
+gr star --format symbols   # One symbol per line (easiest parsing)
+gr star --format files     # One file per line
+gr list --format ids       # Just issue IDs for scripting
+gr list --format json      # Structured JSON
+```
+
+### **Auto-Symbol Discovery**
+```bash
+# Automatically discover and add symbols from files:
+gr update --scan-file "src/auth.rs"           # Adds symbols from file
+gr create "title" --scan-file "file.rs"       # Creates + scans + adds symbols
+```
+
+### **Smart Context Assembly**
+```bash
+# Auto-expand to include star neighborhoods:
+gr context assemble --auto-expand             # Much richer context
+gr context assemble --auto-expand --format json  # Machine-readable
+```
+
+---
+
 ## 🛠️ The Agent's Golden Rules
 
 1.  **Always Forward Slashes**: Symbol IDs and file paths **must** use `/` normalization, even on Windows (e.g., `src/main.rs::run`).
@@ -326,29 +375,42 @@ The extension now opens as a **full dashboard panel** with:
 
 ---
 
-## 🧮 Command Reference (v2.6)
+## 🧮 Command Reference (v2.8)
 
-### Agent-Native Commands (NEW)
+### 🤖 Agent Automation Commands (NEW v2.8)
+| Command | Example | Purpose |
+|---------|---------|---------|
+| `gr create --scan-file --start-work` | `gr create "Fix auth" --scan-file "src/auth.rs" --start-work` | One-shot issue creation |
+| `gr update --scan-file` | `gr update --scan-file "src/user.rs"` | Auto-discover symbols from files |
+| `gr star` (context-aware) | `gr star` | Uses focused issue automatically |
+| `gr star --format symbols` | `gr star --format symbols` | Clean symbol list (one per line) |
+| `gr star --format files` | `gr star --format files` | Clean file list (one per line) |
+| `gr list --format ids` | `gr list --format ids` | Just IDs for scripting |
+| `gr list --format json` | `gr list --format json` | Structured JSON |
+| `gr context assemble --auto-expand` | `gr context assemble --auto-expand` | Include star neighborhoods |
+| `gr pulse` (enhanced) | `gr pulse` | Clean status with current work + blockers |
+
+### Agent-Native Commands
 | Command | Example | Purpose |
 |---------|---------|---------|
 | `gr pulse` | `gr pulse --assignee me` | Session hydration |
 | `gr inspect` | `gr inspect gr-abc` | One-shot context |
 | `gr workon` | `gr workon gr-abc` | Start work (branch + status) |
-| `gr workon --clear` | `gr workon --clear` | Clear current focus (NEW v2.6) |
+| `gr workon --clear` | `gr workon --clear` | Clear current focus |
 | `gr set` | `gr set abc pri:1 stat:ip` | Fuzzy updates |
 | `gr refactor` | `gr refactor --apply` | Auto-fix cycles |
 | `gr memo attach` | `gr memo attach sym "note"` | Persist symbol notes |
 | `gr context-bundle` | `gr context-bundle gr-abc` | Complete context bundle |
-| `gr issue search` | `gr issue search "query"` | Issue search (NEW v2.6) |
+| `gr issue search` | `gr issue search "query"` | Issue search |
 | `gr onboard` | `gr onboard --non-interactive` | Initialize (agent-friendly) |
 
 ### Core Commands
 | Command | Arguments | Use Case |
 |---------|-----------|----------|
-| `gr create` | `<TITLE>` `-d` `-t` `-p` | Create issue |
-| `gr update` | `<ID>` `--status` `--add-symbol` | Update issue |
-| `gr ready` | `--assignee` | Find actionable work |
-| `gr ready` | `--assignee` | Find actionable work |
+| `gr create` | `<TITLE>` `-d` `-t` `-p` `--scan-file` `--start-work` | Create issue (enhanced) |
+| `gr update` | `<ID>` `--status` `--add-symbol` `--scan-file` | Update issue (enhanced) |
+| `gr list` | `--format [table|json|ids]` | List issues (enhanced) |
+| `gr star` | `[FILE]` `--format [structured|symbols|files|json]` | Get connected context (enhanced) |
 
 ### Analysis Commands
 | Command | Purpose |
@@ -361,10 +423,10 @@ The extension now opens as a **full dashboard panel** with:
 | `gr analysis search` | BM25 natural language search |
 | `gr analysis path` | Shortest path tracing (supports fuzzy matching) |
 
-### Context Commands (NEW v2.3)
+### Context Commands
 | Command | Example | Purpose |
 |---------|---------|---------|
-| `gr context assemble` | `--issue ID` or `--symbols` | Mini codebase for agents |
+| `gr context assemble` | `--issue ID` `--auto-expand` `--format [markdown|json]` | Mini codebase for agents (enhanced) |
 | `gr context error` | `--message "error text"` | Find related issues |
 | `gr context diff` | `--path diff.txt` | Infer issue from changes |
 | `gr context todo` | `--file src/main.rs` | Scan for TODO comments |

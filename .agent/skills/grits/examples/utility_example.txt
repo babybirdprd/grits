@@ -5,9 +5,33 @@ User: "How many open bugs do we have?"
 Agent: `gr stats`
 Output:
 Total Issues: 12
-Open: 8
-Bugs: 5
-Features: 3
+
+User: "List just the issue IDs for scripting"
+Agent: `gr list --format ids`
+Output:
+gr-abc123
+gr-def456
+gr-ghi789
+
+User: "Get all issues as JSON for processing"
+Agent: `gr list --format json`
+Output:
+[
+  {
+    "id": "gr-abc123",
+    "title": "Fix auth bug",
+    "status": "open",
+    "priority": 1,
+    "type": "bug"
+  },
+  {
+    "id": "gr-def456", 
+    "title": "Add logging",
+    "status": "in-progress",
+    "priority": 2,
+    "type": "feature"
+  }
+]
 
 User: "Back up the issues to a custom file."
 Agent: `gr export --output backup.jsonl`

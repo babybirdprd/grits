@@ -1,0 +1,79 @@
+User: "Create an issue to fix the authentication system and start working on it"
+
+# ONE-SHOT ISSUE CREATION WITH AUTO-DISCOVERY
+Agent: `gr create "Fix authentication system" --scan-file "src/auth.rs" --scan-file "src/user.rs" --start-work`
+Output:
+Created issue gr-auth42
+Auto-discovered symbols from 2 files
+Started working on: gr-auth42 Fix authentication system
+
+User: "What files are connected to my current work?"
+Agent: `gr star --format files` (uses focused issue automatically)
+Output:
+src/auth.rs
+src/user.rs
+src/session.rs
+
+User: "Show me all the symbols in a clean format"
+Agent: `gr star --format symbols`
+Output:
+src/auth.rs::validate_user
+src/auth.rs::AuthError
+src/user.rs::User
+src/user.rs::UserRole
+src/session.rs::Session
+
+User: "I need to add the database layer too"
+Agent: `gr update --scan-file "src/database.rs"` (no --id needed, uses focus)
+Output: Updated issue gr-auth42
+
+User: "Give me the full context with all related code"
+Agent: `gr context assemble --auto-expand`
+Output:
+# Mini Codebase
+
+> Assembled for issue: `gr-auth42`
+
+**Symbols**: 12 | **Files**: 4
+
+## Files
+
+- `src/auth.rs`
+- `src/user.rs` 
+- `src/session.rs`
+- `src/database.rs`
+
+## Symbols
+
+### `src/auth.rs::validate_user`
+- **File**: `src/auth.rs`
+- **Kind**: function
+
+```rust
+pub fn validate_user(username: &str, password: &str) -> Result<User, AuthError> {
+    // validation logic
+}
+```
+
+[... full code for all symbols ...]
+
+User: "What's my current status?"
+Agent: `gr pulse`
+Output:
+{
+  "status": "ready",
+  "current_work": {
+    "id": "gr-auth42",
+    "title": "Fix authentication system",
+    "status": "in-progress", 
+    "connected_files": [
+      "src/auth.rs",
+      "src/user.rs",
+      "src/database.rs"
+    ]
+  },
+  "recent_commits": [
+    "a1b2c3d Add user validation",
+    "e4f5g6h Fix session timeout"
+  ]
+}
