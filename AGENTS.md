@@ -2,12 +2,30 @@
 
 This documentation is the **sole source of truth** for AI agents using Grits. It provides an opinionated, intent-based workflow for managing issues and code topology.
 
+---
+
+## 🤖 The Planner/Coder Protocol (v3.0+)
+
+Grits enforces a strict "Separation of Concerns" between planning and implementation to minimize agent drift and token waste.
+
+### **1. The Planner Agent** (`grits-plan` skill)
+- **Persona**: The Architect.
+- **Goal**: Analyze User Intent (`description`), research codebase topology, and write a concrete `design`.
+- **Primary Tooling**: `gr star`, `gr context assemble`, `gr update --design`.
+- **Skill**: [.agent/skills/grits-plan/SKILL.md](.agent/skills/grits-plan/SKILL.md)
+
+### **2. The Coder Agent** (`grits-code` skill)
+- **Persona**: The Builder.
+- **Goal**: Read the `design`, execute changes to source files, and maintain the **Execution Log** (`notes`).
+- **Primary Tooling**: `gr pulse`, `gr workon`, `gr update --append`.
+- **Skill**: [.agent/skills/grits-code/SKILL.md](.agent/skills/grits-code/SKILL.md)
+
 > [!IMPORTANT]
-> **Twin Engine Synchronization**: Grits uses a SQLite database for speed (`.grits/grits.db`) and a JSONL file for version control (`.grits/issues.jsonl`). All CLI commands automatically import/export between these engines.
+> **Enforcement**: `gr workon` will automatically warn if a Coder starts work on an issue where `design` is empty. Always request a plan from a Planner first.
 
 ---
 
-## 🤖 NEW: AI Agent Automation Features (v3.0+)
+## 🤖 AI Agent Automation Features (v3.0+)
 
 ### **One-Shot Issue Creation**
 ```bash
@@ -40,9 +58,11 @@ gr dep add gr-child gr-parent --type blocks
 ### **Context-Aware Commands (Default Behavior)**
 ```bash
 # After gr workon, commands automatically use focused issue:
+gr pulse                   # Returns FULL Rich Context (Intent, Plan, History)
 gr star                    # Uses focused issue's symbols (no file argument needed)
-gr context assemble        # Uses focused issue automatically  
+gr context assemble        # Uses focused issue (+ Fallback for raw files)
 gr update --scan-file X    # Updates focused issue (no --id needed)
+gr update --append --notes "msg" # Logs iteration to Execution Log
 ```
 
 ### **Clean, Structured Outputs**
@@ -68,24 +88,31 @@ gr update --scan-file "src/auth.rs"           # Adds symbols from file
 gr create "title" --scan-file "file.rs"       # Creates + scans + adds symbols
 ```
 
-### **Smart Context Assembly**
+### **Execution Log (Lab Notebook)**
 ```bash
-# Auto-expand to include star neighborhoods:
-gr context assemble --auto-expand             # Much richer context
-gr context assemble --auto-expand --format json  # Machine-readable
+# Append to history instead of overwriting:
+gr update --notes "First attempt failed: missing dependency" --append
+# ✅ Keeps history with automatic timestamps in Issue.notes
 ```
+
+### **The Planner/Coder Protocol**
+1. **Goal**: Separate "Research/Architecture" from "Implementation".
+2. **Planner Agent**: Must populate `design` (Implementation Plan) before handoff.
+3. **Coder Agent**: Executes only when `design` is present. Uses `gr update --append` to log progress.
+4. **Enforcement**: `gr workon` will warn if `design` is empty.
 
 ---
 
 ## 🛠️ The Agent's Golden Rules
 
 1.  **Always Forward Slashes**: Symbol IDs and file paths **must** use `/` normalization, even on Windows (e.g., `src/main.rs::run`).
-2.  **Run `gr pulse` First**: Start every session with `gr pulse` for instant context.
-3.  **Use `gr workon`**: Start work with `gr workon <id>` to set status and **lock focus**.
-4.  **Sticky Focus**: After `gr workon`, use `gr set stat:ip` without ID — it auto-targets the focused issue.
-5.  **Link Your Work**: Use `gr update <ID> --add-symbol <SYM>` to populate the **Focus View**.
-6.  **Fix Cycles**: Use `gr refactor` to detect and auto-fix architectural issues.
-7.  **Leave Memos**: Use `gr memo attach <SYM> <NOTE>` to store long-term context about specific symbols for future agents.
+2.  **Run `gr pulse` First**: Start every session with `gr pulse` for instant **Rich Context**.
+3.  **Respect the Handoff**: **DO NOT CODE** if `design` is empty. Ask for a Plan first.
+4.  **Log Iterations**: Use `gr update --append` to keep a persistent **Execution Log**.
+5.  **Use `gr workon`**: Start work with `gr workon <id>` to set status and **lock focus**.
+6.  **Sticky Focus**: After `gr workon`, use commands without IDs — they auto-target the focused issue.
+7.  **Link Your Work**: Use `gr update --add-symbol <SYM>` to populate the **Focus View**.
+8.  **Leave Memos**: Use `gr memo attach <SYM> <NOTE>` to store long-term context about specific symbols.
 
 ---
 

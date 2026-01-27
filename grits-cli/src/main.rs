@@ -48,8 +48,16 @@ enum Commands {
         id: Option<String>,
         #[arg(long)]
         title: Option<String>,
-        #[arg(long, alias = "notes")]
+        #[arg(long)]
         description: Option<String>,
+        #[arg(long)]
+        design: Option<String>,
+        #[arg(long)]
+        acceptance_criteria: Option<String>,
+        #[arg(long)]
+        notes: Option<String>,
+        #[arg(long, alias = "append")]
+        append_notes: bool,
         #[arg(long)]
         status: Option<String>,
         #[arg(long)]
@@ -78,6 +86,12 @@ enum Commands {
         title: String,
         #[arg(short, long, default_value = "")]
         description: String,
+        #[arg(long, default_value = "")]
+        design: String,
+        #[arg(long, default_value = "")]
+        acceptance_criteria: String,
+        #[arg(long, default_value = "")]
+        notes: String,
         #[arg(short = 't', long = "type", default_value = "bug")]
         type_: String,
         #[arg(short, long, default_value_t = 2)]
@@ -344,7 +358,16 @@ fn main() -> anyhow::Result<()> {
                     println!("Assignee:    {}", assignee);
                 }
                 println!("------------------------------------------------------------");
-                println!("{}", issue.description);
+                println!("Description:\n{}\n", issue.description);
+                if !issue.design.is_empty() {
+                    println!("Design (Implementation Plan):\n{}\n", issue.design);
+                }
+                if !issue.acceptance_criteria.is_empty() {
+                    println!("Acceptance Criteria:\n{}\n", issue.acceptance_criteria);
+                }
+                if !issue.notes.is_empty() {
+                    println!("Execution Log (Notes):\n{}\n", issue.notes);
+                }
                 if !issue.affected_symbols.is_empty() {
                     println!("\nConnected Files:");
                     for sym in issue.affected_symbols {
@@ -365,6 +388,10 @@ fn main() -> anyhow::Result<()> {
             id,
             title,
             description,
+            design,
+            acceptance_criteria,
+            notes,
+            append_notes,
             status,
             priority,
             type_,
@@ -398,6 +425,24 @@ fn main() -> anyhow::Result<()> {
                 }
                 if let Some(d) = description {
                     issue.description = d;
+                }
+                if let Some(d) = design {
+                    issue.design = d;
+                }
+                if let Some(ac) = acceptance_criteria {
+                    issue.acceptance_criteria = ac;
+                }
+                if let Some(n) = notes {
+                    if append_notes {
+                        let timestamp = Utc::now().to_rfc3339();
+                        if issue.notes.is_empty() {
+                            issue.notes = format!("[{}] {}\n", timestamp, n);
+                        } else {
+                            issue.notes.push_str(&format!("\n[{}] {}\n", timestamp, n));
+                        }
+                    } else {
+                        issue.notes = n;
+                    }
                 }
                 if let Some(s) = status {
                     issue.status = s;
@@ -483,6 +528,9 @@ fn main() -> anyhow::Result<()> {
         Commands::Create {
             title,
             description,
+            design,
+            acceptance_criteria,
+            notes,
             type_,
             priority,
             scan_file,
@@ -522,6 +570,9 @@ fn main() -> anyhow::Result<()> {
                 content_hash: String::new(),
                 title,
                 description,
+                design,
+                acceptance_criteria,
+                notes,
                 status: "open".to_string(),
                 priority,
                 issue_type: type_,
@@ -644,6 +695,10 @@ fn main() -> anyhow::Result<()> {
                         "id": issue.id,
                         "title": issue.title,
                         "status": issue.status,
+                        "description": issue.description,
+                        "design": issue.design,
+                        "acceptance_criteria": issue.acceptance_criteria,
+                        "notes": issue.notes,
                         "connected_files": issue.affected_symbols
                     });
 
@@ -698,6 +753,12 @@ fn main() -> anyhow::Result<()> {
                 if let Some(mut issue) = store.get_issue(&issue_id)? {
                     // Set focus
                     std::fs::write(&focus_path, &issue.id)?;
+
+                    // Protocol check: Planner/Coder handoff
+                    if issue.design.is_empty() {
+                        println!("> [WARNING] Protocol Violation: 'design' (Implementation Plan) is empty.");
+                        println!("> A Coder Agent should not start work until a Planner Agent has populated the design.");
+                    }
 
                     // Update status
                     if issue.status != "in-progress" {
@@ -831,11 +892,13 @@ fn main() -> anyhow::Result<()> {
                 use grits_core::topology::cache::TopologyCache;
 
                 let cache_path = db_path.parent().unwrap().join("topology.json");
-                if !cache_path.exists() {
-                    eprintln!("Topology cache not found. Run 'gr onboard' or scan first.");
-                    std::process::exit(1);
-                }
-                let cache = TopologyCache::load(&cache_path)?;
+                let cache = if cache_path.exists() {
+                    TopologyCache::load(&cache_path)?
+                } else {
+                    // Fallback: Create an empty cache if none exists to support "Blind" assembly
+                    use grits_core::topology::SymbolGraph;
+                    TopologyCache::from_graph(SymbolGraph::new())
+                };
 
                 let mut seed_symbols: Vec<String> = symbols.unwrap_or_default();
                 let issue_id = if let Some(id) = issue {

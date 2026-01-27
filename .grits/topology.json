@@ -1,549 +1,29 @@
 {
   "graph": {
     "nodes": {
-      "grits-core/src/memory_store.rs::new": {
-        "id": "grits-core/src/memory_store.rs::new",
-        "name": "new",
-        "file_path": "grits-core/src/memory_store.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          689,
-          743
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/context.rs::MiniCodebase": {
-        "id": "grits-core/src/context.rs::MiniCodebase",
-        "name": "MiniCodebase",
-        "file_path": "grits-core/src/context.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "type_identifier",
-        "byte_range": [
-          2339,
-          6784
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/topology/mod.rs": {
-        "id": "grits-core/src/topology/mod.rs",
-        "name": "grits-core/src/topology/mod.rs",
-        "file_path": "grits-core/src/topology/mod.rs",
+      "grits-cli/tests/cli_tests.rs": {
+        "id": "grits-cli/tests/cli_tests.rs",
+        "name": "grits-cli/tests/cli_tests.rs",
+        "file_path": "grits-cli/tests/cli_tests.rs",
         "package": null,
         "language": "rust",
         "kind": "file",
         "byte_range": [
           0,
-          3519
+          3584
         ],
         "metadata": {}
       },
-      "grits-core/src/memory_store.rs::execute_raw": {
-        "id": "grits-core/src/memory_store.rs::execute_raw",
-        "name": "execute_raw",
-        "file_path": "grits-core/src/memory_store.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          2698,
-          2805
-        ],
-        "metadata": {}
-      },
-      "grits-cli/src/main.rs::find_db_path": {
-        "id": "grits-cli/src/main.rs::find_db_path",
-        "name": "find_db_path",
-        "file_path": "grits-cli/src/main.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          24026,
-          24736
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/merge.rs::is_tombstone": {
-        "id": "grits-core/src/merge.rs::is_tombstone",
-        "name": "is_tombstone",
-        "file_path": "grits-core/src/merge.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          3846,
-          3927
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/search.rs::SearchIndex": {
-        "id": "grits-core/src/search.rs::SearchIndex",
-        "name": "SearchIndex",
-        "file_path": "grits-core/src/search.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "type_identifier",
-        "byte_range": [
-          504,
-          3262
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/search.rs::search": {
-        "id": "grits-core/src/search.rs::search",
-        "name": "search",
-        "file_path": "grits-core/src/search.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          1734,
-          3259
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/context.rs::assemble": {
-        "id": "grits-core/src/context.rs::assemble",
-        "name": "assemble",
-        "file_path": "grits-core/src/context.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          2414,
-          4490
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/fs.rs::rename": {
-        "id": "grits-core/src/fs.rs::rename",
-        "name": "rename",
-        "file_path": "grits-core/src/fs.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          1049,
-          1165
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/memory_store.rs::list_config": {
-        "id": "grits-core/src/memory_store.rs::list_config",
-        "name": "list_config",
-        "file_path": "grits-core/src/memory_store.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          2359,
-          2690
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/store.rs::set_config": {
-        "id": "grits-core/src/store.rs::set_config",
-        "name": "set_config",
-        "file_path": "grits-core/src/store.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          11382,
-          11633
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/git.rs": {
-        "id": "grits-core/src/git.rs",
-        "name": "grits-core/src/git.rs",
-        "file_path": "grits-core/src/git.rs",
+      "grits-core/src/lib.rs": {
+        "id": "grits-core/src/lib.rs",
+        "name": "grits-core/src/lib.rs",
+        "file_path": "grits-core/src/lib.rs",
         "package": null,
         "language": "rust",
         "kind": "file",
         "byte_range": [
           0,
-          5583
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/topology/workspace.rs::test_package_map": {
-        "id": "grits-core/src/topology/workspace.rs::test_package_map",
-        "name": "test_package_map",
-        "file_path": "grits-core/src/topology/workspace.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          12535,
-          13031
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/topology/scanner.rs::ParserCache": {
-        "id": "grits-core/src/topology/scanner.rs::ParserCache",
-        "name": "ParserCache",
-        "file_path": "grits-core/src/topology/scanner.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "type_identifier",
-        "byte_range": [
-          928,
-          2469
-        ],
-        "metadata": {}
-      },
-      "grits-cli/tests/topology_test.rs": {
-        "id": "grits-cli/tests/topology_test.rs",
-        "name": "grits-cli/tests/topology_test.rs",
-        "file_path": "grits-cli/tests/topology_test.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "file",
-        "byte_range": [
-          0,
-          1298
-        ],
-        "metadata": {}
-      },
-      "grits-core/tests/memory_store_test.rs::test_memory_store_config": {
-        "id": "grits-core/tests/memory_store_test.rs::test_memory_store_config",
-        "name": "test_memory_store_config",
-        "file_path": "grits-core/tests/memory_store_test.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          1026,
-          1359
-        ],
-        "metadata": {}
-      },
-      "grits-cli/tests/scanner_test.rs::test_scanner_max_depth": {
-        "id": "grits-cli/tests/scanner_test.rs::test_scanner_max_depth",
-        "name": "test_scanner_max_depth",
-        "file_path": "grits-cli/tests/scanner_test.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          1811,
-          2973
-        ],
-        "metadata": {}
-      },
-      "grits-cli/tests/scanner_test.rs::test_scanner_with_excludes": {
-        "id": "grits-cli/tests/scanner_test.rs::test_scanner_with_excludes",
-        "name": "test_scanner_with_excludes",
-        "file_path": "grits-cli/tests/scanner_test.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          127,
-          1282
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/context.rs::hydrate_code": {
-        "id": "grits-core/src/context.rs::hydrate_code",
-        "name": "hydrate_code",
-        "file_path": "grits-core/src/context.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          4562,
-          5573
-        ],
-        "metadata": {}
-      },
-      "grits-cli/tests/scanner_test.rs": {
-        "id": "grits-cli/tests/scanner_test.rs",
-        "name": "grits-cli/tests/scanner_test.rs",
-        "file_path": "grits-cli/tests/scanner_test.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "file",
-        "byte_range": [
-          0,
-          2975
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/context.rs::SymbolEntry": {
-        "id": "grits-core/src/context.rs::SymbolEntry",
-        "name": "SymbolEntry",
-        "file_path": "grits-core/src/context.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "type_identifier",
-        "byte_range": [
-          1112,
-          1694
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/git.rs::has_remote": {
-        "id": "grits-core/src/git.rs::has_remote",
-        "name": "has_remote",
-        "file_path": "grits-core/src/git.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          4777,
-          5144
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/memory_store.rs::import_from_string": {
-        "id": "grits-core/src/memory_store.rs::import_from_string",
-        "name": "import_from_string",
-        "file_path": "grits-core/src/memory_store.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          751,
-          1218
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/store.rs::execute_raw": {
-        "id": "grits-core/src/store.rs::execute_raw",
-        "name": "execute_raw",
-        "file_path": "grits-core/src/store.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          15468,
-          15588
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/store.rs::export_to_jsonl": {
-        "id": "grits-core/src/store.rs::export_to_jsonl",
-        "name": "export_to_jsonl",
-        "file_path": "grits-core/src/store.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          35068,
-          36317
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/memory_store.rs::export_to_jsonl": {
-        "id": "grits-core/src/memory_store.rs::export_to_jsonl",
-        "name": "export_to_jsonl",
-        "file_path": "grits-core/src/memory_store.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          7120,
-          8533
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/merge.rs::test_merge_no_conflict": {
-        "id": "grits-core/src/merge.rs::test_merge_no_conflict",
-        "name": "test_merge_no_conflict",
-        "file_path": "grits-core/src/merge.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          20194,
-          20683
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/git.rs::rebase_continue": {
-        "id": "grits-core/src/git.rs::rebase_continue",
-        "name": "rebase_continue",
-        "file_path": "grits-core/src/git.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          4281,
-          4769
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/topology/scanner.rs::with_extensions": {
-        "id": "grits-core/src/topology/scanner.rs::with_extensions",
-        "name": "with_extensions",
-        "file_path": "grits-core/src/topology/scanner.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          3069,
-          3196
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/topology/workspace.rs::detect_node_workspace": {
-        "id": "grits-core/src/topology/workspace.rs::detect_node_workspace",
-        "name": "detect_node_workspace",
-        "file_path": "grits-core/src/topology/workspace.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          3602,
-          8691
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/merge.rs": {
-        "id": "grits-core/src/merge.rs",
-        "name": "grits-core/src/merge.rs",
-        "file_path": "grits-core/src/merge.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "file",
-        "byte_range": [
-          0,
-          22305
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/git.rs::pull_rebase": {
-        "id": "grits-core/src/git.rs::pull_rebase",
-        "name": "pull_rebase",
-        "file_path": "grits-core/src/git.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          2526,
-          3017
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/topology/mod.rs::add_weighted_dependency": {
-        "id": "grits-core/src/topology/mod.rs::add_weighted_dependency",
-        "name": "add_weighted_dependency",
-        "file_path": "grits-core/src/topology/mod.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          1324,
-          1646
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/memory_store.rs::MemoryStoreInner": {
-        "id": "grits-core/src/memory_store.rs::MemoryStoreInner",
-        "name": "MemoryStoreInner",
-        "file_path": "grits-core/src/memory_store.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "type_identifier",
-        "byte_range": [
-          457,
-          661
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/store.rs::get_all_labels": {
-        "id": "grits-core/src/store.rs::get_all_labels",
-        "name": "get_all_labels",
-        "file_path": "grits-core/src/store.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          8438,
-          8972
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/topology/scanner.rs::ScanProgress": {
-        "id": "grits-core/src/topology/scanner.rs::ScanProgress",
-        "name": "ScanProgress",
-        "file_path": "grits-core/src/topology/scanner.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "type_identifier",
-        "byte_range": [
-          544,
-          671
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/memory_store.rs::export_to_string": {
-        "id": "grits-core/src/memory_store.rs::export_to_string",
-        "name": "export_to_string",
-        "file_path": "grits-core/src/memory_store.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          1226,
-          1685
-        ],
-        "metadata": {}
-      },
-      "grits-cli/src/main.rs::FrontmatterDependency": {
-        "id": "grits-cli/src/main.rs::FrontmatterDependency",
-        "name": "FrontmatterDependency",
-        "file_path": "grits-cli/src/main.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "type_identifier",
-        "byte_range": [
-          3822,
-          3965
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/memory_store.rs::generate_unique_id": {
-        "id": "grits-core/src/memory_store.rs::generate_unique_id",
-        "name": "generate_unique_id",
-        "file_path": "grits-core/src/memory_store.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          5919,
-          6857
-        ],
-        "metadata": {}
-      },
-      "grits-cli/src/main.rs::main": {
-        "id": "grits-cli/src/main.rs::main",
-        "name": "main",
-        "file_path": "grits-cli/src/main.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          4458,
-          24024
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/context.rs::ContextInvariants": {
-        "id": "grits-core/src/context.rs::ContextInvariants",
-        "name": "ContextInvariants",
-        "file_path": "grits-core/src/context.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "type_identifier",
-        "byte_range": [
-          1794,
-          1989
+          400
         ],
         "metadata": {}
       },
@@ -560,42 +40,81 @@
         ],
         "metadata": {}
       },
-      "grits-core/src/memory_store.rs::create_issue": {
-        "id": "grits-core/src/memory_store.rs::create_issue",
-        "name": "create_issue",
-        "file_path": "grits-core/src/memory_store.rs",
+      "grits-core/src/topology/mod.rs": {
+        "id": "grits-core/src/topology/mod.rs",
+        "name": "grits-core/src/topology/mod.rs",
+        "file_path": "grits-core/src/topology/mod.rs",
         "package": null,
         "language": "rust",
-        "kind": "identifier",
+        "kind": "file",
         "byte_range": [
-          6865,
-          7112
+          0,
+          3519
         ],
         "metadata": {}
       },
-      "grits-core/src/store.rs::update_issue": {
-        "id": "grits-core/src/store.rs::update_issue",
-        "name": "update_issue",
-        "file_path": "grits-core/src/store.rs",
+      "grits-core/src/topology/workspace.rs::detect_go_workspace": {
+        "id": "grits-core/src/topology/workspace.rs::detect_go_workspace",
+        "name": "detect_go_workspace",
+        "file_path": "grits-core/src/topology/workspace.rs",
         "package": null,
         "language": "rust",
         "kind": "identifier",
         "byte_range": [
-          11643,
-          15029
+          8738,
+          11310
         ],
         "metadata": {}
       },
-      "grits-core/src/topology/cache.rs::load": {
-        "id": "grits-core/src/topology/cache.rs::load",
-        "name": "load",
-        "file_path": "grits-core/src/topology/cache.rs",
+      "grits-core/src/fs.rs::StdFileSystem": {
+        "id": "grits-core/src/fs.rs::StdFileSystem",
+        "name": "StdFileSystem",
+        "file_path": "grits-core/src/fs.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "type_identifier",
+        "byte_range": [
+          633,
+          1601
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/git.rs::rebase_continue": {
+        "id": "grits-core/src/git.rs::rebase_continue",
+        "name": "rebase_continue",
+        "file_path": "grits-core/src/git.rs",
         "package": null,
         "language": "rust",
         "kind": "identifier",
         "byte_range": [
-          933,
-          1105
+          4281,
+          4769
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/merge.rs::merge_status": {
+        "id": "grits-core/src/merge.rs::merge_status",
+        "name": "merge_status",
+        "file_path": "grits-core/src/merge.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          15656,
+          15984
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/merge.rs::merge_priority": {
+        "id": "grits-core/src/merge.rs::merge_priority",
+        "name": "merge_priority",
+        "file_path": "grits-core/src/merge.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          15988,
+          16461
         ],
         "metadata": {}
       },
@@ -612,146 +131,55 @@
         ],
         "metadata": {}
       },
-      "grits-core/src/merge.rs::test_merge_tombstone_wins_over_edit": {
-        "id": "grits-core/src/merge.rs::test_merge_tombstone_wins_over_edit",
-        "name": "test_merge_tombstone_wins_over_edit",
-        "file_path": "grits-core/src/merge.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          21225,
-          21723
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/models.rs::Comment": {
-        "id": "grits-core/src/models.rs::Comment",
-        "name": "Comment",
-        "file_path": "grits-core/src/models.rs",
+      "grits-cli/src/main.rs::IssueFrontmatter": {
+        "id": "grits-cli/src/main.rs::IssueFrontmatter",
+        "name": "IssueFrontmatter",
+        "file_path": "grits-cli/src/main.rs",
         "package": null,
         "language": "rust",
         "kind": "type_identifier",
         "byte_range": [
-          470,
-          625
+          6028,
+          6424
         ],
         "metadata": {}
       },
-      "grits-core/src/merge.rs::merge_field_by_updated_at": {
-        "id": "grits-core/src/merge.rs::merge_field_by_updated_at",
-        "name": "merge_field_by_updated_at",
-        "file_path": "grits-core/src/merge.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          14670,
-          15173
-        ],
-        "metadata": {}
-      },
-      "grits-cli/src/main.rs::default_dep_type": {
-        "id": "grits-cli/src/main.rs::default_dep_type",
-        "name": "default_dep_type",
-        "file_path": "grits-cli/src/main.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          3967,
-          4029
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/topology/cache.rs::get_changed_files": {
-        "id": "grits-core/src/topology/cache.rs::get_changed_files",
-        "name": "get_changed_files",
+      "grits-core/src/topology/cache.rs::update_from_dir_with_progress": {
+        "id": "grits-core/src/topology/cache.rs::update_from_dir_with_progress",
+        "name": "update_from_dir_with_progress",
         "file_path": "grits-core/src/topology/cache.rs",
         "package": null,
         "language": "rust",
         "kind": "identifier",
         "byte_range": [
-          1757,
-          2567
+          3436,
+          3927
         ],
         "metadata": {}
       },
-      "grits-core/src/context.rs": {
-        "id": "grits-core/src/context.rs",
-        "name": "grits-core/src/context.rs",
-        "file_path": "grits-core/src/context.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "file",
-        "byte_range": [
-          0,
-          6784
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/topology/mod.rs::new": {
-        "id": "grits-core/src/topology/mod.rs::new",
-        "name": "new",
-        "file_path": "grits-core/src/topology/mod.rs",
+      "grits-core/tests/git_test.rs::test_git_operations": {
+        "id": "grits-core/tests/git_test.rs::test_git_operations",
+        "name": "test_git_operations",
+        "file_path": "grits-core/tests/git_test.rs",
         "package": null,
         "language": "rust",
         "kind": "identifier",
         "byte_range": [
-          940,
-          1059
+          89,
+          1487
         ],
         "metadata": {}
       },
-      "grits-core/src/topology/scanner.rs::is_excluded": {
-        "id": "grits-core/src/topology/scanner.rs::is_excluded",
-        "name": "is_excluded",
+      "grits-core/src/topology/scanner.rs::with_excludes": {
+        "id": "grits-core/src/topology/scanner.rs::with_excludes",
+        "name": "with_excludes",
         "file_path": "grits-core/src/topology/scanner.rs",
         "package": null,
         "language": "rust",
         "kind": "identifier",
         "byte_range": [
-          4059,
-          4731
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/merge.rs::is_expired_tombstone": {
-        "id": "grits-core/src/merge.rs::is_expired_tombstone",
-        "name": "is_expired_tombstone",
-        "file_path": "grits-core/src/merge.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          3931,
-          4548
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/store.rs": {
-        "id": "grits-core/src/store.rs",
-        "name": "grits-core/src/store.rs",
-        "file_path": "grits-core/src/store.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "file",
-        "byte_range": [
-          0,
-          36682
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/topology/scanner.rs::without_default_excludes": {
-        "id": "grits-core/src/topology/scanner.rs::without_default_excludes",
-        "name": "without_default_excludes",
-        "file_path": "grits-core/src/topology/scanner.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          3564,
-          3680
+          3327,
+          3556
         ],
         "metadata": {}
       },
@@ -768,6 +196,97 @@
         ],
         "metadata": {}
       },
+      "grits-core/src/store.rs::list_config": {
+        "id": "grits-core/src/store.rs::list_config",
+        "name": "list_config",
+        "file_path": "grits-core/src/store.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          15457,
+          15887
+        ],
+        "metadata": {}
+      },
+      "grits-cli/src/main.rs::default_dep_type": {
+        "id": "grits-cli/src/main.rs::default_dep_type",
+        "name": "default_dep_type",
+        "file_path": "grits-cli/src/main.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          5918,
+          5982
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/util.rs::generate_hash_id": {
+        "id": "grits-core/src/util.rs::generate_hash_id",
+        "name": "generate_hash_id",
+        "file_path": "grits-core/src/util.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          1712,
+          2890
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/topology/workspace.rs::test_package_map": {
+        "id": "grits-core/src/topology/workspace.rs::test_package_map",
+        "name": "test_package_map",
+        "file_path": "grits-core/src/topology/workspace.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          12535,
+          13031
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/search.rs::search": {
+        "id": "grits-core/src/search.rs::search",
+        "name": "search",
+        "file_path": "grits-core/src/search.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          1734,
+          3259
+        ],
+        "metadata": {}
+      },
+      "grits-core/tests/memory_store_test.rs::test_memory_store_config": {
+        "id": "grits-core/tests/memory_store_test.rs::test_memory_store_config",
+        "name": "test_memory_store_config",
+        "file_path": "grits-core/tests/memory_store_test.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          1026,
+          1359
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/topology/workspace.rs": {
+        "id": "grits-core/src/topology/workspace.rs",
+        "name": "grits-core/src/topology/workspace.rs",
+        "file_path": "grits-core/src/topology/workspace.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "file",
+        "byte_range": [
+          0,
+          13036
+        ],
+        "metadata": {}
+      },
       "grits-core/src/context.rs::ContextMetadata": {
         "id": "grits-core/src/context.rs::ContextMetadata",
         "name": "ContextMetadata",
@@ -781,6 +300,84 @@
         ],
         "metadata": {}
       },
+      "grits-core/src/topology/mod.rs::add_symbol": {
+        "id": "grits-core/src/topology/mod.rs::add_symbol",
+        "name": "add_symbol",
+        "file_path": "grits-core/src/topology/mod.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          1065,
+          1171
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/topology/parser.rs": {
+        "id": "grits-core/src/topology/parser.rs",
+        "name": "grits-core/src/topology/parser.rs",
+        "file_path": "grits-core/src/topology/parser.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "file",
+        "byte_range": [
+          0,
+          32109
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/topology/scanner.rs::scan_with_progress": {
+        "id": "grits-core/src/topology/scanner.rs::scan_with_progress",
+        "name": "scan_with_progress",
+        "file_path": "grits-core/src/topology/scanner.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          4788,
+          7353
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/store.rs::create_issue": {
+        "id": "grits-core/src/store.rs::create_issue",
+        "name": "create_issue",
+        "file_path": "grits-core/src/store.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          34253,
+          37692
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/topology/workspace.rs::WorkspaceDetector": {
+        "id": "grits-core/src/topology/workspace.rs::WorkspaceDetector",
+        "name": "WorkspaceDetector",
+        "file_path": "grits-core/src/topology/workspace.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "type_identifier",
+        "byte_range": [
+          667,
+          12175
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/sync.rs": {
+        "id": "grits-core/src/sync.rs",
+        "name": "grits-core/src/sync.rs",
+        "file_path": "grits-core/src/sync.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "file",
+        "byte_range": [
+          0,
+          4482
+        ],
+        "metadata": {}
+      },
       "grits-core/src/git.rs::commit": {
         "id": "grits-core/src/git.rs::commit",
         "name": "commit",
@@ -791,6 +388,851 @@
         "byte_range": [
           1814,
           2518
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/context.rs::assemble": {
+        "id": "grits-core/src/context.rs::assemble",
+        "name": "assemble",
+        "file_path": "grits-core/src/context.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          2414,
+          5760
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/merge.rs::merge_issue": {
+        "id": "grits-core/src/merge.rs::merge_issue",
+        "name": "merge_issue",
+        "file_path": "grits-core/src/merge.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          12146,
+          14411
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/search.rs::tokenize": {
+        "id": "grits-core/src/search.rs::tokenize",
+        "name": "tokenize",
+        "file_path": "grits-core/src/search.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          3266,
+          3471
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/merge.rs::create_tombstone": {
+        "id": "grits-core/src/merge.rs::create_tombstone",
+        "name": "create_tombstone",
+        "file_path": "grits-core/src/merge.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          19897,
+          20173
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/store.rs::get_all_labels": {
+        "id": "grits-core/src/store.rs::get_all_labels",
+        "name": "get_all_labels",
+        "file_path": "grits-core/src/store.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          8690,
+          9236
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/topology/cache.rs::TopologyCache": {
+        "id": "grits-core/src/topology/cache.rs::TopologyCache",
+        "name": "TopologyCache",
+        "file_path": "grits-core/src/topology/cache.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "type_identifier",
+        "byte_range": [
+          538,
+          4152
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/merge.rs::merge_labels": {
+        "id": "grits-core/src/merge.rs::merge_labels",
+        "name": "merge_labels",
+        "file_path": "grits-core/src/merge.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          17617,
+          17959
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/store.rs::execute_raw": {
+        "id": "grits-core/src/store.rs::execute_raw",
+        "name": "execute_raw",
+        "file_path": "grits-core/src/store.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          15899,
+          16022
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/topology/scanner.rs::get_or_create": {
+        "id": "grits-core/src/topology/scanner.rs::get_or_create",
+        "name": "get_or_create",
+        "file_path": "grits-core/src/topology/scanner.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          1149,
+          2466
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/merge.rs::merge_dependencies": {
+        "id": "grits-core/src/merge.rs::merge_dependencies",
+        "name": "merge_dependencies",
+        "file_path": "grits-core/src/merge.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          17184,
+          17613
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/memory_store.rs::get_config": {
+        "id": "grits-core/src/memory_store.rs::get_config",
+        "name": "get_config",
+        "file_path": "grits-core/src/memory_store.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          1726,
+          1885
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/store.rs": {
+        "id": "grits-core/src/store.rs",
+        "name": "grits-core/src/store.rs",
+        "file_path": "grits-core/src/store.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "file",
+        "byte_range": [
+          0,
+          39365
+        ],
+        "metadata": {}
+      },
+      "grits-cli/tests/scanner_test.rs": {
+        "id": "grits-cli/tests/scanner_test.rs",
+        "name": "grits-cli/tests/scanner_test.rs",
+        "file_path": "grits-cli/tests/scanner_test.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "file",
+        "byte_range": [
+          0,
+          2975
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/context.rs::MiniCodebase": {
+        "id": "grits-core/src/context.rs::MiniCodebase",
+        "name": "MiniCodebase",
+        "file_path": "grits-core/src/context.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "type_identifier",
+        "byte_range": [
+          2339,
+          8140
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/context.rs::to_markdown": {
+        "id": "grits-core/src/context.rs::to_markdown",
+        "name": "to_markdown",
+        "file_path": "grits-core/src/context.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          6985,
+          8138
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/merge.rs::max_time": {
+        "id": "grits-core/src/merge.rs::max_time",
+        "name": "max_time",
+        "file_path": "grits-core/src/merge.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          16745,
+          16879
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/fs.rs::create_dir_all": {
+        "id": "grits-core/src/fs.rs::create_dir_all",
+        "name": "create_dir_all",
+        "file_path": "grits-core/src/fs.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          924,
+          1041
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/git.rs::pull_rebase": {
+        "id": "grits-core/src/git.rs::pull_rebase",
+        "name": "pull_rebase",
+        "file_path": "grits-core/src/git.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          2526,
+          3017
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/fs.rs::exists": {
+        "id": "grits-core/src/fs.rs::exists",
+        "name": "exists",
+        "file_path": "grits-core/src/fs.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          1173,
+          1242
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/memory_store.rs::update_issue": {
+        "id": "grits-core/src/memory_store.rs::update_issue",
+        "name": "update_issue",
+        "file_path": "grits-core/src/memory_store.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          2104,
+          2351
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/topology/scanner.rs::without_default_excludes": {
+        "id": "grits-core/src/topology/scanner.rs::without_default_excludes",
+        "name": "without_default_excludes",
+        "file_path": "grits-core/src/topology/scanner.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          3564,
+          3680
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/topology/workspace.rs::detect": {
+        "id": "grits-core/src/topology/workspace.rs::detect",
+        "name": "detect",
+        "file_path": "grits-core/src/topology/workspace.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          762,
+          1237
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/topology/scanner.rs::with_max_depth": {
+        "id": "grits-core/src/topology/scanner.rs::with_max_depth",
+        "name": "with_max_depth",
+        "file_path": "grits-core/src/topology/scanner.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          3204,
+          3319
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/topology/mod.rs::SymbolGraph": {
+        "id": "grits-core/src/topology/mod.rs::SymbolGraph",
+        "name": "SymbolGraph",
+        "file_path": "grits-core/src/topology/mod.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "type_identifier",
+        "byte_range": [
+          917,
+          1648
+        ],
+        "metadata": {}
+      },
+      "grits-cli/tests/scanner_test.rs::test_scanner_max_depth": {
+        "id": "grits-cli/tests/scanner_test.rs::test_scanner_max_depth",
+        "name": "test_scanner_max_depth",
+        "file_path": "grits-cli/tests/scanner_test.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          1811,
+          2973
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/util.rs": {
+        "id": "grits-core/src/util.rs",
+        "name": "grits-core/src/util.rs",
+        "file_path": "grits-core/src/util.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "file",
+        "byte_range": [
+          0,
+          4425
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/util.rs::test_encode_base36": {
+        "id": "grits-core/src/util.rs::test_encode_base36",
+        "name": "test_encode_base36",
+        "file_path": "grits-core/src/util.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          2986,
+          3592
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/store.rs::generate_unique_id": {
+        "id": "grits-core/src/store.rs::generate_unique_id",
+        "name": "generate_unique_id",
+        "file_path": "grits-core/src/store.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          31292,
+          34241
+        ],
+        "metadata": {}
+      },
+      "grits-cli/tests/topology_test.rs::test_parser_integration": {
+        "id": "grits-cli/tests/topology_test.rs::test_parser_integration",
+        "name": "test_parser_integration",
+        "file_path": "grits-cli/tests/topology_test.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          166,
+          1298
+        ],
+        "metadata": {}
+      },
+      "grits-core/tests/git_test.rs": {
+        "id": "grits-core/tests/git_test.rs",
+        "name": "grits-core/tests/git_test.rs",
+        "file_path": "grits-core/tests/git_test.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "file",
+        "byte_range": [
+          0,
+          1489
+        ],
+        "metadata": {}
+      },
+      "grits-core/tests/export_test.rs::test_export_to_jsonl": {
+        "id": "grits-core/tests/export_test.rs::test_export_to_jsonl",
+        "name": "test_export_to_jsonl",
+        "file_path": "grits-core/tests/export_test.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          125,
+          3160
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/fs.rs::open_read": {
+        "id": "grits-core/src/fs.rs::open_read",
+        "name": "open_read",
+        "file_path": "grits-core/src/fs.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          1250,
+          1444
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/topology/mod.rs::DependencyEdge": {
+        "id": "grits-core/src/topology/mod.rs::DependencyEdge",
+        "name": "DependencyEdge",
+        "file_path": "grits-core/src/topology/mod.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "type_identifier",
+        "byte_range": [
+          578,
+          690
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/merge.rs::merge3way": {
+        "id": "grits-core/src/merge.rs::merge3way",
+        "name": "merge3way",
+        "file_path": "grits-core/src/merge.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          1476,
+          3118
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/topology/scanner.rs::ScanProgress": {
+        "id": "grits-core/src/topology/scanner.rs::ScanProgress",
+        "name": "ScanProgress",
+        "file_path": "grits-core/src/topology/scanner.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "type_identifier",
+        "byte_range": [
+          544,
+          671
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/merge.rs::create_issue": {
+        "id": "grits-core/src/merge.rs::create_issue",
+        "name": "create_issue",
+        "file_path": "grits-core/src/merge.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          18596,
+          19889
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/topology/cache.rs::get_changed_files": {
+        "id": "grits-core/src/topology/cache.rs::get_changed_files",
+        "name": "get_changed_files",
+        "file_path": "grits-core/src/topology/cache.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          1757,
+          2567
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/memory_store.rs::list_config": {
+        "id": "grits-core/src/memory_store.rs::list_config",
+        "name": "list_config",
+        "file_path": "grits-core/src/memory_store.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          2359,
+          2690
+        ],
+        "metadata": {}
+      },
+      "grits-cli/src/main.rs::find_db_path": {
+        "id": "grits-cli/src/main.rs::find_db_path",
+        "name": "find_db_path",
+        "file_path": "grits-cli/src/main.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          43698,
+          44491
+        ],
+        "metadata": {}
+      },
+      "grits-cli/tests/topology_test.rs": {
+        "id": "grits-cli/tests/topology_test.rs",
+        "name": "grits-cli/tests/topology_test.rs",
+        "file_path": "grits-cli/tests/topology_test.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "file",
+        "byte_range": [
+          0,
+          1298
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/git.rs::StdGit": {
+        "id": "grits-core/src/git.rs::StdGit",
+        "name": "StdGit",
+        "file_path": "grits-core/src/git.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "type_identifier",
+        "byte_range": [
+          962,
+          5581
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/git.rs::add": {
+        "id": "grits-core/src/git.rs::add",
+        "name": "add",
+        "file_path": "grits-core/src/git.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          1371,
+          1806
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/store.rs::get_all_dependencies": {
+        "id": "grits-core/src/store.rs::get_all_dependencies",
+        "name": "get_all_dependencies",
+        "file_path": "grits-core/src/store.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          9248,
+          10240
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/models.rs::Comment": {
+        "id": "grits-core/src/models.rs::Comment",
+        "name": "Comment",
+        "file_path": "grits-core/src/models.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "type_identifier",
+        "byte_range": [
+          470,
+          625
+        ],
+        "metadata": {}
+      },
+      "grits-cli/tests/scanner_test.rs::test_cache_save_load": {
+        "id": "grits-cli/tests/scanner_test.rs::test_cache_save_load",
+        "name": "test_cache_save_load",
+        "file_path": "grits-cli/tests/scanner_test.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          1295,
+          1798
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/topology/cache.rs::from_graph": {
+        "id": "grits-core/src/topology/cache.rs::from_graph",
+        "name": "from_graph",
+        "file_path": "grits-core/src/topology/cache.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          746,
+          925
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/topology/parser.rs::parse_file": {
+        "id": "grits-core/src/topology/parser.rs::parse_file",
+        "name": "parse_file",
+        "file_path": "grits-core/src/topology/parser.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          8444,
+          32104
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/store.rs::export_to_jsonl": {
+        "id": "grits-core/src/store.rs::export_to_jsonl",
+        "name": "export_to_jsonl",
+        "file_path": "grits-core/src/store.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          37704,
+          38986
+        ],
+        "metadata": {}
+      },
+      "grits-core/tests/memory_store_test.rs::test_memory_store_export_import": {
+        "id": "grits-core/tests/memory_store_test.rs::test_memory_store_export_import",
+        "name": "test_memory_store_export_import",
+        "file_path": "grits-core/tests/memory_store_test.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          1372,
+          2256
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/topology/mod.rs::StarNeighborhood": {
+        "id": "grits-core/src/topology/mod.rs::StarNeighborhood",
+        "name": "StarNeighborhood",
+        "file_path": "grits-core/src/topology/mod.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "type_identifier",
+        "byte_range": [
+          1759,
+          1938
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/memory_store.rs::import_from_string": {
+        "id": "grits-core/src/memory_store.rs::import_from_string",
+        "name": "import_from_string",
+        "file_path": "grits-core/src/memory_store.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          751,
+          1218
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/util.rs::test_generate_hash_id_stability": {
+        "id": "grits-core/src/util.rs::test_generate_hash_id_stability",
+        "name": "test_generate_hash_id_stability",
+        "file_path": "grits-core/src/util.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          3613,
+          4420
+        ],
+        "metadata": {}
+      },
+      "grits-core/tests/export_test.rs": {
+        "id": "grits-core/tests/export_test.rs",
+        "name": "grits-core/tests/export_test.rs",
+        "file_path": "grits-core/tests/export_test.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "file",
+        "byte_range": [
+          0,
+          3162
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/topology/cache.rs::hash_file": {
+        "id": "grits-core/src/topology/cache.rs::hash_file",
+        "name": "hash_file",
+        "file_path": "grits-core/src/topology/cache.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          3935,
+          4149
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/context.rs::ContextInvariants": {
+        "id": "grits-core/src/context.rs::ContextInvariants",
+        "name": "ContextInvariants",
+        "file_path": "grits-core/src/context.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "type_identifier",
+        "byte_range": [
+          1794,
+          1989
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/search.rs::SearchIndex": {
+        "id": "grits-core/src/search.rs::SearchIndex",
+        "name": "SearchIndex",
+        "file_path": "grits-core/src/search.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "type_identifier",
+        "byte_range": [
+          504,
+          3262
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/memory_store.rs::MemoryStoreInner": {
+        "id": "grits-core/src/memory_store.rs::MemoryStoreInner",
+        "name": "MemoryStoreInner",
+        "file_path": "grits-core/src/memory_store.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "type_identifier",
+        "byte_range": [
+          457,
+          661
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/store.rs::parse_timestamp": {
+        "id": "grits-core/src/store.rs::parse_timestamp",
+        "name": "parse_timestamp",
+        "file_path": "grits-core/src/store.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          39001,
+          39360
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/store.rs::import_from_jsonl": {
+        "id": "grits-core/src/store.rs::import_from_jsonl",
+        "name": "import_from_jsonl",
+        "file_path": "grits-core/src/store.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          26430,
+          31280
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/store.rs::list_issues": {
+        "id": "grits-core/src/store.rs::list_issues",
+        "name": "list_issues",
+        "file_path": "grits-core/src/store.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          21751,
+          26418
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/sync.rs::run_sync": {
+        "id": "grits-core/src/sync.rs::run_sync",
+        "name": "run_sync",
+        "file_path": "grits-core/src/sync.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          143,
+          4482
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/topology/scanner.rs::ParserCache": {
+        "id": "grits-core/src/topology/scanner.rs::ParserCache",
+        "name": "ParserCache",
+        "file_path": "grits-core/src/topology/scanner.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "type_identifier",
+        "byte_range": [
+          928,
+          2469
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/memory_store.rs::import_from_jsonl": {
+        "id": "grits-core/src/memory_store.rs::import_from_jsonl",
+        "name": "import_from_jsonl",
+        "file_path": "grits-core/src/memory_store.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          5336,
+          5911
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/merge.rs::merge_field_by_updated_at": {
+        "id": "grits-core/src/merge.rs::merge_field_by_updated_at",
+        "name": "merge_field_by_updated_at",
+        "file_path": "grits-core/src/merge.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          14670,
+          15173
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/git.rs::has_remote": {
+        "id": "grits-core/src/git.rs::has_remote",
+        "name": "has_remote",
+        "file_path": "grits-core/src/git.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          4777,
+          5144
         ],
         "metadata": {}
       },
@@ -820,302 +1262,29 @@
         ],
         "metadata": {}
       },
-      "grits-core/src/memory_store.rs::set_config": {
-        "id": "grits-core/src/memory_store.rs::set_config",
-        "name": "set_config",
-        "file_path": "grits-core/src/memory_store.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          1893,
-          2096
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/memory_store.rs::get_issue": {
-        "id": "grits-core/src/memory_store.rs::get_issue",
-        "name": "get_issue",
-        "file_path": "grits-core/src/memory_store.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          2813,
-          3301
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/topology/parser.rs::new": {
-        "id": "grits-core/src/topology/parser.rs::new",
-        "name": "new",
-        "file_path": "grits-core/src/topology/parser.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          7702,
-          8436
-        ],
-        "metadata": {}
-      },
-      "grits-cli/src/main.rs::Cli": {
-        "id": "grits-cli/src/main.rs::Cli",
-        "name": "Cli",
+      "grits-cli/src/main.rs::FrontmatterDependency": {
+        "id": "grits-cli/src/main.rs::FrontmatterDependency",
+        "name": "FrontmatterDependency",
         "file_path": "grits-cli/src/main.rs",
         "package": null,
         "language": "rust",
         "kind": "type_identifier",
         "byte_range": [
-          338,
-          502
+          5766,
+          5914
         ],
         "metadata": {}
       },
-      "grits-cli/tests/cli_tests.rs::test_path_handling": {
-        "id": "grits-cli/tests/cli_tests.rs::test_path_handling",
-        "name": "test_path_handling",
-        "file_path": "grits-cli/tests/cli_tests.rs",
+      "grits-core/tests/memory_store_test.rs::test_memory_store_crud": {
+        "id": "grits-core/tests/memory_store_test.rs::test_memory_store_crud",
+        "name": "test_memory_store_crud",
+        "file_path": "grits-core/tests/memory_store_test.rs",
         "package": null,
         "language": "rust",
         "kind": "identifier",
         "byte_range": [
-          2648,
-          3582
-        ],
-        "metadata": {}
-      },
-      "grits-cli/tests/scanner_test.rs::test_cache_save_load": {
-        "id": "grits-cli/tests/scanner_test.rs::test_cache_save_load",
-        "name": "test_cache_save_load",
-        "file_path": "grits-cli/tests/scanner_test.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          1295,
-          1798
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/memory_store.rs": {
-        "id": "grits-core/src/memory_store.rs",
-        "name": "grits-core/src/memory_store.rs",
-        "file_path": "grits-core/src/memory_store.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "file",
-        "byte_range": [
-          0,
-          8538
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/merge.rs::merge_field": {
-        "id": "grits-core/src/merge.rs::merge_field",
-        "name": "merge_field",
-        "file_path": "grits-core/src/merge.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          14415,
-          14666
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/sync.rs": {
-        "id": "grits-core/src/sync.rs",
-        "name": "grits-core/src/sync.rs",
-        "file_path": "grits-core/src/sync.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "file",
-        "byte_range": [
-          0,
-          4482
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/topology/cache.rs::get_current_head": {
-        "id": "grits-core/src/topology/cache.rs::get_current_head",
-        "name": "get_current_head",
-        "file_path": "grits-core/src/topology/cache.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          2617,
-          3025
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/topology/scanner.rs::scan_with_progress": {
-        "id": "grits-core/src/topology/scanner.rs::scan_with_progress",
-        "name": "scan_with_progress",
-        "file_path": "grits-core/src/topology/scanner.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          4788,
-          7353
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/merge.rs::create_tombstone": {
-        "id": "grits-core/src/merge.rs::create_tombstone",
-        "name": "create_tombstone",
-        "file_path": "grits-core/src/merge.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          19897,
-          20173
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/topology/workspace.rs::WorkspaceConfig": {
-        "id": "grits-core/src/topology/workspace.rs::WorkspaceConfig",
-        "name": "WorkspaceConfig",
-        "file_path": "grits-core/src/topology/workspace.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "type_identifier",
-        "byte_range": [
-          459,
-          583
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/git.rs::add": {
-        "id": "grits-core/src/git.rs::add",
-        "name": "add",
-        "file_path": "grits-core/src/git.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          1371,
-          1806
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/util.rs::test_encode_base36": {
-        "id": "grits-core/src/util.rs::test_encode_base36",
-        "name": "test_encode_base36",
-        "file_path": "grits-core/src/util.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          2986,
-          3592
-        ],
-        "metadata": {}
-      },
-      "grits-core/tests/git_test.rs": {
-        "id": "grits-core/tests/git_test.rs",
-        "name": "grits-core/tests/git_test.rs",
-        "file_path": "grits-core/tests/git_test.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "file",
-        "byte_range": [
-          0,
-          1489
-        ],
-        "metadata": {}
-      },
-      "grits-cli/src/main.rs": {
-        "id": "grits-cli/src/main.rs",
-        "name": "grits-cli/src/main.rs",
-        "file_path": "grits-cli/src/main.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "file",
-        "byte_range": [
-          0,
-          24737
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/store.rs::open": {
-        "id": "grits-core/src/store.rs::open",
-        "name": "open",
-        "file_path": "grits-core/src/store.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          1657,
-          4316
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/merge.rs::merge3way": {
-        "id": "grits-core/src/merge.rs::merge3way",
-        "name": "merge3way",
-        "file_path": "grits-core/src/merge.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          1476,
-          3118
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/merge.rs::merge_notes": {
-        "id": "grits-core/src/merge.rs::merge_notes",
-        "name": "merge_notes",
-        "file_path": "grits-core/src/merge.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          15177,
-          15652
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/topology/mod.rs::StarNeighborhood": {
-        "id": "grits-core/src/topology/mod.rs::StarNeighborhood",
-        "name": "StarNeighborhood",
-        "file_path": "grits-core/src/topology/mod.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "type_identifier",
-        "byte_range": [
-          1759,
-          1938
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/store.rs::import_from_jsonl": {
-        "id": "grits-core/src/store.rs::import_from_jsonl",
-        "name": "import_from_jsonl",
-        "file_path": "grits-core/src/store.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          25744,
-          30489
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/topology/cache.rs::from_graph": {
-        "id": "grits-core/src/topology/cache.rs::from_graph",
-        "name": "from_graph",
-        "file_path": "grits-core/src/topology/cache.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          746,
-          925
+          96,
+          1013
         ],
         "metadata": {}
       },
@@ -1132,16 +1301,42 @@
         ],
         "metadata": {}
       },
-      "grits-core/src/git.rs::push": {
-        "id": "grits-core/src/git.rs::push",
-        "name": "push",
-        "file_path": "grits-core/src/git.rs",
+      "grits-core/tests/search_test.rs::test_search": {
+        "id": "grits-core/tests/search_test.rs::test_search",
+        "name": "test_search",
+        "file_path": "grits-core/tests/search_test.rs",
         "package": null,
         "language": "rust",
         "kind": "identifier",
         "byte_range": [
-          3025,
-          3396
+          84,
+          1185
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/topology/mod.rs::new": {
+        "id": "grits-core/src/topology/mod.rs::new",
+        "name": "new",
+        "file_path": "grits-core/src/topology/mod.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          940,
+          1059
+        ],
+        "metadata": {}
+      },
+      "grits-core/tests/search_test.rs": {
+        "id": "grits-core/tests/search_test.rs",
+        "name": "grits-core/tests/search_test.rs",
+        "file_path": "grits-core/tests/search_test.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "file",
+        "byte_range": [
+          0,
+          1187
         ],
         "metadata": {}
       },
@@ -1158,16 +1353,744 @@
         ],
         "metadata": {}
       },
-      "grits-core/src/topology/cache.rs::new": {
-        "id": "grits-core/src/topology/cache.rs::new",
+      "grits-cli/src/main.rs::is_meaningful_symbol": {
+        "id": "grits-cli/src/main.rs::is_meaningful_symbol",
+        "name": "is_meaningful_symbol",
+        "file_path": "grits-cli/src/main.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          45090,
+          46121
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/fs.rs::read_to_string": {
+        "id": "grits-core/src/fs.rs::read_to_string",
+        "name": "read_to_string",
+        "file_path": "grits-core/src/fs.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          674,
+          782
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/search.rs::new": {
+        "id": "grits-core/src/search.rs::new",
         "name": "new",
+        "file_path": "grits-core/src/search.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          528,
+          1726
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/topology/cache.rs::load": {
+        "id": "grits-core/src/topology/cache.rs::load",
+        "name": "load",
         "file_path": "grits-core/src/topology/cache.rs",
         "package": null,
         "language": "rust",
         "kind": "identifier",
         "byte_range": [
-          564,
-          738
+          933,
+          1105
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/git.rs::command": {
+        "id": "grits-core/src/git.rs::command",
+        "name": "command",
+        "file_path": "grits-core/src/git.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          783,
+          955
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/store.rs::open": {
+        "id": "grits-core/src/store.rs::open",
+        "name": "open",
+        "file_path": "grits-core/src/store.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          1744,
+          4478
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/memory_store.rs::get_issue": {
+        "id": "grits-core/src/memory_store.rs::get_issue",
+        "name": "get_issue",
+        "file_path": "grits-core/src/memory_store.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          2813,
+          3301
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/topology/cache.rs::get_current_head": {
+        "id": "grits-core/src/topology/cache.rs::get_current_head",
+        "name": "get_current_head",
+        "file_path": "grits-core/src/topology/cache.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          2617,
+          3025
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/git.rs": {
+        "id": "grits-core/src/git.rs",
+        "name": "grits-core/src/git.rs",
+        "file_path": "grits-core/src/git.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "file",
+        "byte_range": [
+          0,
+          5583
+        ],
+        "metadata": {}
+      },
+      "grits-cli/tests/cli_tests.rs::test_path_handling": {
+        "id": "grits-cli/tests/cli_tests.rs::test_path_handling",
+        "name": "test_path_handling",
+        "file_path": "grits-cli/tests/cli_tests.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          2648,
+          3582
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/fs.rs": {
+        "id": "grits-core/src/fs.rs",
+        "name": "grits-core/src/fs.rs",
+        "file_path": "grits-core/src/fs.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "file",
+        "byte_range": [
+          0,
+          1603
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/git.rs::show": {
+        "id": "grits-core/src/git.rs::show",
+        "name": "show",
+        "file_path": "grits-core/src/git.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          3841,
+          4273
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/fs.rs::open_write": {
+        "id": "grits-core/src/fs.rs::open_write",
+        "name": "open_write",
+        "file_path": "grits-core/src/fs.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          1452,
+          1598
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/memory_store.rs::new": {
+        "id": "grits-core/src/memory_store.rs::new",
+        "name": "new",
+        "file_path": "grits-core/src/memory_store.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          689,
+          743
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/memory_store.rs::create_issue": {
+        "id": "grits-core/src/memory_store.rs::create_issue",
+        "name": "create_issue",
+        "file_path": "grits-core/src/memory_store.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          7827,
+          8074
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/models.rs::Issue": {
+        "id": "grits-core/src/models.rs::Issue",
+        "name": "Issue",
+        "file_path": "grits-core/src/models.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "type_identifier",
+        "byte_range": [
+          687,
+          2903
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/topology/parser.rs::new": {
+        "id": "grits-core/src/topology/parser.rs::new",
+        "name": "new",
+        "file_path": "grits-core/src/topology/parser.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          7702,
+          8436
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/memory_store.rs::generate_unique_id": {
+        "id": "grits-core/src/memory_store.rs::generate_unique_id",
+        "name": "generate_unique_id",
+        "file_path": "grits-core/src/memory_store.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          5919,
+          7819
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/fs.rs::write": {
+        "id": "grits-core/src/fs.rs::write",
+        "name": "write",
+        "file_path": "grits-core/src/fs.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          790,
+          916
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/git.rs::init": {
+        "id": "grits-core/src/git.rs::init",
+        "name": "init",
+        "file_path": "grits-core/src/git.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          992,
+          1363
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/memory_store.rs::MemoryStore": {
+        "id": "grits-core/src/memory_store.rs::MemoryStore",
+        "name": "MemoryStore",
+        "file_path": "grits-core/src/memory_store.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "type_identifier",
+        "byte_range": [
+          1692,
+          9498
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/store.rs::update_issue": {
+        "id": "grits-core/src/store.rs::update_issue",
+        "name": "update_issue",
+        "file_path": "grits-core/src/store.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          11983,
+          15445
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/store.rs::get_issue": {
+        "id": "grits-core/src/store.rs::get_issue",
+        "name": "get_issue",
+        "file_path": "grits-core/src/store.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          16034,
+          21739
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/topology/scanner.rs::scan": {
+        "id": "grits-core/src/topology/scanner.rs::scan",
+        "name": "scan",
+        "file_path": "grits-core/src/topology/scanner.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          7421,
+          7529
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/topology/workspace.rs::detect_node_workspace": {
+        "id": "grits-core/src/topology/workspace.rs::detect_node_workspace",
+        "name": "detect_node_workspace",
+        "file_path": "grits-core/src/topology/workspace.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          3602,
+          8691
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/store.rs::SqliteStore": {
+        "id": "grits-core/src/store.rs::SqliteStore",
+        "name": "SqliteStore",
+        "file_path": "grits-core/src/store.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "type_identifier",
+        "byte_range": [
+          11270,
+          38993
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/memory_store.rs::execute_raw": {
+        "id": "grits-core/src/memory_store.rs::execute_raw",
+        "name": "execute_raw",
+        "file_path": "grits-core/src/memory_store.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          2698,
+          2805
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/git.rs::push": {
+        "id": "grits-core/src/git.rs::push",
+        "name": "push",
+        "file_path": "grits-core/src/git.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          3025,
+          3396
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/context.rs::SymbolEntry": {
+        "id": "grits-core/src/context.rs::SymbolEntry",
+        "name": "SymbolEntry",
+        "file_path": "grits-core/src/context.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "type_identifier",
+        "byte_range": [
+          1112,
+          1694
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/store.rs::get_all_comments": {
+        "id": "grits-core/src/store.rs::get_all_comments",
+        "name": "get_all_comments",
+        "file_path": "grits-core/src/store.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          10252,
+          11255
+        ],
+        "metadata": {}
+      },
+      "grits-cli/src/main.rs": {
+        "id": "grits-cli/src/main.rs",
+        "name": "grits-cli/src/main.rs",
+        "file_path": "grits-cli/src/main.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "file",
+        "byte_range": [
+          0,
+          46123
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/merge.rs::read_issues": {
+        "id": "grits-core/src/merge.rs::read_issues",
+        "name": "read_issues",
+        "file_path": "grits-core/src/merge.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          3122,
+          3633
+        ],
+        "metadata": {}
+      },
+      "grits-cli/src/main.rs::main": {
+        "id": "grits-cli/src/main.rs::main",
+        "name": "main",
+        "file_path": "grits-cli/src/main.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          6428,
+          43694
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/store.rs::export_all_issues": {
+        "id": "grits-core/src/store.rs::export_all_issues",
+        "name": "export_all_issues",
+        "file_path": "grits-core/src/store.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          4490,
+          8678
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/store.rs::set_config": {
+        "id": "grits-core/src/store.rs::set_config",
+        "name": "set_config",
+        "file_path": "grits-core/src/store.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          11714,
+          11971
+        ],
+        "metadata": {}
+      },
+      "grits-cli/src/main.rs::Cli": {
+        "id": "grits-cli/src/main.rs::Cli",
+        "name": "Cli",
+        "file_path": "grits-cli/src/main.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "type_identifier",
+        "byte_range": [
+          349,
+          520
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/git.rs::status": {
+        "id": "grits-core/src/git.rs::status",
+        "name": "status",
+        "file_path": "grits-core/src/git.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          3404,
+          3833
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/memory_store.rs": {
+        "id": "grits-core/src/memory_store.rs",
+        "name": "grits-core/src/memory_store.rs",
+        "file_path": "grits-core/src/memory_store.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "file",
+        "byte_range": [
+          0,
+          9500
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/context.rs": {
+        "id": "grits-core/src/context.rs",
+        "name": "grits-core/src/context.rs",
+        "file_path": "grits-core/src/context.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "file",
+        "byte_range": [
+          0,
+          8141
+        ],
+        "metadata": {}
+      },
+      "grits-cli/src/main.rs::discover_symbols_in_file": {
+        "id": "grits-cli/src/main.rs::discover_symbols_in_file",
+        "name": "discover_symbols_in_file",
+        "file_path": "grits-cli/src/main.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          44569,
+          45019
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/memory_store.rs::list_issues": {
+        "id": "grits-core/src/memory_store.rs::list_issues",
+        "name": "list_issues",
+        "file_path": "grits-core/src/memory_store.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          3309,
+          5328
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/merge.rs::merge_logic": {
+        "id": "grits-core/src/merge.rs::merge_logic",
+        "name": "merge_logic",
+        "file_path": "grits-core/src/merge.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          4552,
+          11752
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/topology/cache.rs::update_from_dir": {
+        "id": "grits-core/src/topology/cache.rs::update_from_dir",
+        "name": "update_from_dir",
+        "file_path": "grits-core/src/topology/cache.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          3033,
+          3374
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/merge.rs::merge_tombstones": {
+        "id": "grits-core/src/merge.rs::merge_tombstones",
+        "name": "merge_tombstones",
+        "file_path": "grits-core/src/merge.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          11756,
+          12142
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/topology/cache.rs::save": {
+        "id": "grits-core/src/topology/cache.rs::save",
+        "name": "save",
+        "file_path": "grits-core/src/topology/cache.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          1113,
+          1379
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/topology/workspace.rs::WorkspacePackage": {
+        "id": "grits-core/src/topology/workspace.rs::WorkspacePackage",
+        "name": "WorkspacePackage",
+        "file_path": "grits-core/src/topology/workspace.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "type_identifier",
+        "byte_range": [
+          208,
+          348
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/memory_store.rs::export_to_string": {
+        "id": "grits-core/src/memory_store.rs::export_to_string",
+        "name": "export_to_string",
+        "file_path": "grits-core/src/memory_store.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          1226,
+          1685
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/context.rs::hydrate_code": {
+        "id": "grits-core/src/context.rs::hydrate_code",
+        "name": "hydrate_code",
+        "file_path": "grits-core/src/context.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          5832,
+          6930
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/merge.rs": {
+        "id": "grits-core/src/merge.rs",
+        "name": "grits-core/src/merge.rs",
+        "file_path": "grits-core/src/merge.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "file",
+        "byte_range": [
+          0,
+          22305
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/topology/parser.rs::is_builtin_symbol": {
+        "id": "grits-core/src/topology/parser.rs::is_builtin_symbol",
+        "name": "is_builtin_symbol",
+        "file_path": "grits-core/src/topology/parser.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          549,
+          7527
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/topology/parser.rs::CodeParser": {
+        "id": "grits-core/src/topology/parser.rs::CodeParser",
+        "name": "CodeParser",
+        "file_path": "grits-core/src/topology/parser.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "type_identifier",
+        "byte_range": [
+          7679,
+          32107
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/util.rs::encode_base36": {
+        "id": "grits-core/src/util.rs::encode_base36",
+        "name": "encode_base36",
+        "file_path": "grits-core/src/util.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          136,
+          1708
+        ],
+        "metadata": {}
+      },
+      "grits-cli/tests/cli_tests.rs::test_create_list_show_close": {
+        "id": "grits-cli/tests/cli_tests.rs::test_create_list_show_close",
+        "name": "test_create_list_show_close",
+        "file_path": "grits-cli/tests/cli_tests.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          747,
+          2635
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/merge.rs::test_merge_no_conflict": {
+        "id": "grits-core/src/merge.rs::test_merge_no_conflict",
+        "name": "test_merge_no_conflict",
+        "file_path": "grits-core/src/merge.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          20194,
+          20683
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/models.rs::Dependency": {
+        "id": "grits-core/src/models.rs::Dependency",
+        "name": "Dependency",
+        "file_path": "grits-core/src/models.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "type_identifier",
+        "byte_range": [
+          212,
+          417
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/memory_store.rs::set_config": {
+        "id": "grits-core/src/memory_store.rs::set_config",
+        "name": "set_config",
+        "file_path": "grits-core/src/memory_store.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          1893,
+          2096
+        ],
+        "metadata": {}
+      },
+      "grits-core/tests/store_test.rs": {
+        "id": "grits-core/tests/store_test.rs",
+        "name": "grits-core/tests/store_test.rs",
+        "file_path": "grits-core/tests/store_test.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "file",
+        "byte_range": [
+          0,
+          3162
         ],
         "metadata": {}
       },
@@ -1197,237 +2120,29 @@
         ],
         "metadata": {}
       },
-      "grits-core/tests/memory_store_test.rs::test_memory_store_crud": {
-        "id": "grits-core/tests/memory_store_test.rs::test_memory_store_crud",
-        "name": "test_memory_store_crud",
-        "file_path": "grits-core/tests/memory_store_test.rs",
+      "grits-cli/tests/cli_tests.rs::test_onboard": {
+        "id": "grits-cli/tests/cli_tests.rs::test_onboard",
+        "name": "test_onboard",
+        "file_path": "grits-cli/tests/cli_tests.rs",
         "package": null,
         "language": "rust",
         "kind": "identifier",
         "byte_range": [
-          96,
-          1013
+          104,
+          734
         ],
         "metadata": {}
       },
-      "grits-core/src/memory_store.rs::import_from_jsonl": {
-        "id": "grits-core/src/memory_store.rs::import_from_jsonl",
-        "name": "import_from_jsonl",
-        "file_path": "grits-core/src/memory_store.rs",
+      "grits-core/src/topology/scanner.rs::is_excluded": {
+        "id": "grits-core/src/topology/scanner.rs::is_excluded",
+        "name": "is_excluded",
+        "file_path": "grits-core/src/topology/scanner.rs",
         "package": null,
         "language": "rust",
         "kind": "identifier",
         "byte_range": [
-          5336,
-          5911
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/fs.rs::open_write": {
-        "id": "grits-core/src/fs.rs::open_write",
-        "name": "open_write",
-        "file_path": "grits-core/src/fs.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          1452,
-          1598
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/merge.rs::merge_status": {
-        "id": "grits-core/src/merge.rs::merge_status",
-        "name": "merge_status",
-        "file_path": "grits-core/src/merge.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          15656,
-          15984
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/topology/cache.rs::update_from_dir": {
-        "id": "grits-core/src/topology/cache.rs::update_from_dir",
-        "name": "update_from_dir",
-        "file_path": "grits-core/src/topology/cache.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          3033,
-          3374
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/merge.rs::IssueKey": {
-        "id": "grits-core/src/merge.rs::IssueKey",
-        "name": "IssueKey",
-        "file_path": "grits-core/src/merge.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "type_identifier",
-        "byte_range": [
-          516,
-          1472
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/store.rs::generate_unique_id": {
-        "id": "grits-core/src/store.rs::generate_unique_id",
-        "name": "generate_unique_id",
-        "file_path": "grits-core/src/store.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          30499,
-          31685
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/fs.rs::write": {
-        "id": "grits-core/src/fs.rs::write",
-        "name": "write",
-        "file_path": "grits-core/src/fs.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          790,
-          916
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/topology/cache.rs::update_from_dir_with_progress": {
-        "id": "grits-core/src/topology/cache.rs::update_from_dir_with_progress",
-        "name": "update_from_dir_with_progress",
-        "file_path": "grits-core/src/topology/cache.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          3436,
-          3927
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/topology/mod.rs::add_symbol": {
-        "id": "grits-core/src/topology/mod.rs::add_symbol",
-        "name": "add_symbol",
-        "file_path": "grits-core/src/topology/mod.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          1065,
-          1171
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/topology/parser.rs::CodeParser": {
-        "id": "grits-core/src/topology/parser.rs::CodeParser",
-        "name": "CodeParser",
-        "file_path": "grits-core/src/topology/parser.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "type_identifier",
-        "byte_range": [
-          7679,
-          32107
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/merge.rs::create_issue": {
-        "id": "grits-core/src/merge.rs::create_issue",
-        "name": "create_issue",
-        "file_path": "grits-core/src/merge.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          18596,
-          19889
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/store.rs::SqliteStore": {
-        "id": "grits-core/src/store.rs::SqliteStore",
-        "name": "SqliteStore",
-        "file_path": "grits-core/src/store.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "type_identifier",
-        "byte_range": [
-          10951,
-          36323
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/fs.rs::exists": {
-        "id": "grits-core/src/fs.rs::exists",
-        "name": "exists",
-        "file_path": "grits-core/src/fs.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          1173,
-          1242
-        ],
-        "metadata": {}
-      },
-      "grits-core/tests/memory_store_test.rs::test_memory_store_export_import": {
-        "id": "grits-core/tests/memory_store_test.rs::test_memory_store_export_import",
-        "name": "test_memory_store_export_import",
-        "file_path": "grits-core/tests/memory_store_test.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          1372,
-          2256
-        ],
-        "metadata": {}
-      },
-      "grits-core/tests/search_test.rs": {
-        "id": "grits-core/tests/search_test.rs",
-        "name": "grits-core/tests/search_test.rs",
-        "file_path": "grits-core/tests/search_test.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "file",
-        "byte_range": [
-          0,
-          1187
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/topology/cache.rs::TopologyCache": {
-        "id": "grits-core/src/topology/cache.rs::TopologyCache",
-        "name": "TopologyCache",
-        "file_path": "grits-core/src/topology/cache.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "type_identifier",
-        "byte_range": [
-          538,
-          4152
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/context.rs::to_markdown": {
-        "id": "grits-core/src/context.rs::to_markdown",
-        "name": "to_markdown",
-        "file_path": "grits-core/src/context.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          5628,
-          6782
+          4059,
+          4731
         ],
         "metadata": {}
       },
@@ -1444,302 +2159,29 @@
         ],
         "metadata": {}
       },
-      "grits-core/src/search.rs::new": {
-        "id": "grits-core/src/search.rs::new",
-        "name": "new",
-        "file_path": "grits-core/src/search.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          528,
-          1726
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/store.rs::list_issues": {
-        "id": "grits-core/src/store.rs::list_issues",
-        "name": "list_issues",
-        "file_path": "grits-core/src/store.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          21182,
-          25734
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/store.rs::export_all_issues": {
-        "id": "grits-core/src/store.rs::export_all_issues",
-        "name": "export_all_issues",
-        "file_path": "grits-core/src/store.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          4326,
-          8428
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/merge.rs::merge_logic": {
-        "id": "grits-core/src/merge.rs::merge_logic",
-        "name": "merge_logic",
-        "file_path": "grits-core/src/merge.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          4552,
-          11752
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/topology/mod.rs::DependencyEdge": {
-        "id": "grits-core/src/topology/mod.rs::DependencyEdge",
-        "name": "DependencyEdge",
-        "file_path": "grits-core/src/topology/mod.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "type_identifier",
-        "byte_range": [
-          578,
-          690
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/topology/scanner.rs::new": {
-        "id": "grits-core/src/topology/scanner.rs::new",
-        "name": "new",
-        "file_path": "grits-core/src/topology/scanner.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          2669,
-          3061
-        ],
-        "metadata": {}
-      },
-      "grits-cli/tests/topology_test.rs::test_parser_integration": {
-        "id": "grits-cli/tests/topology_test.rs::test_parser_integration",
-        "name": "test_parser_integration",
-        "file_path": "grits-cli/tests/topology_test.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          166,
-          1298
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/memory_store.rs::MemoryStore": {
-        "id": "grits-core/src/memory_store.rs::MemoryStore",
-        "name": "MemoryStore",
+      "grits-core/src/memory_store.rs::export_to_jsonl": {
+        "id": "grits-core/src/memory_store.rs::export_to_jsonl",
+        "name": "export_to_jsonl",
         "file_path": "grits-core/src/memory_store.rs",
         "package": null,
         "language": "rust",
-        "kind": "type_identifier",
+        "kind": "identifier",
         "byte_range": [
-          1692,
-          8536
+          8082,
+          9495
         ],
         "metadata": {}
       },
-      "grits-core/src/store.rs::list_config": {
-        "id": "grits-core/src/store.rs::list_config",
-        "name": "list_config",
-        "file_path": "grits-core/src/store.rs",
+      "grits-core/src/fs.rs::rename": {
+        "id": "grits-core/src/fs.rs::rename",
+        "name": "rename",
+        "file_path": "grits-core/src/fs.rs",
         "package": null,
         "language": "rust",
         "kind": "identifier",
         "byte_range": [
-          15039,
-          15458
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/topology/cache.rs::hash_file": {
-        "id": "grits-core/src/topology/cache.rs::hash_file",
-        "name": "hash_file",
-        "file_path": "grits-core/src/topology/cache.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          3935,
-          4149
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/topology/scanner.rs::with_max_depth": {
-        "id": "grits-core/src/topology/scanner.rs::with_max_depth",
-        "name": "with_max_depth",
-        "file_path": "grits-core/src/topology/scanner.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          3204,
-          3319
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/git.rs::StdGit": {
-        "id": "grits-core/src/git.rs::StdGit",
-        "name": "StdGit",
-        "file_path": "grits-core/src/git.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "type_identifier",
-        "byte_range": [
-          962,
-          5581
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/store.rs::parse_timestamp": {
-        "id": "grits-core/src/store.rs::parse_timestamp",
-        "name": "parse_timestamp",
-        "file_path": "grits-core/src/store.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          36329,
-          36680
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/topology/scanner.rs::scan": {
-        "id": "grits-core/src/topology/scanner.rs::scan",
-        "name": "scan",
-        "file_path": "grits-core/src/topology/scanner.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          7421,
-          7529
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/git.rs::command": {
-        "id": "grits-core/src/git.rs::command",
-        "name": "command",
-        "file_path": "grits-core/src/git.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          783,
-          955
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/git.rs::init": {
-        "id": "grits-core/src/git.rs::init",
-        "name": "init",
-        "file_path": "grits-core/src/git.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          992,
-          1363
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/merge.rs::merge_priority": {
-        "id": "grits-core/src/merge.rs::merge_priority",
-        "name": "merge_priority",
-        "file_path": "grits-core/src/merge.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          15988,
-          16461
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/models.rs::Dependency": {
-        "id": "grits-core/src/models.rs::Dependency",
-        "name": "Dependency",
-        "file_path": "grits-core/src/models.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "type_identifier",
-        "byte_range": [
-          212,
-          417
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/topology/cache.rs": {
-        "id": "grits-core/src/topology/cache.rs",
-        "name": "grits-core/src/topology/cache.rs",
-        "file_path": "grits-core/src/topology/cache.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "file",
-        "byte_range": [
-          0,
-          4154
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/topology/scanner.rs::with_excludes": {
-        "id": "grits-core/src/topology/scanner.rs::with_excludes",
-        "name": "with_excludes",
-        "file_path": "grits-core/src/topology/scanner.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          3327,
-          3556
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/topology/workspace.rs::WorkspacePackage": {
-        "id": "grits-core/src/topology/workspace.rs::WorkspacePackage",
-        "name": "WorkspacePackage",
-        "file_path": "grits-core/src/topology/workspace.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "type_identifier",
-        "byte_range": [
-          208,
-          348
-        ],
-        "metadata": {}
-      },
-      "grits-cli/tests/cli_tests.rs": {
-        "id": "grits-cli/tests/cli_tests.rs",
-        "name": "grits-cli/tests/cli_tests.rs",
-        "file_path": "grits-cli/tests/cli_tests.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "file",
-        "byte_range": [
-          0,
-          3584
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/topology/parser.rs::is_builtin_symbol": {
-        "id": "grits-core/src/topology/parser.rs::is_builtin_symbol",
-        "name": "is_builtin_symbol",
-        "file_path": "grits-core/src/topology/parser.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          549,
-          7527
+          1049,
+          1165
         ],
         "metadata": {}
       },
@@ -1756,133 +2198,42 @@
         ],
         "metadata": {}
       },
-      "grits-core/src/util.rs::encode_base36": {
-        "id": "grits-core/src/util.rs::encode_base36",
-        "name": "encode_base36",
-        "file_path": "grits-core/src/util.rs",
+      "grits-cli/tests/scanner_test.rs::test_scanner_with_excludes": {
+        "id": "grits-cli/tests/scanner_test.rs::test_scanner_with_excludes",
+        "name": "test_scanner_with_excludes",
+        "file_path": "grits-cli/tests/scanner_test.rs",
         "package": null,
         "language": "rust",
         "kind": "identifier",
         "byte_range": [
-          136,
-          1708
+          127,
+          1282
         ],
         "metadata": {}
       },
-      "grits-core/tests/export_test.rs::test_export_to_jsonl": {
-        "id": "grits-core/tests/export_test.rs::test_export_to_jsonl",
-        "name": "test_export_to_jsonl",
-        "file_path": "grits-core/tests/export_test.rs",
+      "grits-core/src/merge.rs::is_expired_tombstone": {
+        "id": "grits-core/src/merge.rs::is_expired_tombstone",
+        "name": "is_expired_tombstone",
+        "file_path": "grits-core/src/merge.rs",
         "package": null,
         "language": "rust",
         "kind": "identifier",
         "byte_range": [
-          125,
-          3160
+          3931,
+          4548
         ],
         "metadata": {}
       },
-      "grits-core/tests/memory_store_test.rs": {
-        "id": "grits-core/tests/memory_store_test.rs",
-        "name": "grits-core/tests/memory_store_test.rs",
-        "file_path": "grits-core/tests/memory_store_test.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "file",
-        "byte_range": [
-          0,
-          2258
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/store.rs::get_all_comments": {
-        "id": "grits-core/src/store.rs::get_all_comments",
-        "name": "get_all_comments",
+      "grits-core/src/store.rs::get_config": {
+        "id": "grits-core/src/store.rs::get_config",
+        "name": "get_config",
         "file_path": "grits-core/src/store.rs",
         "package": null,
         "language": "rust",
         "kind": "identifier",
         "byte_range": [
-          9961,
-          10939
-        ],
-        "metadata": {}
-      },
-      "grits-core/tests/search_test.rs::test_search": {
-        "id": "grits-core/tests/search_test.rs::test_search",
-        "name": "test_search",
-        "file_path": "grits-core/tests/search_test.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          84,
-          1185
-        ],
-        "metadata": {}
-      },
-      "grits-cli/tests/cli_tests.rs::test_onboard": {
-        "id": "grits-cli/tests/cli_tests.rs::test_onboard",
-        "name": "test_onboard",
-        "file_path": "grits-cli/tests/cli_tests.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          104,
-          734
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/merge.rs::merge_tombstones": {
-        "id": "grits-core/src/merge.rs::merge_tombstones",
-        "name": "merge_tombstones",
-        "file_path": "grits-core/src/merge.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          11756,
-          12142
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/models.rs::Issue": {
-        "id": "grits-core/src/models.rs::Issue",
-        "name": "Issue",
-        "file_path": "grits-core/src/models.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "type_identifier",
-        "byte_range": [
-          687,
-          2903
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/merge.rs::max_time": {
-        "id": "grits-core/src/merge.rs::max_time",
-        "name": "max_time",
-        "file_path": "grits-core/src/merge.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          16745,
-          16879
-        ],
-        "metadata": {}
-      },
-      "grits-core/tests/store_test.rs": {
-        "id": "grits-core/tests/store_test.rs",
-        "name": "grits-core/tests/store_test.rs",
-        "file_path": "grits-core/tests/store_test.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "file",
-        "byte_range": [
-          0,
-          3162
+          11308,
+          11702
         ],
         "metadata": {}
       },
@@ -1899,224 +2250,29 @@
         ],
         "metadata": {}
       },
-      "grits-core/src/fs.rs::read_to_string": {
-        "id": "grits-core/src/fs.rs::read_to_string",
-        "name": "read_to_string",
-        "file_path": "grits-core/src/fs.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          674,
-          782
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/topology/scanner.rs::DirectoryScanner": {
-        "id": "grits-core/src/topology/scanner.rs::DirectoryScanner",
-        "name": "DirectoryScanner",
+      "grits-core/src/topology/scanner.rs::new": {
+        "id": "grits-core/src/topology/scanner.rs::new",
+        "name": "new",
         "file_path": "grits-core/src/topology/scanner.rs",
         "package": null,
         "language": "rust",
-        "kind": "type_identifier",
-        "byte_range": [
-          2640,
-          7532
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/models.rs": {
-        "id": "grits-core/src/models.rs",
-        "name": "grits-core/src/models.rs",
-        "file_path": "grits-core/src/models.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "file",
-        "byte_range": [
-          0,
-          2905
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/topology/workspace.rs": {
-        "id": "grits-core/src/topology/workspace.rs",
-        "name": "grits-core/src/topology/workspace.rs",
-        "file_path": "grits-core/src/topology/workspace.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "file",
-        "byte_range": [
-          0,
-          13036
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/store.rs::get_all_dependencies": {
-        "id": "grits-core/src/store.rs::get_all_dependencies",
-        "name": "get_all_dependencies",
-        "file_path": "grits-core/src/store.rs",
-        "package": null,
-        "language": "rust",
         "kind": "identifier",
         "byte_range": [
-          8982,
-          9951
+          2669,
+          3061
         ],
         "metadata": {}
       },
-      "grits-core/src/memory_store.rs::get_config": {
-        "id": "grits-core/src/memory_store.rs::get_config",
-        "name": "get_config",
-        "file_path": "grits-core/src/memory_store.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          1726,
-          1885
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/topology/scanner.rs": {
-        "id": "grits-core/src/topology/scanner.rs",
-        "name": "grits-core/src/topology/scanner.rs",
+      "grits-core/src/topology/scanner.rs::with_extensions": {
+        "id": "grits-core/src/topology/scanner.rs::with_extensions",
+        "name": "with_extensions",
         "file_path": "grits-core/src/topology/scanner.rs",
         "package": null,
         "language": "rust",
-        "kind": "file",
-        "byte_range": [
-          0,
-          7534
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/store.rs::create_issue": {
-        "id": "grits-core/src/store.rs::create_issue",
-        "name": "create_issue",
-        "file_path": "grits-core/src/store.rs",
-        "package": null,
-        "language": "rust",
         "kind": "identifier",
         "byte_range": [
-          31695,
-          35058
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/merge.rs::merge_issue": {
-        "id": "grits-core/src/merge.rs::merge_issue",
-        "name": "merge_issue",
-        "file_path": "grits-core/src/merge.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          12146,
-          14411
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/merge.rs::max_time_opt": {
-        "id": "grits-core/src/merge.rs::max_time_opt",
-        "name": "max_time_opt",
-        "file_path": "grits-core/src/merge.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          16883,
-          17180
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/merge.rs::read_issues": {
-        "id": "grits-core/src/merge.rs::read_issues",
-        "name": "read_issues",
-        "file_path": "grits-core/src/merge.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          3122,
-          3633
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/merge.rs::is_time_after": {
-        "id": "grits-core/src/merge.rs::is_time_after",
-        "name": "is_time_after",
-        "file_path": "grits-core/src/merge.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          16465,
-          16741
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/topology/workspace.rs::WorkspaceDetector": {
-        "id": "grits-core/src/topology/workspace.rs::WorkspaceDetector",
-        "name": "WorkspaceDetector",
-        "file_path": "grits-core/src/topology/workspace.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "type_identifier",
-        "byte_range": [
-          667,
-          12175
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/fs.rs::open_read": {
-        "id": "grits-core/src/fs.rs::open_read",
-        "name": "open_read",
-        "file_path": "grits-core/src/fs.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          1250,
-          1444
-        ],
-        "metadata": {}
-      },
-      "grits-cli/src/main.rs::IssueFrontmatter": {
-        "id": "grits-cli/src/main.rs::IssueFrontmatter",
-        "name": "IssueFrontmatter",
-        "file_path": "grits-cli/src/main.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "type_identifier",
-        "byte_range": [
-          4072,
-          4456
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/git.rs::show": {
-        "id": "grits-core/src/git.rs::show",
-        "name": "show",
-        "file_path": "grits-core/src/git.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          3841,
-          4273
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/memory_store.rs::update_issue": {
-        "id": "grits-core/src/memory_store.rs::update_issue",
-        "name": "update_issue",
-        "file_path": "grits-core/src/memory_store.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          2104,
-          2351
+          3069,
+          3196
         ],
         "metadata": {}
       },
@@ -2133,341 +2289,42 @@
         ],
         "metadata": {}
       },
-      "grits-core/src/topology/mod.rs::SymbolGraph": {
-        "id": "grits-core/src/topology/mod.rs::SymbolGraph",
-        "name": "SymbolGraph",
-        "file_path": "grits-core/src/topology/mod.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "type_identifier",
-        "byte_range": [
-          917,
-          1648
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/memory_store.rs::list_issues": {
-        "id": "grits-core/src/memory_store.rs::list_issues",
-        "name": "list_issues",
-        "file_path": "grits-core/src/memory_store.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          3309,
-          5328
-        ],
-        "metadata": {}
-      },
-      "grits-core/tests/export_test.rs": {
-        "id": "grits-core/tests/export_test.rs",
-        "name": "grits-core/tests/export_test.rs",
-        "file_path": "grits-core/tests/export_test.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "file",
-        "byte_range": [
-          0,
-          3162
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/store.rs::get_config": {
-        "id": "grits-core/src/store.rs::get_config",
-        "name": "get_config",
-        "file_path": "grits-core/src/store.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          10988,
-          11372
-        ],
-        "metadata": {}
-      },
-      "grits-core/tests/git_test.rs::test_git_operations": {
-        "id": "grits-core/tests/git_test.rs::test_git_operations",
-        "name": "test_git_operations",
-        "file_path": "grits-core/tests/git_test.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          89,
-          1487
-        ],
-        "metadata": {}
-      },
-      "grits-cli/tests/cli_tests.rs::test_create_list_show_close": {
-        "id": "grits-cli/tests/cli_tests.rs::test_create_list_show_close",
-        "name": "test_create_list_show_close",
-        "file_path": "grits-cli/tests/cli_tests.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          747,
-          2635
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/topology/workspace.rs::detect_go_workspace": {
-        "id": "grits-core/src/topology/workspace.rs::detect_go_workspace",
-        "name": "detect_go_workspace",
-        "file_path": "grits-core/src/topology/workspace.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          8738,
-          11310
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/search.rs::tokenize": {
-        "id": "grits-core/src/search.rs::tokenize",
-        "name": "tokenize",
-        "file_path": "grits-core/src/search.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          3266,
-          3471
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/fs.rs": {
-        "id": "grits-core/src/fs.rs",
-        "name": "grits-core/src/fs.rs",
-        "file_path": "grits-core/src/fs.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "file",
-        "byte_range": [
-          0,
-          1603
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/merge.rs::merge_dependencies": {
-        "id": "grits-core/src/merge.rs::merge_dependencies",
-        "name": "merge_dependencies",
+      "grits-core/src/merge.rs::merge_field": {
+        "id": "grits-core/src/merge.rs::merge_field",
+        "name": "merge_field",
         "file_path": "grits-core/src/merge.rs",
         "package": null,
         "language": "rust",
         "kind": "identifier",
         "byte_range": [
-          17184,
-          17613
+          14415,
+          14666
         ],
         "metadata": {}
       },
-      "grits-core/src/topology/cache.rs::is_stale": {
-        "id": "grits-core/src/topology/cache.rs::is_stale",
-        "name": "is_stale",
-        "file_path": "grits-core/src/topology/cache.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          1457,
-          1686
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/util.rs::generate_hash_id": {
-        "id": "grits-core/src/util.rs::generate_hash_id",
-        "name": "generate_hash_id",
-        "file_path": "grits-core/src/util.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          1712,
-          2890
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/fs.rs::create_dir_all": {
-        "id": "grits-core/src/fs.rs::create_dir_all",
-        "name": "create_dir_all",
-        "file_path": "grits-core/src/fs.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          924,
-          1041
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/store.rs::get_issue": {
-        "id": "grits-core/src/store.rs::get_issue",
-        "name": "get_issue",
-        "file_path": "grits-core/src/store.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          15598,
-          21172
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/fs.rs::StdFileSystem": {
-        "id": "grits-core/src/fs.rs::StdFileSystem",
-        "name": "StdFileSystem",
-        "file_path": "grits-core/src/fs.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "type_identifier",
-        "byte_range": [
-          633,
-          1601
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/sync.rs::run_sync": {
-        "id": "grits-core/src/sync.rs::run_sync",
-        "name": "run_sync",
-        "file_path": "grits-core/src/sync.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          143,
-          4482
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/topology/scanner.rs::get_or_create": {
-        "id": "grits-core/src/topology/scanner.rs::get_or_create",
-        "name": "get_or_create",
-        "file_path": "grits-core/src/topology/scanner.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          1149,
-          2466
-        ],
-        "metadata": {}
-      },
-      "grits-core/tests/store_test.rs::test_export_to_jsonl": {
-        "id": "grits-core/tests/store_test.rs::test_export_to_jsonl",
-        "name": "test_export_to_jsonl",
-        "file_path": "grits-core/tests/store_test.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          125,
-          3160
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/util.rs::test_generate_hash_id_stability": {
-        "id": "grits-core/src/util.rs::test_generate_hash_id_stability",
-        "name": "test_generate_hash_id_stability",
-        "file_path": "grits-core/src/util.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          3613,
-          4420
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/git.rs::status": {
-        "id": "grits-core/src/git.rs::status",
-        "name": "status",
-        "file_path": "grits-core/src/git.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          3404,
-          3833
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/merge.rs::merge_labels": {
-        "id": "grits-core/src/merge.rs::merge_labels",
-        "name": "merge_labels",
+      "grits-core/src/merge.rs::is_tombstone": {
+        "id": "grits-core/src/merge.rs::is_tombstone",
+        "name": "is_tombstone",
         "file_path": "grits-core/src/merge.rs",
         "package": null,
         "language": "rust",
         "kind": "identifier",
         "byte_range": [
-          17617,
-          17959
+          3846,
+          3927
         ],
         "metadata": {}
       },
-      "grits-core/src/topology/parser.rs::parse_file": {
-        "id": "grits-core/src/topology/parser.rs::parse_file",
-        "name": "parse_file",
-        "file_path": "grits-core/src/topology/parser.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          8444,
-          32104
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/topology/workspace.rs::detect": {
-        "id": "grits-core/src/topology/workspace.rs::detect",
-        "name": "detect",
-        "file_path": "grits-core/src/topology/workspace.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          762,
-          1237
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/lib.rs": {
-        "id": "grits-core/src/lib.rs",
-        "name": "grits-core/src/lib.rs",
-        "file_path": "grits-core/src/lib.rs",
+      "grits-core/tests/memory_store_test.rs": {
+        "id": "grits-core/tests/memory_store_test.rs",
+        "name": "grits-core/tests/memory_store_test.rs",
+        "file_path": "grits-core/tests/memory_store_test.rs",
         "package": null,
         "language": "rust",
         "kind": "file",
         "byte_range": [
           0,
-          400
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/topology/cache.rs::save": {
-        "id": "grits-core/src/topology/cache.rs::save",
-        "name": "save",
-        "file_path": "grits-core/src/topology/cache.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "identifier",
-        "byte_range": [
-          1113,
-          1379
-        ],
-        "metadata": {}
-      },
-      "grits-core/src/topology/parser.rs": {
-        "id": "grits-core/src/topology/parser.rs",
-        "name": "grits-core/src/topology/parser.rs",
-        "file_path": "grits-core/src/topology/parser.rs",
-        "package": null,
-        "language": "rust",
-        "kind": "file",
-        "byte_range": [
-          0,
-          32109
+          2258
         ],
         "metadata": {}
       },
@@ -2484,16 +2341,185 @@
         ],
         "metadata": {}
       },
-      "grits-core/src/util.rs": {
-        "id": "grits-core/src/util.rs",
-        "name": "grits-core/src/util.rs",
-        "file_path": "grits-core/src/util.rs",
+      "grits-core/src/merge.rs::is_time_after": {
+        "id": "grits-core/src/merge.rs::is_time_after",
+        "name": "is_time_after",
+        "file_path": "grits-core/src/merge.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          16465,
+          16741
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/merge.rs::test_merge_tombstone_wins_over_edit": {
+        "id": "grits-core/src/merge.rs::test_merge_tombstone_wins_over_edit",
+        "name": "test_merge_tombstone_wins_over_edit",
+        "file_path": "grits-core/src/merge.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          21225,
+          21723
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/merge.rs::IssueKey": {
+        "id": "grits-core/src/merge.rs::IssueKey",
+        "name": "IssueKey",
+        "file_path": "grits-core/src/merge.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "type_identifier",
+        "byte_range": [
+          516,
+          1472
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/topology/scanner.rs": {
+        "id": "grits-core/src/topology/scanner.rs",
+        "name": "grits-core/src/topology/scanner.rs",
+        "file_path": "grits-core/src/topology/scanner.rs",
         "package": null,
         "language": "rust",
         "kind": "file",
         "byte_range": [
           0,
-          4425
+          7534
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/topology/workspace.rs::WorkspaceConfig": {
+        "id": "grits-core/src/topology/workspace.rs::WorkspaceConfig",
+        "name": "WorkspaceConfig",
+        "file_path": "grits-core/src/topology/workspace.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "type_identifier",
+        "byte_range": [
+          459,
+          583
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/models.rs": {
+        "id": "grits-core/src/models.rs",
+        "name": "grits-core/src/models.rs",
+        "file_path": "grits-core/src/models.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "file",
+        "byte_range": [
+          0,
+          2905
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/topology/cache.rs::new": {
+        "id": "grits-core/src/topology/cache.rs::new",
+        "name": "new",
+        "file_path": "grits-core/src/topology/cache.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          564,
+          738
+        ],
+        "metadata": {}
+      },
+      "grits-core/tests/store_test.rs::test_export_to_jsonl": {
+        "id": "grits-core/tests/store_test.rs::test_export_to_jsonl",
+        "name": "test_export_to_jsonl",
+        "file_path": "grits-core/tests/store_test.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          125,
+          3160
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/merge.rs::max_time_opt": {
+        "id": "grits-core/src/merge.rs::max_time_opt",
+        "name": "max_time_opt",
+        "file_path": "grits-core/src/merge.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          16883,
+          17180
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/merge.rs::merge_notes": {
+        "id": "grits-core/src/merge.rs::merge_notes",
+        "name": "merge_notes",
+        "file_path": "grits-core/src/merge.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          15177,
+          15652
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/topology/cache.rs::is_stale": {
+        "id": "grits-core/src/topology/cache.rs::is_stale",
+        "name": "is_stale",
+        "file_path": "grits-core/src/topology/cache.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          1457,
+          1686
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/topology/mod.rs::add_weighted_dependency": {
+        "id": "grits-core/src/topology/mod.rs::add_weighted_dependency",
+        "name": "add_weighted_dependency",
+        "file_path": "grits-core/src/topology/mod.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "identifier",
+        "byte_range": [
+          1324,
+          1646
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/topology/scanner.rs::DirectoryScanner": {
+        "id": "grits-core/src/topology/scanner.rs::DirectoryScanner",
+        "name": "DirectoryScanner",
+        "file_path": "grits-core/src/topology/scanner.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "type_identifier",
+        "byte_range": [
+          2640,
+          7532
+        ],
+        "metadata": {}
+      },
+      "grits-core/src/topology/cache.rs": {
+        "id": "grits-core/src/topology/cache.rs",
+        "name": "grits-core/src/topology/cache.rs",
+        "file_path": "grits-core/src/topology/cache.rs",
+        "package": null,
+        "language": "rust",
+        "kind": "file",
+        "byte_range": [
+          0,
+          4154
         ],
         "metadata": {}
       }
@@ -2629,6 +2655,22 @@
       ],
       [
         "grits-cli/src/main.rs",
+        "discover_symbols_in_file(&file_path)",
+        {
+          "relation": "calls",
+          "strength": 1.0
+        }
+      ],
+      [
+        "grits-cli/src/main.rs",
+        "discover_symbols_in_file",
+        {
+          "relation": "calls",
+          "strength": 1.0
+        }
+      ],
+      [
+        "grits-cli/src/main.rs",
         "grits_core::models::Dependency",
         {
           "relation": "imports",
@@ -2637,7 +2679,31 @@
       ],
       [
         "grits-cli/src/main.rs",
-        "grits_core::topology::{get_star, scanner::DirectoryScanner, cache::TopologyCache}",
+        "Some(parent_issue.id)",
+        {
+          "relation": "calls",
+          "strength": 0.6
+        }
+      ],
+      [
+        "grits-cli/src/main.rs",
+        "discover_symbols_in_file(file_path)",
+        {
+          "relation": "calls",
+          "strength": 1.0
+        }
+      ],
+      [
+        "grits-cli/src/main.rs",
+        "discover_symbols_in_file",
+        {
+          "relation": "calls",
+          "strength": 1.0
+        }
+      ],
+      [
+        "grits-cli/src/main.rs",
+        "grits_core::models::Dependency",
         {
           "relation": "imports",
           "strength": 0.3
@@ -2645,10 +2711,18 @@
       ],
       [
         "grits-cli/src/main.rs",
-        "get_star(&graph, &file, depth)",
+        "grits_core::topology::{cache::TopologyCache, get_star, scanner::DirectoryScanner}",
+        {
+          "relation": "imports",
+          "strength": 0.3
+        }
+      ],
+      [
+        "grits-cli/src/main.rs",
+        "get_star(&graph, file_path, depth)",
         {
           "relation": "calls",
-          "strength": 0.6
+          "strength": 1.0
         }
       ],
       [
@@ -2656,7 +2730,23 @@
         "get_star",
         {
           "relation": "calls",
-          "strength": 0.6
+          "strength": 1.0
+        }
+      ],
+      [
+        "grits-cli/src/main.rs",
+        "is_meaningful_symbol(&neighbor)",
+        {
+          "relation": "calls",
+          "strength": 1.0
+        }
+      ],
+      [
+        "grits-cli/src/main.rs",
+        "is_meaningful_symbol",
+        {
+          "relation": "calls",
+          "strength": 1.0
         }
       ],
       [
@@ -2685,6 +2775,14 @@
       ],
       [
         "grits-cli/src/main.rs",
+        "Some(iss.id)",
+        {
+          "relation": "calls",
+          "strength": 0.6
+        }
+      ],
+      [
+        "grits-cli/src/main.rs",
         "grits_core::topology::{cache::TopologyCache, scanner::DirectoryScanner}",
         {
           "relation": "imports",
@@ -2692,7 +2790,47 @@
         }
       ],
       [
+        "grits-cli/src/main.rs",
+        "Some(&parent_id)",
+        {
+          "relation": "calls",
+          "strength": 0.6
+        }
+      ],
+      [
+        "grits-cli/src/main.rs",
+        "grits_core::models::Dependency",
+        {
+          "relation": "imports",
+          "strength": 0.3
+        }
+      ],
+      [
         "grits-cli/src/main.rs::find_db_path",
+        "grits-cli/src/main.rs",
+        {
+          "relation": "defined_in",
+          "strength": 1.0
+        }
+      ],
+      [
+        "grits-cli/src/main.rs::discover_symbols_in_file",
+        "grits-cli/src/main.rs",
+        {
+          "relation": "defined_in",
+          "strength": 1.0
+        }
+      ],
+      [
+        "grits-cli/src/main.rs",
+        "std::path::Path",
+        {
+          "relation": "imports",
+          "strength": 0.3
+        }
+      ],
+      [
+        "grits-cli/src/main.rs::is_meaningful_symbol",
         "grits-cli/src/main.rs",
         {
           "relation": "defined_in",
@@ -3897,6 +4035,14 @@
         {
           "relation": "part_of",
           "strength": 1.0
+        }
+      ],
+      [
+        "grits-core/src/memory_store.rs",
+        "Ok(format!(\"{}.{}\", parent, max_suffix + 1))",
+        {
+          "relation": "calls",
+          "strength": 0.6
         }
       ],
       [
@@ -5461,7 +5607,7 @@
       ],
       [
         "grits-core/src/store.rs",
-        "Ok(Dependency {\n                    issue_id: row.get(0)?,\n                    depends_on_id: row.get(1)?,\n                    type_: row.get(2)?,\n                    created_at,\n                    created_by: row.get(4)?,\n                })",
+        "Ok(Dependency {\r\n                    issue_id: row.get(0)?,\r\n                    depends_on_id: row.get(1)?,\r\n                    type_: row.get(2)?,\r\n                    created_at,\r\n                    created_by: row.get(4)?,\r\n                })",
         {
           "relation": "calls",
           "strength": 0.6
@@ -5509,7 +5655,7 @@
       ],
       [
         "grits-core/src/store.rs",
-        "Ok(Comment {\n                    id: row.get(0)?,\n                    issue_id: row.get(1)?,\n                    author: row.get(2)?,\n                    text: row.get(3)?,\n                    created_at,\n                })",
+        "Ok(Comment {\r\n                    id: row.get(0)?,\r\n                    issue_id: row.get(1)?,\r\n                    author: row.get(2)?,\r\n                    text: row.get(3)?,\r\n                    created_at,\r\n                })",
         {
           "relation": "calls",
           "strength": 0.6
@@ -5873,6 +6019,14 @@
         {
           "relation": "part_of",
           "strength": 1.0
+        }
+      ],
+      [
+        "grits-core/src/store.rs",
+        "Ok(format!(\"{}.{}\", parent, max_suffix + 1))",
+        {
+          "relation": "calls",
+          "strength": 0.6
         }
       ],
       [

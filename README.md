@@ -2,7 +2,7 @@
 
 A Git-native, local-first issue tracker designed for **AI Agents** and humans.
 
-**Status**: v2.9.0 — "Agent Automation"
+**Status**: v3.0.0 — "Active State Store"
 
 ## Quick Start
 
@@ -26,6 +26,20 @@ cd your-project
 gr onboard
 ```
 
+## 🤖 The State Store Protocol (Planner/Coder)
+
+Grits transforms from a passive tracker into an **Active State Store (World Model)** for agents. It enforces a strict separation between research and execution to minimize LLM "halucinations" and context drift.
+
+### The Lifecycle of an Issue
+1. **User Intent** (`description`): The high-level goal set by a human or orchestrator.
+2. **Planner Agent**: Analyzes the intent, researches the code via `gr star`, and populates the **Implementation Plan** (`design`).
+3. **Coder Agent**: Wakes up to a **Rich Pulse** JSON. If `design` is present, it begins coding. It logs every iteration/rollout to the **Execution Log** (`notes`) via `gr update --append`.
+
+### Key Commands for Agents
+- `gr pulse`: Returns a full **Rich Context** JSON (Intent + Plan + Rules + History).
+- `gr update --append`: Persistent append-only logging for the Lab Notebook (`notes`).
+- `gr workon`: Automatically warns if a Coder starts work without a `design`.
+
 ## Core Workflow
 
 ### 1. Check Pulse
@@ -36,11 +50,7 @@ gr pulse
 
 ### 2. Create Issue
 ```bash
-gr create "Fix login bug" --type bug --priority 1
-
-# Create a sub-task (Hierarchical ID)
-gr create "Validate email" --parent gr-abc123
-# ✅ Result: gr-abc123.1
+gr create "Fix login bug" --description "intent" --design "plan" --start-work
 ```
 
 ### 3. Hierarchy & Linking
@@ -50,58 +60,40 @@ gr dep add gr-child123 gr-parentabc --migrate
 # ✅ Result: Child is renamed to gr-parentabc.n
 ```
 
-### 3. Work on Issue
-Sets the "sticky focus" and updates status to `in-progress`.
+### 4. Context Awareness (Blind Assembly)
+Bundle relevant code even if you don't have a topology map yet.
 ```bash
-gr workon <issue-id>
+gr context assemble --symbols "README.md,src/main.rs"
 ```
 
-### 4. Context Awareness (Star Neighborhood)
-Find files topologically connected to your target.
-```bash
-gr star src/auth.rs
-```
+## CLI Reference (v3.1.0)
 
-### 5. Assemble Context
-Bundle relevant code into a Markdown format for LLM analysis.
-```bash
-gr context assemble --issue <issue-id>
-```
-
-## CLI Reference
+| Field | Purpose | Agent Map |
+|-------|---------|-----------|
+| `description` | The User's Intent | **Intent** |
+| `design` | Implementation Plan | **Strategy** |
+| `acceptance_criteria` | Success Definitions | **Proof** |
+| `notes` | Execution Log (Append-only) | **Memory** |
 
 | Command | Purpose |
 |---------|---------|
-| `gr list` | List issues (filter by status, assignee, etc.) |
-| `gr show <id>` | Show issue details |
-| `gr update` | Update issue fields |
-| `gr close <id>` | Close an issue |
-| `gr dep add <c> <p>` | Link tasks (parent, blocks, related) |
-| `gr pulse` | Session hydration (Focus + Blockers + Recent Commits) |
-| `gr workon <id>` | Set focus and status |
-| `gr star <file>` | Get connected files (imports/calls) |
-| `gr context assemble` | Generate mini-codebase from focus or symbols |
-| `gr export` | Export to JSONL (for git sync) |
-| `gr import` | Import from JSONL |
-| `gr stats` | Simple issue statistics |
+| `gr show <id>` | Displays Rich Context + Execution Log |
+| `gr update --append` | Marks notes as append-only (Lab Notebook) |
+| `gr pulse` | Rich Context JSON for Session Hydration |
+| `gr context assemble` | Fallback "Blind" assembly for raw file paths |
 
 ---
 
 ## Agent Skills
 
-Grits exposes its functionality as a standardized "Agent Skill" for AI agents. This allows agents to natively discover and utilize Grits for task management and context retrieval.
+Grits separates logic into two specialized roles to enforce the Planner/Coder protocol.
 
-- **Skill Definition**: [.agent/skills/grits/SKILL.md](.agent/skills/grits/SKILL.md)
+- **Planner Skill**: [.agent/skills/grits-plan/SKILL.md](.agent/skills/grits-plan/SKILL.md) — For Architecture & Design.
+- **Coder Skill**: [.agent/skills/grits-code/SKILL.md](.agent/skills/grits-code/SKILL.md) — For Implementation & Logging.
+- **Agent Guide**: [AGENTS.md](AGENTS.md)
 - **Standard**: Follows the [Agent Skills](https://agentskills.io) open specification.
 
-To use this skill with a compatible agent (e.g., in a browser environment or agent runner), point the agent to the `.agent/skills/grits` directory.
-
 ---
-
-## Documentation
-
-- [AGENTS.md](AGENTS.md): Comprehensive agent guide
-- [TASK.md](TASK.md): Current strategic plan
 
 ## Architecture
 
@@ -111,7 +103,7 @@ To use this skill with a compatible agent (e.g., in a browser environment or age
 
 **Graph-Lite**:
 - Uses a lightweight AST parser to build a dependency graph.
-- Provides "Star Neighborhoods" (connected files) to agents without heavy analysis.
+- Supports **Blind Assembly** fallback for non-topological file access.
 
 ## License
 

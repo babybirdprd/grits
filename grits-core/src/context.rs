@@ -88,18 +88,25 @@ impl MiniCodebase {
     ) -> Self {
         // Collect all relevant symbol IDs using star neighborhood
         let mut relevant_ids = HashSet::new();
+        let mut fallback_files = HashSet::new();
 
         for seed in &seed_symbols {
-            let star = get_star(graph, seed, depth);
-            relevant_ids.insert(star.center.clone());
-            for neighbor in star.neighbors {
-                relevant_ids.insert(neighbor);
+            if graph.nodes.contains_key(seed) {
+                let star = get_star(graph, seed, depth);
+                relevant_ids.insert(star.center.clone());
+                for neighbor in star.neighbors {
+                    relevant_ids.insert(neighbor);
+                }
+            } else {
+                // Fallback: If it's not in the graph, treat it as a potential file path
+                // This is useful for "Blind" context assembly where the agent provides file paths directly.
+                fallback_files.insert(seed.clone());
             }
         }
 
         // Build symbol entries
         let mut symbols: Vec<SymbolEntry> = Vec::new();
-        let mut files = HashSet::new();
+        let mut files = fallback_files;
 
         for id in &relevant_ids {
             if let Some(symbol) = graph.nodes.get(id) {
@@ -116,17 +123,31 @@ impl MiniCodebase {
             }
         }
 
+        // If we have fallback files but no symbols were extracted,
+        // we might want to create "virtual" symbol entries for the files themselves
+        // to ensure hydrate_code can still pull them in if they are treated as full-file symbols.
+        for file_path in &files {
+            if !relevant_ids.iter().any(|id| id.starts_with(file_path)) {
+                // Check if this file actually exists (we'll rely on hydrate_code to handle missing files gracefully)
+                // but we add a entry for the whole file.
+                symbols.push(SymbolEntry {
+                    id: file_path.clone(),
+                    name: file_path.clone(),
+                    file_path: file_path.clone(),
+                    kind: "file".to_string(),
+                    code: None,
+                    byte_range: None, // None means read the whole file
+                });
+            }
+        }
+
         // Simple sort by file path then ID
-        symbols.sort_by(|a, b| {
-            a.file_path.cmp(&b.file_path).then(a.id.cmp(&b.id))
-        });
+        symbols.sort_by(|a, b| a.file_path.cmp(&b.file_path).then(a.id.cmp(&b.id)));
 
         // Build invariants
         let invariants = ContextInvariants {
             forbidden_dependencies: Vec::new(),
-            notes: vec![
-                "Focus on the provided symbols.".to_string(),
-            ],
+            notes: vec!["Focus on the provided symbols and files.".to_string()],
         };
 
         // Build metadata
@@ -154,22 +175,25 @@ impl MiniCodebase {
         let mut file_cache: HashMap<String, String> = HashMap::new();
 
         for symbol in &mut self.symbols {
-            if let Some((start, end)) = symbol.byte_range {
-                let content = if let Some(c) = file_cache.get(&symbol.file_path) {
-                    c
+            let content = if let Some(c) = file_cache.get(&symbol.file_path) {
+                c
+            } else {
+                let full_path = base_path.join(&symbol.file_path);
+                if let Ok(c) = fs::read_to_string(full_path) {
+                    file_cache.insert(symbol.file_path.clone(), c);
+                    file_cache.get(&symbol.file_path).unwrap()
                 } else {
-                    let full_path = base_path.join(&symbol.file_path);
-                    if let Ok(c) = fs::read_to_string(full_path) {
-                        file_cache.insert(symbol.file_path.clone(), c);
-                        file_cache.get(&symbol.file_path).unwrap()
-                    } else {
-                        continue;
-                    }
-                };
+                    continue;
+                }
+            };
 
+            if let Some((start, end)) = symbol.byte_range {
                 if start < content.len() && end <= content.len() && start <= end {
                     symbol.code = Some(content[start..end].to_string());
                 }
+            } else {
+                // If no byte range, take the whole file
+                symbol.code = Some(content.clone());
             }
         }
     }
@@ -182,7 +206,7 @@ impl MiniCodebase {
         md.push_str("# Mini Codebase\n\n");
 
         if let Some(issue) = &self.seed_issue {
-            md.push_str(&format!( "> Assembled for issue: `{}`\n\n", issue));
+            md.push_str(&format!("> Assembled for issue: `{}`\n\n", issue));
         }
 
         // Stats
