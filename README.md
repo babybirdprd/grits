@@ -66,7 +66,7 @@ Bundle relevant code even if you don't have a topology map yet.
 gr context assemble --symbols "README.md,src/main.rs"
 ```
 
-## CLI Reference (v3.1.0)
+## CLI Reference (v3.2.0)
 
 | Field | Purpose | Agent Map |
 |-------|---------|-----------|
@@ -84,13 +84,9 @@ gr context assemble --symbols "README.md,src/main.rs"
 
 ---
 
-## Agent Skills
-
-Grits separates logic into two specialized roles to enforce the Planner/Coder protocol.
-
-- **Planner Skill**: [.agent/skills/grits-plan/SKILL.md](.agent/skills/grits-plan/SKILL.md) — For Architecture & Design.
-- **Coder Skill**: [.agent/skills/grits-code/SKILL.md](.agent/skills/grits-code/SKILL.md) — For Implementation & Logging.
-- **Agent Guide**: [AGENTS.md](AGENTS.md)
+- **Planner Skill**: [.agent/skills/grits-plan/SKILL.md](.agent/skills/grits-plan/SKILL.md) — Self-contained Architect instructions.
+- **Coder Skill**: [.agent/skills/grits-code/SKILL.md](.agent/skills/grits-code/SKILL.md) — Self-contained Builder instructions.
+- **Workflows**: [.agent/workflows/](.agent/workflows/) — Automated turbo-execution paths.
 - **Standard**: Follows the [Agent Skills](https://agentskills.io) open specification.
 
 ---
