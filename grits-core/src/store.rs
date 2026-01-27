@@ -28,6 +28,7 @@ pub trait Store {
         title: &str,
         description: &str,
         creator: &str,
+        parent_id: Option<&str>,
     ) -> Result<String>;
     fn create_issue(&self, issue: &Issue) -> Result<()>;
     fn export_to_jsonl(&self, jsonl_path: &Path, fs: &dyn FileSystem) -> Result<()>;
@@ -763,7 +764,42 @@ pub mod sqlite_impl {
             title: &str,
             description: &str,
             creator: &str,
+            parent_id: Option<&str>,
         ) -> Result<String> {
+            if let Some(parent) = parent_id {
+                // Hierarchical ID generation: <parent_id>.<next_index>
+                let mut stmt = self
+                    .conn
+                    .prepare("SELECT id FROM issues WHERE id LIKE ?1 ORDER BY id DESC")?;
+                let parent_prefix = format!("{}.%", parent);
+                let rows = stmt.query_map([parent_prefix], |row| row.get::<_, String>(0))?;
+
+                let mut max_suffix = 0;
+                let parent_dot = format!("{}.", parent);
+                for id_res in rows {
+                    if let Ok(id) = id_res {
+                        if id.starts_with(&parent_dot) {
+                            let suffix_part = &id[parent_dot.len()..];
+                            // Only consider first level suffix, e.g. gr-abc.1.2 -> suffix_part is "1.2"
+                            // We want immediate children of 'parent'.
+                            if let Some(first_dot) = suffix_part.find('.') {
+                                if let Ok(n) = suffix_part[..first_dot].parse::<i32>() {
+                                    if n > max_suffix {
+                                        max_suffix = n;
+                                    }
+                                }
+                            } else if let Ok(n) = suffix_part.parse::<i32>() {
+                                if n > max_suffix {
+                                    max_suffix = n;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                return Ok(format!("{}.{}", parent, max_suffix + 1));
+            }
+
             let created_at = Utc::now();
             let base_length = 6;
             let max_length = 8;

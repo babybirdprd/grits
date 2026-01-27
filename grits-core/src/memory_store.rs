@@ -193,8 +193,32 @@ impl Store for MemoryStore {
         title: &str,
         description: &str,
         creator: &str,
+        parent_id: Option<&str>,
     ) -> Result<String> {
         let inner = self.inner.read().unwrap();
+
+        if let Some(parent) = parent_id {
+            let mut max_suffix = 0;
+            let parent_dot = format!("{}.", parent);
+            for id in inner.issues.keys() {
+                if id.starts_with(&parent_dot) {
+                    let suffix_part = &id[parent_dot.len()..];
+                    if let Some(first_dot) = suffix_part.find('.') {
+                        if let Ok(n) = suffix_part[..first_dot].parse::<i32>() {
+                            if n > max_suffix {
+                                max_suffix = n;
+                            }
+                        }
+                    } else if let Ok(n) = suffix_part.parse::<i32>() {
+                        if n > max_suffix {
+                            max_suffix = n;
+                        }
+                    }
+                }
+            }
+            return Ok(format!("{}.{}", parent, max_suffix + 1));
+        }
+
         let created_at = Utc::now();
         let base_length = 6;
         let max_length = 8;

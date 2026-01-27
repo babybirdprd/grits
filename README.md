@@ -37,6 +37,17 @@ gr pulse
 ### 2. Create Issue
 ```bash
 gr create "Fix login bug" --type bug --priority 1
+
+# Create a sub-task (Hierarchical ID)
+gr create "Validate email" --parent gr-abc123
+# ✅ Result: gr-abc123.1
+```
+
+### 3. Hierarchy & Linking
+Link existing tasks or migrate them into a hierarchy.
+```bash
+gr dep add gr-child123 gr-parentabc --migrate
+# ✅ Result: Child is renamed to gr-parentabc.n
 ```
 
 ### 3. Work on Issue
@@ -65,6 +76,7 @@ gr context assemble --issue <issue-id>
 | `gr show <id>` | Show issue details |
 | `gr update` | Update issue fields |
 | `gr close <id>` | Close an issue |
+| `gr dep add <c> <p>` | Link tasks (parent, blocks, related) |
 | `gr pulse` | Session hydration (Focus + Blockers + Recent Commits) |
 | `gr workon <id>` | Set focus and status |
 | `gr star <file>` | Get connected files (imports/calls) |

@@ -7,13 +7,34 @@ This documentation is the **sole source of truth** for AI agents using Grits. It
 
 ---
 
-## 🤖 NEW: AI Agent Automation Features (v2.8+)
+## 🤖 NEW: AI Agent Automation Features (v3.0+)
 
 ### **One-Shot Issue Creation**
 ```bash
 # Create issue, auto-discover symbols, and start work in one command:
 gr create "Fix auth bug" --scan-file "src/auth.rs" --scan-file "src/user.rs" --start-work
 # ✅ Creates issue, auto-discovers symbols, starts work
+```
+
+### **Hierarchy & Dot-Notation IDs (NEW v3.0)**
+```bash
+# Create a sub-task for an epic:
+gr create "UI Work" --parent gr-abc123
+# ✅ Result: gr-abc123.1
+
+# Recursive support (sub-tasks of sub-tasks):
+gr create "Button component" --parent gr-abc123.1
+# ✅ Result: gr-abc123.1.1
+```
+
+### **Migration & Linking (NEW v2.9)**
+```bash
+# Link an existing issue into a hierarchy AND rename it:
+gr dep add gr-hash123 gr-epic456 --migrate
+# ✅ Result: gr-hash123 is renamed to gr-epic456.n (next index)
+
+# Link issues without renaming:
+gr dep add gr-child gr-parent --type blocks
 ```
 
 ### **Context-Aware Commands (Default Behavior)**
@@ -407,7 +428,8 @@ The extension now opens as a **full dashboard panel** with:
 ### Core Commands
 | Command | Arguments | Use Case |
 |---------|-----------|----------|
-| `gr create` | `<TITLE>` `-d` `-t` `-p` `--scan-file` `--start-work` | Create issue (enhanced) |
+| `gr create` | `<TITLE>` `--parent` `--scan-file` `--start-work` | Create issue (enhanced) |
+| `gr dep add` | `<CHILD> <PARENT>` `--migrate` `--type` | Manage hierarchy & links |
 | `gr update` | `<ID>` `--status` `--add-symbol` `--scan-file` | Update issue (enhanced) |
 | `gr list` | `--format [table|json|ids]` | List issues (enhanced) |
 | `gr star` | `[FILE]` `--format [structured|symbols|files|json]` | Get connected context (enhanced) |

@@ -57,27 +57,6 @@ $cliCargoContent = $cliCargoContent -replace 'grits-core\s*=\s*\{\s*version\s*=\
 Set-Content $cliCargoPath $cliCargoContent -NoNewline
 Write-Host "  Updated: grits-cli/Cargo.toml" -ForegroundColor Green
 
-# Update extension/package.json
-$extPackagePath = "extension/package.json"
-$extPackageContent = Get-Content $extPackagePath -Raw
-$extPackageContent = $extPackageContent -replace '"version"\s*:\s*"[\d.]+"', "`"version`": `"$newVersion`""
-Set-Content $extPackagePath $extPackageContent -NoNewline
-Write-Host "  Updated: extension/package.json" -ForegroundColor Green
-
-# Update extension/webview/package.json
-$webviewPackagePath = "extension/webview/package.json"
-$webviewPackageContent = Get-Content $webviewPackagePath -Raw
-$webviewPackageContent = $webviewPackageContent -replace '"version"\s*:\s*"[\d.]+"', "`"version`": `"$newVersion`""
-Set-Content $webviewPackagePath $webviewPackageContent -NoNewline
-Write-Host "  Updated: extension/webview/package.json" -ForegroundColor Green
-
-# Update root package.json
-$rootPackagePath = "package.json"
-$rootPackageContent = Get-Content $rootPackagePath -Raw
-$rootPackageContent = $rootPackageContent -replace '"version"\s*:\s*"[\d.]+"', "`"version`": `"$newVersion`""
-Set-Content $rootPackagePath $rootPackageContent -NoNewline
-Write-Host "  Updated: package.json (root)" -ForegroundColor Green
-
 # Update README.md
 $readmePath = "README.md"
 $readmeContent = Get-Content $readmePath -Raw

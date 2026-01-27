@@ -1,7 +1,7 @@
 ---
 name: grits-issue-tracker
 description: Manages tasks and retrieves codebase context using Grits (git-native issue tracker). Use this when the user asks to list/create/update issues, check project pulse, or find related files via the dependency graph.
-version: 2.8.0
+version: 3.0.0
 ---
 
 # Grits Issue Tracker Skill
@@ -20,12 +20,16 @@ To efficiently manage project tasks and utilize topological code context for inf
   - `gr list` - Human-readable table
   - `gr list --format ids` - Just IDs (one per line, perfect for scripting)
   - `gr list --format json` - Structured JSON for parsing
-- **Create with Auto-Discovery**: 
+- **Create with Auto-Discovery & Hierarchy**: 
   - `gr create "Fix auth bug" --scan-file "src/auth.rs" --scan-file "src/user.rs" --start-work`
+  - `gr create "Sub-task title" --parent <PARENT_ID>` - Automatically generates `<PARENT_ID>.n`
   - Automatically discovers symbols, adds them to issue, and starts work
 - **Update with File Scanning**: 
   - `gr update --scan-file "path/to/file.rs"` - Auto-discovers and adds symbols from files
   - Uses focused issue automatically (no `--id` needed after `gr workon`)
+- **Dependency & Hierarchy Management**:
+  - `gr dep add <child> <parent> [--type parent|blocks|related]`
+  - `gr dep add <child> <parent> --migrate` - Renames existing child to follow parent's hierarchical ID
 
 ### 3. **Context-Aware Code Analysis**
 - **Smart Star Neighborhood**: 
